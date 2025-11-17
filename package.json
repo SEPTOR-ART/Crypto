@@ -1,0 +1,27 @@
+{
+  "name": "cryptozen",
+  "version": "1.0.0",
+  "description": "Modern cryptocurrency exchange platform with Asian-inspired aesthetics",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "npm start --prefix server",
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server"
+  },
+  "keywords": [
+    "cryptocurrency",
+    "exchange",
+    "trading",
+    "blockchain",
+    "bitcoin",
+    "ethereum"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

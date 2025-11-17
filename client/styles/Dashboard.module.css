@@ -1,0 +1,388 @@
+.container {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: #1a2a6c;
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.logo h1 {
+  color: #1a2a6c;
+  font-size: 1.8rem;
+}
+
+.nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.navLink {
+  color: #495057;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.navLink:hover {
+  color: #1a2a6c;
+}
+
+.userButton {
+  background: #1a2a6c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.userButton:hover {
+  background: #2a4d69;
+}
+
+/* Main Content */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Portfolio Overview */
+.portfolioOverview {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.portfolioHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.portfolioHeader h2 {
+  font-size: 1.8rem;
+  color: #1a2a6c;
+}
+
+.portfolioValue {
+  text-align: right;
+}
+
+.valueLabel {
+  display: block;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.valueAmount {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a2a6c;
+}
+
+.portfolioStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.statCard {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.statCard h3 {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.statCard p {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.positiveChange {
+  color: #28a745;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab:hover {
+  color: #1a2a6c;
+}
+
+.activeTab {
+  color: #1a2a6c;
+  border-bottom: 3px solid #1a2a6c;
+}
+
+/* Tab Content */
+.tabContent {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Overview Content */
+.chartPlaceholder {
+  margin-bottom: 2rem;
+}
+
+.chartPlaceholder p {
+  text-align: center;
+  color: #6c757d;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.chartArea {
+  height: 300px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quickActions h3 {
+  margin-bottom: 1rem;
+  color: #1a2a6c;
+}
+
+.actionButtons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.actionButton {
+  padding: 1rem;
+  background: #1a2a6c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.actionButton:hover {
+  background: #2a4d69;
+  transform: translateY(-2px);
+}
+
+/* Holdings Table */
+.holdingsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.holdingsTable th {
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.holdingsTable td {
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.assetInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.assetSymbol {
+  font-weight: 700;
+  color: #1a2a6c;
+}
+
+.assetName {
+  color: #6c757d;
+}
+
+.allocationBar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.allocationFill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a2a6c, #2a4d69);
+  border-radius: 4px;
+}
+
+/* Transactions Table */
+.transactionsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transactionsTable th {
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.transactionsTable td {
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.transactionType {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.buy {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.sell {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .nav {
+    gap: 1rem;
+  }
+  
+  .main {
+    padding: 1rem;
+  }
+  
+  .portfolioHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .portfolioValue {
+    text-align: left;
+  }
+  
+  .portfolioStats {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    overflow-x: auto;
+  }
+  
+  .tab {
+    padding: 1rem;
+    white-space: nowrap;
+  }
+  
+  .actionButtons {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Add these new styles at the end of the file */
+
+.error {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.status {
+  display: inline-block;
+  padding: 0.25em 0.4em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.status.pending {
+  color: #fff;
+  background-color: #6c757d;
+}
+
+.status.completed {
+  color: #fff;
+  background-color: #28a745;
+}
+
+.status.failed {
+  color: #fff;
+  background-color: #dc3545;
+}
+
+.status.cancelled {
+  color: #fff;
+  background-color: #ffc107;
+}

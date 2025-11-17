@@ -1,0 +1,345 @@
+.container {
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+/* Hero Section with Parallax Effect */
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: white;
+}
+
+.parallaxBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a2a6c, #2a4d69, #4b86b4);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  z-index: -1;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.heroContent {
+  text-align: center;
+  max-width: 800px;
+  padding: 2rem;
+  z-index: 1;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.highlight {
+  color: #ffd700; /* Gold color for Asian-inspired theme */
+  position: relative;
+}
+
+.highlight::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+}
+
+.description {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryButton, .secondaryButton {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.primaryButton {
+  background: linear-gradient(45deg, #ffd700, #ffaa00);
+  color: #1a2a6c;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.primaryButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.secondaryButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+}
+
+/* Price Tracker Section */
+.priceTracker {
+  padding: 4rem 2rem;
+  background: #f8f9fa;
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #1a2a6c;
+}
+
+.priceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.priceCard {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.priceCard:hover {
+  transform: translateY(-10px);
+}
+
+.priceCard h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #2a4d69;
+}
+
+.price {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 1rem 0;
+  color: #1a2a6c;
+}
+
+.trendUp {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.trendDown {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #1a2a6c;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Features Section */
+.features {
+  padding: 4rem 2rem;
+  background: white;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  text-align: center;
+  padding: 2rem;
+  border-radius: 15px;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.featureCard:hover {
+  background: #e9ecef;
+  transform: scale(1.05);
+}
+
+.featureIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.featureCard h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #1a2a6c;
+}
+
+.featureCard p {
+  color: #495057;
+  line-height: 1.6;
+}
+
+/* CTA Section */
+.ctaSection {
+  padding: 6rem 2rem;
+  background: linear-gradient(135deg, #1a2a6c, #2a4d69);
+  color: white;
+  text-align: center;
+}
+
+.ctaSection h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.ctaSection p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.largeButton {
+  padding: 1.2rem 3rem;
+  font-size: 1.2rem;
+  background: linear-gradient(45deg, #ffd700, #ffaa00);
+  color: #1a2a6c;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+}
+
+.largeButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.6);
+}
+
+/* Footer */
+.footer {
+  background: #1a2a6c;
+  color: white;
+  padding: 4rem 2rem 2rem;
+}
+
+.footerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+}
+
+.footerColumn h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #ffd700;
+}
+
+.footerColumn h4 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #ffd700;
+}
+
+.footerColumn ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footerColumn ul li {
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.footerColumn ul li:hover {
+  opacity: 1;
+}
+
+.copyright {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0.7;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+  
+  .description {
+    font-size: 1.2rem;
+  }
+  
+  .heroContent {
+    padding: 1.5rem;
+  }
+  
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .primaryButton, .secondaryButton {
+    width: 80%;
+  }
+  
+  .sectionTitle {
+    font-size: 2rem;
+  }
+}

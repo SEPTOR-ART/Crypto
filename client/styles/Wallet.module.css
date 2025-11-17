@@ -1,0 +1,538 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - 4rem);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: #1a2a6c;
+}
+
+.walletHeader {
+  margin-bottom: 2rem;
+}
+
+.walletHeader h1 {
+  color: #1a2a6c;
+  margin-bottom: 0.5rem;
+}
+
+.walletHeader p {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* Wallet Overview */
+.walletOverview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.balanceCard h2 {
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.totalBalance {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a2a6c;
+  margin: 0.5rem 0;
+}
+
+.balanceChange {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.cryptoSelector {
+  min-width: 250px;
+}
+
+.cryptoSelect {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+}
+
+/* Wallet Details */
+.walletDetails {
+  display: flex;
+  justify-content: space-between;
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.walletInfo {
+  flex: 1;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoRow span:first-child {
+  color: #6c757d;
+}
+
+.balanceAmount {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a2a6c;
+}
+
+.balanceValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #28a745;
+}
+
+.addressContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.address {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #1a2a6c;
+}
+
+.copyButton {
+  padding: 0.5rem 1rem;
+  background: #1a2a6c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.copyButton:hover {
+  background: #2a4d69;
+}
+
+.qrCode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrPlaceholder {
+  width: 150px;
+  height: 150px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab:hover {
+  color: #1a2a6c;
+}
+
+.activeTab {
+  color: #1a2a6c;
+  border-bottom: 3px solid #1a2a6c;
+}
+
+/* Tab Content */
+.tabContent {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Overview Content */
+.overviewContent h3 {
+  color: #1a2a6c;
+  margin-top: 0;
+}
+
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.assetCard {
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 1.5rem;
+  transition: all 0.3s;
+}
+
+.assetCard:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+}
+
+.assetHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.assetSymbol {
+  font-weight: 700;
+  color: #1a2a6c;
+  font-size: 1.2rem;
+}
+
+.assetName {
+  color: #6c757d;
+}
+
+.assetBalance {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+}
+
+.assetValue {
+  color: #28a745;
+}
+
+/* Send Content */
+.sendContent h3 {
+  color: #1a2a6c;
+  margin-top: 0;
+}
+
+.sendForm {
+  max-width: 500px;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.inputWithSymbol {
+  position: relative;
+}
+
+.inputWithSymbol input {
+  width: 100%;
+  padding: 0.75rem;
+  padding-right: 4rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.inputWithSymbol input:focus {
+  outline: none;
+  border-color: #1a2a6c;
+  box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+}
+
+.symbol {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #1a2a6c;
+  box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+}
+
+.feeInfo {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.feeRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+}
+
+.sendButton {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(45deg, #1a2a6c, #2a4d69);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.sendButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 42, 108, 0.3);
+}
+
+/* Receive Content */
+.receiveContent h3 {
+  color: #1a2a6c;
+  margin-top: 0;
+}
+
+.receiveInfo {
+  max-width: 500px;
+}
+
+.receiveInfo p {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.addressDisplay {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.addressDisplay span {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #1a2a6c;
+  word-break: break-all;
+}
+
+.qrContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.qrContainer .qrPlaceholder {
+  width: 200px;
+  height: 200px;
+}
+
+.warning {
+  color: #dc3545;
+  font-size: 0.9rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* History Content */
+.historyContent h3 {
+  color: #1a2a6c;
+  margin-top: 0;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.historyItem:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.transactionInfo {
+  flex: 1;
+}
+
+.transactionHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.transactionType {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.received {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.sent {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.transactionAmount {
+  font-weight: 600;
+  color: #1a2a6c;
+}
+
+.transactionDetails {
+  display: flex;
+  gap: 1rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.transactionDetails span {
+  font-family: monospace;
+}
+
+.transactionStatus {
+  margin-left: 1rem;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.completed {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.pending {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .walletOverview {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .walletDetails {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .tabs {
+    overflow-x: auto;
+  }
+  
+  .tab {
+    padding: 1rem;
+    white-space: nowrap;
+  }
+  
+  .assetsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .historyItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .transactionStatus {
+    margin-left: 0;
+  }
+}
+
+.error {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}

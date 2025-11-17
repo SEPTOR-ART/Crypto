@@ -1,0 +1,196 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a2a6c, #2a4d69);
+  padding: 1rem;
+}
+
+.signupCard {
+  background: white;
+  border-radius: 15px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo h1 {
+  color: #1a2a6c;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.logo p {
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #f5c6cb;
+}
+
+.form {
+  margin-bottom: 1.5rem;
+}
+
+.nameFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+}
+
+.inputGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.inputGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.inputGroup input:focus {
+  outline: none;
+  border-color: #1a2a6c;
+  box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+}
+
+.signupButton {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(45deg, #1a2a6c, #2a4d69);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.signupButton:hover:not(:disabled) {
+  background: linear-gradient(45deg, #2a4d69, #1a2a6c);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 42, 108, 0.3);
+}
+
+.signupButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ced4da;
+}
+
+.divider span {
+  padding: 0 1rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.socialLogin {
+  margin-bottom: 1.5rem;
+}
+
+.socialButton {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  background: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.socialButton:last-child {
+  margin-bottom: 0;
+}
+
+.socialButton:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.icon {
+  margin-right: 0.5rem;
+  font-weight: bold;
+}
+
+.google .icon {
+  color: #db4437;
+}
+
+.facebook .icon {
+  color: #4267B2;
+}
+
+.loginLink {
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.loginLink a {
+  color: #1a2a6c;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.loginLink a:hover {
+  color: #2a4d69;
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .signupCard {
+    padding: 1.5rem;
+  }
+  
+  .logo h1 {
+    font-size: 2rem;
+  }
+  
+  .nameFields {
+    grid-template-columns: 1fr;
+  }
+}
