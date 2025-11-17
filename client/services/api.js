@@ -6,12 +6,17 @@ const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL || 'ws://localhost:5000'
 // Helper function to make API requests
 const apiRequest = async (endpoint, options = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`Making API request to: ${url}`);
+    
+    const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
       ...options,
+      // Add timeout
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
 
     const data = await response.json();
@@ -23,6 +28,12 @@ const apiRequest = async (endpoint, options = {}) => {
     return data;
   } catch (error) {
     console.error('API request failed:', error);
+    
+    // Handle different types of errors
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    
     throw new Error(`Failed to fetch: ${error.message}`);
   }
 };
@@ -80,6 +91,7 @@ export const cryptoService = {
 
   // Create WebSocket connection for real-time prices
   createPriceWebSocket: () => {
+    console.log(`Creating WebSocket connection to: ${WS_BASE_URL}`);
     const ws = new WebSocket(WS_BASE_URL);
     return ws;
   },

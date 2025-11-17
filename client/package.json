@@ -18,5 +18,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.1.0"
   }
 }

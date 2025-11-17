@@ -23,7 +23,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, request) => {
   console.log('New WebSocket connection');
   
   // Send initial price data
@@ -39,15 +39,17 @@ wss.on('connection', (ws) => {
   
   // Send price updates every 5 seconds
   const priceInterval = setInterval(() => {
-    ws.send(JSON.stringify({
-      type: 'PRICE_UPDATE',
-      data: {
-        BTC: (Math.random() * 100000 + 30000).toFixed(2),
-        ETH: (Math.random() * 5000 + 1500).toFixed(2),
-        LTC: (Math.random() * 500 + 50).toFixed(2),
-        XRP: (Math.random() * 2 + 0.2).toFixed(4)
-      }
-    }));
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'PRICE_UPDATE',
+        data: {
+          BTC: (Math.random() * 100000 + 30000).toFixed(2),
+          ETH: (Math.random() * 5000 + 1500).toFixed(2),
+          LTC: (Math.random() * 500 + 50).toFixed(2),
+          XRP: (Math.random() * 2 + 0.2).toFixed(4)
+        }
+      }));
+    }
   }, 5000);
   
   // Handle WebSocket close
@@ -55,12 +57,37 @@ wss.on('connection', (ws) => {
     console.log('WebSocket connection closed');
     clearInterval(priceInterval);
   });
+  
+  // Handle WebSocket errors
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+    clearInterval(priceInterval);
+  });
 });
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+
+// Configure CORS for production and development
+if (process.env.NODE_ENV === 'production') {
+  app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['https://your-netlify-domain.netlify.app'],
+    credentials: true
+  }));
+} else {
+  app.use(cors());
+}
+
 app.use(express.json());
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Routes
 app.get('/', (req, res) => {
@@ -104,4 +131,12 @@ app.use('/api/mfa', mfaRoutes);
 // Start server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
 });
