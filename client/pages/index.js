@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatSupport from '../components/ChatSupport';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
 
@@ -12,6 +12,18 @@ export default function Home() {
     LTC: 'down',
     XRP: 'up'
   });
+  
+  // State for retrying connection
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // Function to retry connection
+  const retryConnection = () => {
+    setIsRetrying(true);
+    setRetryCount(prev => prev + 1);
+    // Refresh the page to retry connection
+    window.location.reload();
+  };
 
   return (
     <div className={styles.container}>
@@ -43,37 +55,62 @@ export default function Home() {
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Real-Time Crypto Prices</h2>
           {loading ? (
-            <div className={styles.loading}>Loading prices...</div>
+            <div className={styles.loading}>
+              <div className={styles.spinner}></div>
+              Loading prices...
+            </div>
           ) : error ? (
-            <div className={styles.error}>Error loading prices: {error}</div>
+            <div className={styles.errorContainer}>
+              <div className={styles.errorIcon}>⚠️</div>
+              <h3 className={styles.errorTitle}>Connection Error</h3>
+              <p className={styles.errorMessage}>Error loading prices: {error}</p>
+              <button 
+                className={styles.retryButton} 
+                onClick={retryConnection}
+                disabled={isRetrying}
+              >
+                {isRetrying ? 'Retrying...' : 'Retry Connection'}
+              </button>
+              <div className={styles.errorHelp}>
+                <p>Having trouble connecting? Check your internet connection or try again in a few minutes.</p>
+              </div>
+            </div>
           ) : (
             <div className={styles.priceGrid}>
-              <div className={styles.priceCard}>
+              <div className={`${styles.priceCard} ${styles.btcCard}`}>
+                <div className={styles.cardIcon}>₿</div>
                 <h3>Bitcoin (BTC)</h3>
-                <p className={styles.price}>${cryptoPrices.BTC}</p>
-                <div className={trends.BTC === 'up' ? styles.trendUp : styles.trendDown}>
-                  {trends.BTC === 'up' ? '▲' : '▼'} 2.5%
+                <p className={styles.price}>${parseFloat(cryptoPrices.BTC).toLocaleString()}</p>
+                <div className={`${styles.trendIndicator} ${trends.BTC === 'up' ? styles.trendUp : styles.trendDown}`}>
+                  <span className={styles.trendArrow}>{trends.BTC === 'up' ? '▲' : '▼'}</span>
+                  <span className={styles.trendValue}>2.5%</span>
                 </div>
               </div>
-              <div className={styles.priceCard}>
+              <div className={`${styles.priceCard} ${styles.ethCard}`}>
+                <div className={styles.cardIcon}>Ξ</div>
                 <h3>Ethereum (ETH)</h3>
-                <p className={styles.price}>${cryptoPrices.ETH}</p>
-                <div className={trends.ETH === 'up' ? styles.trendUp : styles.trendDown}>
-                  {trends.ETH === 'up' ? '▲' : '▼'} 1.8%
+                <p className={styles.price}>${parseFloat(cryptoPrices.ETH).toLocaleString()}</p>
+                <div className={`${styles.trendIndicator} ${trends.ETH === 'up' ? styles.trendUp : styles.trendDown}`}>
+                  <span className={styles.trendArrow}>{trends.ETH === 'up' ? '▲' : '▼'}</span>
+                  <span className={styles.trendValue}>1.8%</span>
                 </div>
               </div>
-              <div className={styles.priceCard}>
+              <div className={`${styles.priceCard} ${styles.ltcCard}`}>
+                <div className={styles.cardIcon}>Ł</div>
                 <h3>Litecoin (LTC)</h3>
-                <p className={styles.price}>${cryptoPrices.LTC}</p>
-                <div className={trends.LTC === 'up' ? styles.trendUp : styles.trendDown}>
-                  {trends.LTC === 'up' ? '▲' : '▼'} 0.7%
+                <p className={styles.price}>${parseFloat(cryptoPrices.LTC).toLocaleString()}</p>
+                <div className={`${styles.trendIndicator} ${trends.LTC === 'up' ? styles.trendUp : styles.trendDown}`}>
+                  <span className={styles.trendArrow}>{trends.LTC === 'up' ? '▲' : '▼'}</span>
+                  <span className={styles.trendValue}>0.7%</span>
                 </div>
               </div>
-              <div className={styles.priceCard}>
+              <div className={`${styles.priceCard} ${styles.xrpCard}`}>
+                <div className={styles.cardIcon}>X</div>
                 <h3>Ripple (XRP)</h3>
-                <p className={styles.price}>${cryptoPrices.XRP}</p>
-                <div className={trends.XRP === 'up' ? styles.trendUp : styles.trendDown}>
-                  {trends.XRP === 'up' ? '▲' : '▼'} 3.2%
+                <p className={styles.price}>${parseFloat(cryptoPrices.XRP).toLocaleString()}</p>
+                <div className={`${styles.trendIndicator} ${trends.XRP === 'up' ? styles.trendUp : styles.trendDown}`}>
+                  <span className={styles.trendArrow}>{trends.XRP === 'up' ? '▲' : '▼'}</span>
+                  <span className={styles.trendValue}>3.2%</span>
                 </div>
               </div>
             </div>
@@ -86,22 +123,22 @@ export default function Home() {
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Why Choose CryptoZen?</h2>
           <div className={styles.featureGrid}>
-            <div className={styles.featureCard}>
+            <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
               <div className={styles.featureIcon}>🔒</div>
               <h3>Bank-Grade Security</h3>
               <p>Multi-layer security protocols and cold storage for maximum protection</p>
             </div>
-            <div className={styles.featureCard}>
+            <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
               <div className={styles.featureIcon}>💳</div>
               <h3>Multiple Payment Options</h3>
               <p>Buy crypto with credit cards, bank transfers, gift cards, and digital wallets</p>
             </div>
-            <div className={styles.featureCard}>
+            <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
               <div className={styles.featureIcon}>📱</div>
               <h3>Mobile Friendly</h3>
               <p>Trade on the go with our responsive platform and mobile app</p>
             </div>
-            <div className={styles.featureCard}>
+            <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
               <div className={styles.featureIcon}>🌐</div>
               <h3>Global Access</h3>
               <p>Available in 50+ countries with local currency support</p>

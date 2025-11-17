@@ -49,6 +49,20 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 1s ease-out;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
 }
 
 .title {
@@ -56,11 +70,28 @@
   font-weight: 700;
   margin-bottom: 1rem;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes textGlow {
+  from {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+  to {
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6);
+  }
 }
 
 .highlight {
   color: #ffd700; /* Gold color for Asian-inspired theme */
   position: relative;
+  display: inline-block;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.highlight:hover {
+  transform: translateZ(20px);
 }
 
 .highlight::after {
@@ -77,6 +108,16 @@
   font-size: 1.5rem;
   margin-bottom: 2rem;
   opacity: 0.9;
+  animation: fadeIn 1.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
 }
 
 .ctaButtons {
@@ -84,6 +125,18 @@
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+  animation: slideInUp 1s ease-out 0.5s both;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .primaryButton, .secondaryButton {
@@ -94,34 +147,50 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
 
 .primaryButton {
   background: linear-gradient(45deg, #ffd700, #ffaa00);
   color: #1a2a6c;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  transform: translateZ(0);
 }
 
 .primaryButton:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+  transform: translateY(-5px) translateZ(10px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
+}
+
+.primaryButton:active {
+  transform: translateY(0) translateZ(5px);
 }
 
 .secondaryButton {
   background: transparent;
   color: white;
   border: 2px solid white;
+  transform: translateZ(0);
 }
 
 .secondaryButton:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-3px);
+  transform: translateY(-5px) translateZ(10px);
+}
+
+.secondaryButton:active {
+  transform: translateY(0) translateZ(5px);
 }
 
 /* Price Tracker Section */
 .priceTracker {
   padding: 4rem 2rem;
   background: #f8f9fa;
+  position: relative;
+  overflow: hidden;
 }
 
 .sectionTitle {
@@ -129,6 +198,19 @@
   font-size: 2.5rem;
   margin-bottom: 3rem;
   color: #1a2a6c;
+  animation: slideInDown 1s ease-out;
+  transform-style: preserve-3d;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
 }
 
 .priceGrid {
@@ -145,11 +227,65 @@
   padding: 2rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   text-align: center;
-  transition: transform 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  position: relative;
+  overflow: hidden;
 }
 
 .priceCard:hover {
-  transform: translateY(-10px);
+  transform: translateY(-15px) translateZ(20px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.priceCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.priceCard:hover::before {
+  left: 100%;
+}
+
+.cardIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.btcCard {
+  border-top: 5px solid #f7931a;
+}
+
+.ethCard {
+  border-top: 5px solid #627eea;
+}
+
+.ltcCard {
+  border-top: 5px solid #bebebe;
+}
+
+.xrpCard {
+  border-top: 5px solid #23292f;
 }
 
 .priceCard h3 {
@@ -163,27 +299,146 @@
   font-weight: 700;
   margin: 1rem 0;
   color: #1a2a6c;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.trendIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  border-radius: 20px;
+  margin-top: 1rem;
 }
 
 .trendUp {
   color: #28a745;
-  font-weight: 600;
+  background: rgba(40, 167, 69, 0.1);
 }
 
 .trendDown {
   color: #dc3545;
-  font-weight: 600;
+  background: rgba(220, 53, 69, 0.1);
 }
 
-.loading, .error {
+.trendArrow {
+  font-size: 1.2rem;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.trendValue {
+  font-size: 1rem;
+}
+
+.loading {
   text-align: center;
   padding: 2rem;
   font-size: 1.2rem;
   color: #1a2a6c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
-.error {
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(26, 42, 108, 0.2);
+  border-top: 5px solid #1a2a6c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorContainer {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.errorIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: pulse 1.5s infinite;
+}
+
+.errorTitle {
   color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.errorMessage {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.retryButton {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(45deg, #1a2a6c, #2a4d69);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(26, 42, 108, 0.3);
+}
+
+.retryButton:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(26, 42, 108, 0.4);
+}
+
+.retryButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.errorHelp {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+  color: #6c757d;
+  font-size: 0.9rem;
 }
 
 /* Features Section */
@@ -206,16 +461,56 @@
   border-radius: 15px;
   background: #f8f9fa;
   transition: all 0.3s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
 
-.featureCard:hover {
-  background: #e9ecef;
-  transform: scale(1.05);
+.featureCard3D {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.featureCard3D::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.01));
+  z-index: 1;
+  pointer-events: none;
+}
+
+.featureCard3D:hover {
+  transform: translateY(-10px) rotateY(5deg) rotateX(5deg);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.featureCard3D:hover .featureIcon {
+  transform: scale(1.2) rotate(10deg);
 }
 
 .featureIcon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  animation: iconPulse 2s infinite;
+}
+
+@keyframes iconPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .featureCard h3 {
@@ -235,17 +530,45 @@
   background: linear-gradient(135deg, #1a2a6c, #2a4d69);
   color: white;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaSection::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .ctaSection h2 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  animation: textGlow 2s ease-in-out infinite alternate;
 }
 
 .ctaSection p {
   font-size: 1.2rem;
   margin-bottom: 2rem;
   opacity: 0.9;
+  position: relative;
+  z-index: 1;
 }
 
 .largeButton {
@@ -259,11 +582,19 @@
   font-weight: 700;
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+  position: relative;
+  z-index: 1;
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
 
 .largeButton:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 25px rgba(255, 215, 0, 0.6);
+  transform: translateY(-5px) translateZ(15px);
+  box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+}
+
+.largeButton:active {
+  transform: translateY(0) translateZ(10px);
 }
 
 /* Footer */
@@ -303,10 +634,23 @@
   opacity: 0.8;
   cursor: pointer;
   transition: opacity 0.3s ease;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.footerColumn ul li::before {
+  content: '»';
+  position: absolute;
+  left: 0;
+  transition: transform 0.3s ease;
 }
 
 .footerColumn ul li:hover {
   opacity: 1;
+}
+
+.footerColumn ul li:hover::before {
+  transform: translateX(3px);
 }
 
 .copyright {
@@ -341,5 +685,13 @@
   
   .sectionTitle {
     font-size: 2rem;
+  }
+  
+  .priceCard {
+    padding: 1.5rem;
+  }
+  
+  .price {
+    font-size: 1.5rem;
   }
 }

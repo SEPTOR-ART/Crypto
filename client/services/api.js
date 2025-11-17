@@ -93,6 +93,13 @@ export const cryptoService = {
   createPriceWebSocket: () => {
     console.log(`Creating WebSocket connection to: ${WS_BASE_URL}`);
     const ws = new WebSocket(WS_BASE_URL);
+    
+    // Add reconnection logic
+    ws.reconnect = () => {
+      console.log('Attempting to reconnect WebSocket...');
+      return new WebSocket(WS_BASE_URL);
+    };
+    
     return ws;
   },
 };

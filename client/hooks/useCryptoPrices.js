@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cryptoService } from '../services/api';
 
 export const useCryptoPrices = () => {
@@ -10,6 +10,10 @@ export const useCryptoPrices = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const wsRef = useRef(null);
+  const retryTimeoutRef = useRef(null);
+  const retryCountRef = useRef(0);
+  const maxRetries = 5;
 
   useEffect(() => {
     // Get initial prices
@@ -18,45 +22,97 @@ export const useCryptoPrices = () => {
         const initialPrices = await cryptoService.getPrices();
         setPrices(initialPrices);
         setLoading(false);
+        setError(null);
       } catch (err) {
-        setError(err.message);
+        console.error('Failed to fetch initial prices:', err);
+        setError(err.message || 'Failed to load initial prices');
         setLoading(false);
       }
     };
 
-    fetchInitialPrices();
+    // Create WebSocket connection with retry logic
+    const createWebSocketConnection = () => {
+      if (retryCountRef.current >= maxRetries) {
+        setError('Maximum retry attempts reached. Please refresh the page.');
+        return;
+      }
 
-    // Create WebSocket connection for real-time updates
-    const ws = cryptoService.createPriceWebSocket();
-
-    ws.onopen = () => {
-      console.log('WebSocket connection opened');
-    };
-
-    ws.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data);
-        if (message.type === 'PRICE_UPDATE' || message.type === 'INITIAL_PRICES') {
-          setPrices(message.data);
-        }
+        const ws = cryptoService.createPriceWebSocket();
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('WebSocket connection opened');
+          retryCountRef.current = 0; // Reset retry count on successful connection
+          setError(null);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.type === 'PRICE_UPDATE' || message.type === 'INITIAL_PRICES') {
+              setPrices(prevPrices => ({
+                ...prevPrices,
+                ...message.data
+              }));
+            }
+          } catch (err) {
+            console.error('Error parsing WebSocket message:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setError('Failed to connect to real-time price updates');
+        };
+
+        ws.onclose = (event) => {
+          console.log('WebSocket connection closed', event);
+          
+          // Only retry if not closed intentionally and retry count is less than max
+          if (!event.wasClean && retryCountRef.current < maxRetries) {
+            retryCountRef.current += 1;
+            console.log(`Retrying WebSocket connection... Attempt ${retryCountRef.current}/${maxRetries}`);
+            
+            // Exponential backoff
+            const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000);
+            
+            retryTimeoutRef.current = setTimeout(() => {
+              createWebSocketConnection();
+            }, retryDelay);
+          } else if (retryCountRef.current >= maxRetries) {
+            setError('Unable to establish real-time connection after multiple attempts. Please refresh the page.');
+          }
+        };
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+        console.error('Failed to create WebSocket connection:', err);
+        setError('Failed to establish real-time price connection');
+        
+        // Retry with exponential backoff
+        if (retryCountRef.current < maxRetries) {
+          retryCountRef.current += 1;
+          const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000);
+          
+          retryTimeoutRef.current = setTimeout(() => {
+            createWebSocketConnection();
+          }, retryDelay);
+        }
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setError('Failed to connect to real-time price updates');
-    };
+    // Fetch initial prices
+    fetchInitialPrices();
+    
+    // Create WebSocket connection
+    createWebSocketConnection();
 
-    ws.onclose = () => {
-      console.log('WebSocket connection closed');
-    };
-
-    // Clean up WebSocket connection
+    // Clean up WebSocket connection and timeouts
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
       }
     };
   }, []);
