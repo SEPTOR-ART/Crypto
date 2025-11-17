@@ -26,6 +26,8 @@ services:
     buildCommand: cd client && npm install && npm run build
     staticPublishPath: client/out
     envVars:
+      - key: NODE_VERSION
+        value: "20"
       - key: NEXT_PUBLIC_API_BASE_URL
         sync: false
       - key: NEXT_PUBLIC_WS_BASE_URL
