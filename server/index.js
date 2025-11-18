@@ -119,6 +119,7 @@ app.use((req, res, next) => {
 
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),

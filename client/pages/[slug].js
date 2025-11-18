@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 
-const KNOWN = ['support','help-center','contact','fees','docs','terms','privacy','security','compliance','staking'];
+const KNOWN = ['support','help-center','contact','fees','docs','terms','privacy','security','compliance','staking','forgot-password'];
 
 export default function InfoPage({ slug }) {
   const known = KNOWN.includes(slug);
