@@ -1,10 +1,10 @@
 import Head from 'next/head';
 import Link from 'next/link';
 
-const KNOWN = new Set(['support','help-center','contact','fees','docs','terms','privacy','security','compliance','staking']);
+const KNOWN = ['support','help-center','contact','fees','docs','terms','privacy','security','compliance','staking'];
 
 export default function InfoPage({ slug }) {
-  const known = KNOWN.has(slug);
+  const known = KNOWN.includes(slug);
   return (
     <main style={{padding:'4rem 1.5rem',maxWidth:900,margin:'0 auto'}}>
       <Head><title>{known ? `${slug.replace('-', ' ')} - CryptoZen` : 'Page - CryptoZen'}</title></Head>
@@ -21,6 +21,13 @@ export default function InfoPage({ slug }) {
   );
 }
 
-export async function getServerSideProps({ params }) {
+export async function getStaticPaths() {
+  return {
+    paths: KNOWN.map((slug) => ({ params: { slug } })),
+    fallback: false,
+  };
+}
+
+export async function getStaticProps({ params }) {
   return { props: { slug: params.slug } };
 }
