@@ -66,12 +66,16 @@ export default function ThreeCoin() {
   const [ok, setOk] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [lowPerf, setLowPerf] = useState(false);
   useEffect(() => {
     setOk(canUseWebGL());
     if (typeof window !== 'undefined') {
       try {
         setReduceMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
         setIsMobile(window.matchMedia('(pointer: coarse)').matches);
+        const dm = navigator.deviceMemory || 4;
+        const hwConcurrency = navigator.hardwareConcurrency || 4;
+        setLowPerf(dm <= 4 || hwConcurrency <= 4);
       } catch {}
     }
   }, []);
@@ -80,14 +84,14 @@ export default function ThreeCoin() {
 
   return (
     <div style={{ width: 'min(300px, 60vw)', height: 'min(300px, 60vw)', margin: '0 auto', cursor: 'grab' }} aria-label="Interactive 3D coin">
-      <Canvas camera={{ position: [0, 1.2, 3], fov: 40 }} dpr={[1, isMobile ? 1.5 : 2]} gl={{ antialias: true }}>
+      <Canvas camera={{ position: [0, 1.2, 3], fov: 40 }} dpr={[1, lowPerf ? 1.25 : (isMobile ? 1.5 : 2)]} gl={{ antialias: !lowPerf }}>
         <ambientLight intensity={0.8} />
-        <directionalLight position={[3, 3, 3]} intensity={0.9} />
-        <pointLight position={[-2, -2, -2]} intensity={0.6} />
+        <directionalLight position={[3, 3, 3]} intensity={lowPerf ? 0.75 : 0.9} />
+        <pointLight position={[-2, -2, -2]} intensity={lowPerf ? 0.45 : 0.6} />
         <Suspense fallback={null}>
           <PresentationControls global polar={[-0.2, 0.4]} azimuth={[-1, 1]} config={{ mass: 1, tension: 200, friction: 26 }} snap>
-            <Float floatIntensity={reduceMotion ? 0 : 0.8} rotationIntensity={reduceMotion ? 0 : 0.6}>
-              <Coin speed={reduceMotion ? 0 : 0.3} />
+            <Float floatIntensity={reduceMotion ? 0 : (lowPerf ? 0.5 : 0.8)} rotationIntensity={reduceMotion ? 0 : (lowPerf ? 0.4 : 0.6)}>
+              <Coin speed={reduceMotion ? 0 : (lowPerf ? 0.2 : 0.3)} />
               <group position={[0, 0.091, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <Text
                   fontSize={0.45}
@@ -114,9 +118,9 @@ export default function ThreeCoin() {
               </group>
             </Float>
           </PresentationControls>
-          <Sparkles scale={2.5} count={reduceMotion ? 0 : (isMobile ? 8 : 20)} size={1} speed={0.25} color="#ffd700" />
+          <Sparkles scale={2.5} count={reduceMotion ? 0 : (lowPerf ? 6 : (isMobile ? 8 : 20))} size={1} speed={0.25} color="#ffd700" />
           <Environment preset="sunset" />
-          <ContactShadows opacity={0.35} scale={3.2} blur={2.6} far={2.8} />
+          {reduceMotion || lowPerf ? null : <ContactShadows opacity={0.35} scale={3.2} blur={2.6} far={2.8} />}
         </Suspense>
       </Canvas>
     </div>
