@@ -52,17 +52,7 @@ export default function Dashboard() {
     fetchTransactions();
   }, [user]);
 
-  // Show loading state
-  if (authLoading || pricesLoading) {
-    return <div className={styles.loading}>Loading...</div>;
-  }
-
-  // Show nothing if not authenticated (redirecting)
-  if (!user) {
-    return null;
-  }
-
-  // Mock data for demonstration
+  // Mock data for demonstration (must be declared before any early returns)
   useEffect(() => {
     // Simulate portfolio value
     setPortfolioValue((Math.random() * 100000 + 50000).toFixed(2));
@@ -75,6 +65,16 @@ export default function Dashboard() {
       { id: 4, name: 'Ripple', symbol: 'XRP', amount: 1000, value: (1000 * 1.2).toFixed(2) }
     ]);
   }, []);
+
+  // Show loading state
+  if (authLoading || pricesLoading) {
+    return <div className={styles.loading}>Loading...</div>;
+  }
+
+  // Show nothing if not authenticated (redirecting)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className={styles.container}>

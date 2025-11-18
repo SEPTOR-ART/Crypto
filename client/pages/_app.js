@@ -2,6 +2,9 @@ import '../styles/globals.css';
 import Head from 'next/head';
 import { AuthProvider } from '../context/AuthContext';
 import HealthCheck from '../components/HealthCheck';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import AnimationMonitor from '../components/AnimationMonitor';
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -11,7 +14,10 @@ function MyApp({ Component, pageProps }) {
         <meta charSet="utf-8" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Header />
       <Component {...pageProps} />
+      <Footer />
+      <AnimationMonitor />
       <HealthCheck />
     </AuthProvider>
   );

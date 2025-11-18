@@ -1,11 +1,19 @@
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ChatSupport from '../components/ChatSupport';
+import ThreeCoin from '../components/ThreeCoin';
+import HeroCanvas from '../components/HeroCanvas';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
 
 export default function Home() {
-  const { prices: cryptoPrices, loading, error } = useCryptoPrices();
+  const heroRef = useRef(null);
+  const titleRef = useRef(null);
+  const descRef = useRef(null);
+  const ctasRef = useRef(null);
+  const { prices: cryptoPrices, loading, error, refreshing } = useCryptoPrices();
   const [trends] = useState({
     BTC: 'up',
     ETH: 'up',
@@ -25,6 +33,50 @@ export default function Home() {
     window.location.reload();
   };
 
+  useEffect(() => {
+    if (!heroRef.current) return;
+    gsap.registerPlugin(ScrollTrigger);
+    const ctx = gsap.context(() => {
+      const ease = 'power3.out';
+      gsap.timeline({ defaults: { ease } })
+        .from(titleRef.current, { y: 30, opacity: 0, duration: 0.8 })
+        .from(descRef.current, { y: 20, opacity: 0, duration: 0.7 }, '-=0.3')
+        .from(ctasRef.current?.querySelectorAll('button'), { y: 10, opacity: 0, stagger: 0.1, duration: 0.5 }, '-=0.2');
+
+      const cards = document.querySelectorAll(`.${styles.featureCard}`);
+      cards.forEach((el) => {
+        gsap.from(el, {
+          y: 30,
+          opacity: 0,
+          duration: 0.6,
+          ease,
+          scrollTrigger: { trigger: el, start: 'top 80%' }
+        });
+      });
+    }, heroRef);
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      gsap.to(el.querySelector(`.${styles.heroContent}`), { rotateY: x * 6, rotateX: -y * 6, transformPerspective: 600, transformOrigin: 'center', duration: 0.4 });
+    };
+    const onLeave = () => {
+      gsap.to(el.querySelector(`.${styles.heroContent}`), { rotateY: 0, rotateX: 0, duration: 0.5 });
+    };
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseleave', onLeave);
+    return () => {
+      el.removeEventListener('mousemove', onMove);
+      el.removeEventListener('mouseleave', onLeave);
+    };
+  }, []);
+
   return (
     <div className={styles.container}>
       <Head>
@@ -34,18 +86,24 @@ export default function Home() {
       </Head>
 
       {/* Hero Section with Parallax Effect */}
-      <section className={styles.hero}>
+      <section className={styles.hero} ref={heroRef}>
         <div className={styles.parallaxBackground}></div>
-        <div className={styles.heroContent}>
-          <h1 className={styles.title}>
-            Welcome to <span className={styles.highlight}>CryptoZen</span>
-          </h1>
-          <p className={styles.description}>
-            Experience the future of cryptocurrency trading with our secure, Asian-inspired platform
-          </p>
-          <div className={styles.ctaButtons}>
-            <button className={styles.primaryButton}>Get Started</button>
-            <button className={styles.secondaryButton}>Learn More</button>
+        <div className={styles.heroCanvas}><HeroCanvas /></div>
+        <div className={`${styles.heroContent} ${styles.heroGrid}`}>
+          <div>
+            <h1 className={styles.title} ref={titleRef}>
+              Welcome to <span className={styles.highlight}>CryptoZen</span>
+            </h1>
+            <p className={styles.description} ref={descRef}>
+              Experience the future of cryptocurrency trading with our secure, Asian-inspired platform
+            </p>
+            <div className={styles.ctaButtons} ref={ctasRef}>
+              <button className={styles.primaryButton} aria-label="Get started with CryptoZen">Get Started</button>
+              <button className={styles.secondaryButton} aria-label="Learn more about CryptoZen">Learn More</button>
+            </div>
+          </div>
+          <div className={styles.heroAside} aria-hidden>
+            <ThreeCoin />
           </div>
         </div>
       </section>
@@ -77,7 +135,7 @@ export default function Home() {
             </div>
           ) : (
             <div className={styles.priceGrid}>
-              <div className={`${styles.priceCard} ${styles.btcCard}`}>
+              <div className={`${styles.priceCard} ${styles.btcCard} ${refreshing ? styles.priceCardRefreshing : ''}`}>
                 <div className={styles.cardIcon}>₿</div>
                 <h3>Bitcoin (BTC)</h3>
                 <p className={styles.price}>${parseFloat(cryptoPrices.BTC).toLocaleString()}</p>
@@ -86,7 +144,7 @@ export default function Home() {
                   <span className={styles.trendValue}>2.5%</span>
                 </div>
               </div>
-              <div className={`${styles.priceCard} ${styles.ethCard}`}>
+              <div className={`${styles.priceCard} ${styles.ethCard} ${refreshing ? styles.priceCardRefreshing : ''}`}>
                 <div className={styles.cardIcon}>Ξ</div>
                 <h3>Ethereum (ETH)</h3>
                 <p className={styles.price}>${parseFloat(cryptoPrices.ETH).toLocaleString()}</p>
@@ -95,7 +153,7 @@ export default function Home() {
                   <span className={styles.trendValue}>1.8%</span>
                 </div>
               </div>
-              <div className={`${styles.priceCard} ${styles.ltcCard}`}>
+              <div className={`${styles.priceCard} ${styles.ltcCard} ${refreshing ? styles.priceCardRefreshing : ''}`}>
                 <div className={styles.cardIcon}>Ł</div>
                 <h3>Litecoin (LTC)</h3>
                 <p className={styles.price}>${parseFloat(cryptoPrices.LTC).toLocaleString()}</p>
@@ -104,7 +162,7 @@ export default function Home() {
                   <span className={styles.trendValue}>0.7%</span>
                 </div>
               </div>
-              <div className={`${styles.priceCard} ${styles.xrpCard}`}>
+              <div className={`${styles.priceCard} ${styles.xrpCard} ${refreshing ? styles.priceCardRefreshing : ''}`}>
                 <div className={styles.cardIcon}>X</div>
                 <h3>Ripple (XRP)</h3>
                 <p className={styles.price}>${parseFloat(cryptoPrices.XRP).toLocaleString()}</p>
@@ -124,22 +182,45 @@ export default function Home() {
           <h2 className={styles.sectionTitle}>Why Choose CryptoZen?</h2>
           <div className={styles.featureGrid}>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
-              <div className={styles.featureIcon}>🔒</div>
+              <div className={styles.featureIcon} aria-hidden>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="10" width="16" height="10" rx="2" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="#1a2a6c" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </div>
               <h3>Bank-Grade Security</h3>
               <p>Multi-layer security protocols and cold storage for maximum protection</p>
             </div>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
-              <div className={styles.featureIcon}>💳</div>
+              <div className={styles.featureIcon} aria-hidden>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <path d="M3 9h18" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <path d="M7 13h4" stroke="#1a2a6c" strokeWidth="1.8" />
+                </svg>
+              </div>
               <h3>Multiple Payment Options</h3>
               <p>Buy crypto with credit cards, bank transfers, gift cards, and digital wallets</p>
             </div>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
-              <div className={styles.featureIcon}>📱</div>
+              <div className={styles.featureIcon} aria-hidden>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="7" y="3" width="10" height="18" rx="2" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <circle cx="12" cy="17" r="1" fill="#1a2a6c" />
+                </svg>
+              </div>
               <h3>Mobile Friendly</h3>
               <p>Trade on the go with our responsive platform and mobile app</p>
             </div>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
-              <div className={styles.featureIcon}>🌐</div>
+              <div className={styles.featureIcon} aria-hidden>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="9" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <path d="M3 12h18" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <path d="M12 3c3 3 3 15 0 18" stroke="#1a2a6c" strokeWidth="1.8" />
+                  <path d="M12 3c-3 3-3 15 0 18" stroke="#1a2a6c" strokeWidth="1.8" />
+                </svg>
+              </div>
               <h3>Global Access</h3>
               <p>Available in 50+ countries with local currency support</p>
             </div>
@@ -156,47 +237,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className={styles.footer}>
-        <div className={styles.container}>
-          <div className={styles.footerGrid}>
-            <div className={styles.footerColumn}>
-              <h3>CryptoZen</h3>
-              <p>Your trusted partner in cryptocurrency trading</p>
-            </div>
-            <div className={styles.footerColumn}>
-              <h4>Products</h4>
-              <ul>
-                <li>Spot Trading</li>
-                <li>Margin Trading</li>
-                <li>Staking</li>
-                <li>Wallet</li>
-              </ul>
-            </div>
-            <div className={styles.footerColumn}>
-              <h4>Support</h4>
-              <ul>
-                <li>Help Center</li>
-                <li>Contact Us</li>
-                <li>Fee Schedule</li>
-                <li>API Documentation</li>
-              </ul>
-            </div>
-            <div className={styles.footerColumn}>
-              <h4>Legal</h4>
-              <ul>
-                <li>Terms of Service</li>
-                <li>Privacy Policy</li>
-                <li>Security</li>
-                <li>Compliance</li>
-              </ul>
-            </div>
-          </div>
-          <div className={styles.copyright}>
-            <p>&copy; 2025 CryptoZen. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
       <ChatSupport />
     </div>
   );

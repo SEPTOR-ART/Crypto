@@ -13,8 +13,18 @@ a {
   text-decoration: none;
 }
 
+a:hover { text-decoration: underline; }
+a:active { opacity: 0.9; }
+a:visited { color: #2a4d69; }
+
 * {
   box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 3px solid #ffd700;
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 /* Scrollbar styling */
@@ -93,4 +103,9 @@ button:hover {
 
 button:active {
   transform: translateY(0);
+}
+
+html[data-motion='off'] *, html[data-motion='off'] *::before, html[data-motion='off'] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.2s !important; animation-iteration-count: 1 !important; transition-duration: 0.2s !important; scroll-behavior: auto !important; }
 }

@@ -24,7 +24,7 @@
   background: linear-gradient(135deg, #1a2a6c, #2a4d69, #4b86b4);
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
-  z-index: -1;
+  z-index: 0;
 }
 
 @keyframes gradientBG {
@@ -53,6 +53,15 @@
   transform-style: preserve-3d;
   perspective: 1000px;
 }
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 2rem;
+  align-items: center;
+}
+
+.heroAside { display: block; justify-self: center; }
 
 @keyframes fadeInUp {
   from {
@@ -673,6 +682,8 @@
   .heroContent {
     padding: 1.5rem;
   }
+  .heroGrid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .heroAside { display: block; }
   
   .ctaButtons {
     flex-direction: column;
@@ -694,4 +705,21 @@
   .price {
     font-size: 1.5rem;
   }
+}
+.heroCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.priceCardRefreshing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.0) 100%);
+  animation: shimmer 0.8s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

@@ -9,11 +9,13 @@ export const useCryptoPrices = () => {
     XRP: 0
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const wsRef = useRef(null);
   const retryTimeoutRef = useRef(null);
   const retryCountRef = useRef(0);
   const maxRetries = 5;
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
     // Get initial prices
@@ -55,6 +57,10 @@ export const useCryptoPrices = () => {
                 ...prevPrices,
                 ...message.data
               }));
+              if (message.type === 'PRICE_UPDATE') {
+                setRefreshing(true);
+                setTimeout(() => setRefreshing(false), 300);
+              }
             }
           } catch (err) {
             console.error('Error parsing WebSocket message:', err);
@@ -82,6 +88,18 @@ export const useCryptoPrices = () => {
             }, retryDelay);
           } else if (retryCountRef.current >= maxRetries) {
             setError('Unable to establish real-time connection after multiple attempts. Please refresh the page.');
+            if (!pollIntervalRef.current) {
+              pollIntervalRef.current = setInterval(async () => {
+                try {
+                  const refreshed = await cryptoService.getPrices();
+                  setPrices(prev => ({ ...prev, ...refreshed }));
+                  setRefreshing(true);
+                  setTimeout(() => setRefreshing(false), 300);
+                } catch (e) {
+                  console.error('Polling failed', e);
+                }
+              }, 5000);
+            }
           }
         };
       } catch (err) {
@@ -114,8 +132,11 @@ export const useCryptoPrices = () => {
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
     };
   }, []);
 
-  return { prices, loading, error };
+  return { prices, loading, error, refreshing };
 };
