@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from '../styles/ChatSupport.module.css';
+import Icon from './Icon';
 
 export default function ChatSupport() {
   const [isOpen, setIsOpen] = useState(false);
@@ -97,9 +98,9 @@ export default function ChatSupport() {
           </form>
         </div>
       ) : (
-        <button onClick={toggleChat} className={styles.chatButton}>
-          <span className={styles.chatIcon}>💬</span>
-          Support
+        <button onClick={toggleChat} className={styles.chatButton} aria-label="Open support chat">
+          <Icon name="chat" size={24} color="#fff" />
+          <span>Support</span>
         </button>
       )}
     </div>

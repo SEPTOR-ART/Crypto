@@ -16,6 +16,9 @@ const generateToken = (id) => {
 const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, email, password, phone } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+    const strong = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
+    if (!strong) return res.status(400).json({ message: 'Password must be 8+ chars with upper, lower, number' });
 
     // Check if user exists in mock storage
     const userExists = mockUsers.find(user => user.email === email);

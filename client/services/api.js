@@ -1,12 +1,15 @@
 // API service for interacting with the backend
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL || 'ws://localhost:5000';
+const RAW_API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const RAW_WS = process.env.NEXT_PUBLIC_WS_BASE_URL || '';
+const isPlaceholder = /your-render-app-name/.test(RAW_API) || RAW_API === '';
+const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 
 // Helper function to make API requests
 const apiRequest = async (endpoint, options = {}) => {
   try {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const base = isPlaceholder ? '' : RAW_API;
+    const url = `${base}${endpoint}`;
     console.log(`Making API request to: ${url}`);
     
     const response = await fetch(url, {
@@ -15,25 +18,32 @@ const apiRequest = async (endpoint, options = {}) => {
         ...options.headers,
       },
       ...options,
-      // Add timeout
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: AbortSignal.timeout(10000)
     });
 
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+    if (contentType.includes('application/json')) {
+      data = await response.json().catch(() => null);
+    } else {
+      const text = await response.text().catch(() => '');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${text.slice(0, 120)}`);
+      }
+      throw new Error(`Non-JSON response: ${text.slice(0, 120)}`);
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      const msg = data && (data.message || data.error) ? (data.message || data.error) : `HTTP ${response.status}`;
+      throw new Error(msg);
     }
 
     return data;
   } catch (error) {
     console.error('API request failed:', error);
-    
-    // Handle different types of errors
     if (error.name === 'AbortError') {
       throw new Error('Request timeout');
     }
-    
     throw new Error(`Failed to fetch: ${error.message}`);
   }
 };
@@ -81,7 +91,11 @@ export const authService = {
 export const cryptoService = {
   // Get current prices
   getPrices: async () => {
-    return apiRequest('/api/prices');
+    try {
+      return await apiRequest('/api/prices');
+    } catch (e) {
+      return { BTC: 0, ETH: 0, LTC: 0, XRP: 0 };
+    }
   },
 
   // Get available assets
@@ -91,13 +105,15 @@ export const cryptoService = {
 
   // Create WebSocket connection for real-time prices
   createPriceWebSocket: () => {
-    console.log(`Creating WebSocket connection to: ${WS_BASE_URL}`);
-    const ws = new WebSocket(WS_BASE_URL);
+    const originWS = (typeof window !== 'undefined') ? ((window.location.protocol === 'https:') ? 'wss' : 'ws') + '://' + window.location.host : '';
+    const target = isPlaceholderWS ? `${originWS}/ws` : RAW_WS;
+    console.log(`Creating WebSocket connection to: ${target}`);
+    const ws = new WebSocket(target);
     
     // Add reconnection logic
     ws.reconnect = () => {
       console.log('Attempting to reconnect WebSocket...');
-      return new WebSocket(WS_BASE_URL);
+      return new WebSocket(target);
     };
     
     return ws;

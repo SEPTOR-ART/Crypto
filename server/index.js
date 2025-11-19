@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const http = require('http');
@@ -67,6 +69,7 @@ wss.on('connection', (ws, request) => {
 
 // Middleware
 app.use(helmet());
+app.use(morgan('combined'));
 
 // Configure CORS for production and development
 if (process.env.NODE_ENV === 'production') {
@@ -80,12 +83,67 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(express.json());
 
+// Basic rate limiting for auth endpoints
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+app.use('/api/users', authLimiter);
+
+// CSRF protection in production for state-changing routes without Authorization
+function csrfMiddleware(req, res, next) {
+  if (process.env.NODE_ENV !== 'production') return next();
+  const method = req.method.toUpperCase();
+  const mutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
+  if (!mutating) return next();
+  const hasAuth = !!req.headers.authorization;
+  if (hasAuth) return next();
+  const token = req.headers['x-csrf-token'];
+  const expected = process.env.CSRF_SECRET;
+  if (expected && token === expected) return next();
+  return res.status(403).json({ message: 'CSRF validation failed' });
+}
+app.use(csrfMiddleware);
+
+// Simple in-memory metrics
+const metrics = { startTime: Date.now(), requests: 0, paths: {}, latency: { total: 0, count: 0 } };
+app.use((req, res, next) => {
+  const start = process.hrtime.bigint();
+  metrics.requests += 1;
+  metrics.paths[req.path] = (metrics.paths[req.path] || 0) + 1;
+  res.on('finish', () => {
+    const end = process.hrtime.bigint();
+    const ms = Number(end - start) / 1e6;
+    metrics.latency.total += ms;
+    metrics.latency.count += 1;
+  });
+  next();
+});
+
 // Health check endpoint for Render
 app.get('/health', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+app.get('/metrics', (req, res) => {
+  const avgLatency = metrics.latency.count ? Number((metrics.latency.total / metrics.latency.count).toFixed(2)) : 0;
+  res.json({
+    uptime: process.uptime(),
+    since: new Date(metrics.startTime).toISOString(),
+    requests: metrics.requests,
+    avgLatencyMs: avgLatency,
+    paths: metrics.paths,
   });
 });
 

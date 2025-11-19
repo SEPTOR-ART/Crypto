@@ -29,15 +29,6 @@ export default function Trade() {
     }
   }, [user, authLoading, router]);
 
-  // Show loading state
-  if (authLoading || pricesLoading) {
-    return <div className={styles.loading}>Loading...</div>;
-  }
-
-  // Show nothing if not authenticated (redirecting)
-  if (!user) {
-    return null;
-  }
 
   const cryptocurrencies = [
     { symbol: 'BTC', name: 'Bitcoin', price: 45000 },
@@ -46,12 +37,12 @@ export default function Trade() {
     { symbol: 'XRP', name: 'Ripple', price: 1.2 }
   ];
 
-  // Update total when amount changes
+  // Update total when amount changes (must be declared before any early returns)
   useEffect(() => {
     setTotal((amount * price).toFixed(2));
   }, [amount, price]);
 
-  // Mock order book data
+  // Mock order book data (must be declared before any early returns)
   useEffect(() => {
     // Generate mock order book data
     const bids = [];
@@ -71,6 +62,16 @@ export default function Trade() {
     
     setOrderBook({ bids, asks });
   }, [price]);
+
+  // Show loading state
+  if (authLoading || pricesLoading) {
+    return <div className={styles.loading}>Loading...</div>;
+  }
+
+  // Show nothing if not authenticated (redirecting)
+  if (!user) {
+    return null;
+  }
 
   const handleTrade = async (e) => {
     e.preventDefault();

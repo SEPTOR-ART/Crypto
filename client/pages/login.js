@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from '../styles/Login.module.css';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,16 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   const { login } = useAuth();
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  useEffect(() => {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) setEmailError('Enter a valid email'); else setEmailError('');
+  }, [email]);
+  useEffect(() => {
+    const ok = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
+    if (password && !ok) setPasswordError('Min 8 chars, include upper, lower, number'); else setPasswordError('');
+  }, [password]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,7 +56,10 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="Enter your email"
+              aria-invalid={!!emailError}
+              aria-describedby="email-help"
             />
+            {emailError && <div id="email-help" className={styles.inputHelp}>{emailError}</div>}
           </div>
           
           <div className={styles.inputGroup}>
@@ -58,7 +71,10 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="Enter your password"
+              aria-invalid={!!passwordError}
+              aria-describedby="password-help"
             />
+            <div id="password-help" className={styles.inputHelp}>{passwordError || 'Use a strong password for security'}</div>
           </div>
           
           <div className={styles.options}>
@@ -102,7 +118,7 @@ export default function Login() {
         </div>
         
         <div className={styles.signupLink}>
-          Don't have an account? <Link href="/signup">Sign Up</Link>
+          Don’t have an account? <Link href="/signup">Sign Up</Link>
         </div>
       </div>
     </div>

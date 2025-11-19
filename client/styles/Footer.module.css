@@ -1,0 +1,10 @@
+.footer { background: #1a2a6c; color: #fff; padding: 3rem 1.5rem 2rem; }
+.container { max-width: 1200px; margin: 0 auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+.brand { color: #ffd700; margin: 0 0 1rem; }
+.sectionTitle { color: #ffd700; margin: 0 0 .75rem; }
+.list { list-style: none; padding: 0; margin: 0; }
+.link { display: inline-block; padding-left: 1rem; position: relative; opacity: .85; }
+.link::before { content: '»'; position: absolute; left: 0; }
+.link:hover,.link:focus-visible { opacity: 1; text-decoration: underline; outline: none; }
+.copyright { text-align: center; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.12); opacity: .8; }

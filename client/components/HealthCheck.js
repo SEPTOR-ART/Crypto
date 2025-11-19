@@ -9,7 +9,14 @@ const HealthCheck = () => {
     const checkHealth = async () => {
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const isPlaceholder = /your-render-app-name/.test(API_BASE_URL);
+        if (isPlaceholder) {
+          setStatus('unhealthy');
+          setDetails({ error: 'API base URL is not configured' });
+          return;
+        }
+        const path = isPlaceholder ? '/api/health' : `${API_BASE_URL}/health`;
+        const response = await fetch(path);
         
         if (response.ok) {
           const data = await response.json();
