@@ -1,0 +1,65 @@
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: #cccccc; /* Light gray */
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tab:hover {
+  color: #f0f0f0; /* Light silver */
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
+}
+
+.tab.active {
+  color: #6a0dad; /* Deep purple */
+  border-bottom: 3px solid #6a0dad; /* Deep purple */
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
+}
+
+.tabContent {
+  background: #2d2d2d; /* Dark background */
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+}
+
+/* Variants */
+.pillTabs {
+  border-bottom: none;
+}
+
+.pillTabs .tab {
+  border-radius: 20px;
+  border-bottom: none;
+  margin-bottom: 0.5rem;
+}
+
+.pillTabs .tab.active {
+  border-bottom: none;
+  background: #6a0dad; /* Deep purple */
+  color: #f0f0f0; /* Light silver */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}

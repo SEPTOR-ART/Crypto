@@ -1,0 +1,82 @@
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid;
+}
+
+.alertIcon {
+  font-size: 1.5rem;
+}
+
+.alertContent {
+  flex: 1;
+}
+
+.alertTitle {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.alertMessage {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.2rem;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+/* Variants */
+.success {
+  background: rgba(76, 175, 80, 0.1); /* Green with opacity */
+  color: #4caf50; /* Green */
+  border-color: #4caf50; /* Green */
+}
+
+.success .alertIcon {
+  color: #4caf50; /* Green */
+}
+
+.info {
+  background: rgba(33, 150, 243, 0.1); /* Blue with opacity */
+  color: #2196f3; /* Blue */
+  border-color: #2196f3; /* Blue */
+}
+
+.info .alertIcon {
+  color: #2196f3; /* Blue */
+}
+
+.warning {
+  background: rgba(255, 152, 0, 0.1); /* Orange with opacity */
+  color: #ff9800; /* Orange */
+  border-color: #ff9800; /* Orange */
+}
+
+.warning .alertIcon {
+  color: #ff9800; /* Orange */
+}
+
+.error {
+  background: rgba(244, 67, 54, 0.1); /* Red with opacity */
+  color: #f44336; /* Red */
+  border-color: #f44336; /* Red */
+}
+
+.error .alertIcon {
+  color: #f44336; /* Red */
+}

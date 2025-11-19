@@ -1,0 +1,98 @@
+.stats {
+  padding: 4rem 2rem;
+  background: #1a1a1a; /* Dark charcoal gray */
+  position: relative;
+  overflow: hidden;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.statCard {
+  background: #2d2d2d; /* Dark background */
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  border-color: #6a0dad; /* Deep purple */
+}
+
+.statIcon {
+  font-size: 2.5rem;
+  color: #6a0dad; /* Deep purple */
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f0f0f0; /* Light silver */
+  margin: 0 0 0.5rem 0;
+}
+
+.statLabel {
+  color: #cccccc; /* Light gray */
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Background decoration */
+.stats::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(106, 13, 173, 0.05) 0%, transparent 70%); /* Deep purple */
+  animation: rotate 30s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stats {
+    padding: 2rem 1rem;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  
+  .statCard {
+    padding: 1.5rem;
+  }
+  
+  .statValue {
+    font-size: 1.5rem;
+  }
+  
+  .statLabel {
+    font-size: 0.9rem;
+  }
+}

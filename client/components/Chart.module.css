@@ -1,0 +1,95 @@
+.chartContainer {
+  background: #2d2d2d; /* Dark background */
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chartPlaceholder {
+  text-align: center;
+  color: #6a0dad; /* Deep purple */
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.chartTitle {
+  color: #f0f0f0; /* Light silver */
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.chartWrapper {
+  width: 100%;
+  height: 100%;
+}
+
+/* Chart colors */
+.up {
+  color: #4caf50; /* Green */
+}
+
+.down {
+  color: #f44336; /* Red */
+}
+
+.neutral {
+  color: #cccccc; /* Light gray */
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #f0f0f0; /* Light silver */
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legendColor.btc {
+  background: #f7931a;
+}
+
+.legendColor.eth {
+  background: #627eea;
+}
+
+.legendColor.ltc {
+  background: #bebebe;
+}
+
+.legendColor.xrp {
+  background: #23292f;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chartContainer {
+    height: 250px;
+  }
+  
+  .legend {
+    gap: 0.5rem;
+  }
+  
+  .legendItem {
+    font-size: 0.9rem;
+  }
+}

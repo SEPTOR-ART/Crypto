@@ -1,0 +1,174 @@
+.roadmap {
+  padding: 4rem 2rem;
+  background: #2d2d2d; /* Dark background */
+  position: relative;
+  overflow: hidden;
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #f0f0f0; /* Light silver */
+  position: relative;
+  z-index: 1;
+}
+
+.roadmapContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.roadmapTimeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.roadmapTimeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #6a0dad; /* Deep purple */
+}
+
+.milestone {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.milestone::before {
+  content: '';
+  position: absolute;
+  left: -2.5rem;
+  top: 0.5rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6a0dad; /* Deep purple */
+  border: 2px solid #2d2d2d; /* Dark background */
+  z-index: 1;
+}
+
+.milestone.completed::before {
+  background: #4caf50; /* Green */
+}
+
+.milestone.inProgress::before {
+  background: #ff9800; /* Orange */
+}
+
+.milestoneContent {
+  background: #3d3d3d; /* Darker background */
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #4d4d4d; /* Dark border */
+  transition: all 0.3s ease;
+}
+
+.milestoneContent:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  border-color: #6a0dad; /* Deep purple */
+}
+
+.milestoneDate {
+  color: #6a0dad; /* Deep purple */
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.milestoneTitle {
+  color: #f0f0f0; /* Light silver */
+  font-size: 1.5rem;
+  margin: 0 0 1rem 0;
+}
+
+.milestoneDescription {
+  color: #cccccc; /* Light gray */
+  line-height: 1.6;
+  margin: 0;
+}
+
+.milestoneStatus {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.completed .milestoneStatus {
+  background: rgba(76, 175, 80, 0.2); /* Green with opacity */
+  color: #4caf50; /* Green */
+}
+
+.inProgress .milestoneStatus {
+  background: rgba(255, 152, 0, 0.2); /* Orange with opacity */
+  color: #ff9800; /* Orange */
+}
+
+.planned .milestoneStatus {
+  background: rgba(106, 13, 173, 0.2); /* Deep purple with opacity */
+  color: #6a0dad; /* Deep purple */
+}
+
+/* Background decoration */
+.roadmap::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(106, 13, 173, 0.05) 0%, transparent 70%); /* Deep purple */
+  animation: rotate 30s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .roadmap {
+    padding: 2rem 1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 2rem;
+  }
+  
+  .roadmapContainer {
+    padding-left: 1rem;
+  }
+  
+  .roadmapTimeline {
+    padding-left: 1.5rem;
+  }
+  
+  .milestone::before {
+    left: -2rem;
+  }
+  
+  .milestoneContent {
+    padding: 1rem;
+  }
+  
+  .milestoneTitle {
+    font-size: 1.3rem;
+  }
+}

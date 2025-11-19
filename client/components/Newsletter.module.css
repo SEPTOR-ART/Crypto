@@ -1,0 +1,123 @@
+.newsletter {
+  padding: 4rem 2rem;
+  background: #2d2d2d; /* Dark background */
+  position: relative;
+  overflow: hidden;
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #f0f0f0; /* Light silver */
+  position: relative;
+  z-index: 1;
+}
+
+.sectionSubtitle {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 3rem;
+  color: #cccccc; /* Light gray */
+  position: relative;
+  z-index: 1;
+}
+
+.newsletterForm {
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.emailInput {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: #3d3d3d; /* Darker background */
+  color: #f0f0f0; /* Light silver */
+  border: 1px solid #4d4d4d; /* Dark border */
+  border-radius: 30px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.emailInput:focus {
+  outline: none;
+  border-color: #6a0dad; /* Deep purple */
+  box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.2); /* Deep purple with opacity */
+}
+
+.subscribeButton {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  bottom: 5px;
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
+  border: none;
+  border-radius: 30px;
+  padding: 0 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.subscribeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(106, 13, 173, 0.4); /* Deep purple */
+}
+
+/* Background decoration */
+.newsletter::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(106, 13, 173, 0.1) 0%, transparent 70%); /* Deep purple */
+  animation: rotate 30s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .newsletter {
+    padding: 2rem 1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 2rem;
+  }
+  
+  .sectionSubtitle {
+    font-size: 1rem;
+  }
+  
+  .newsletterForm {
+    position: relative;
+  }
+  
+  .emailInput {
+    padding: 0.75rem 1rem;
+  }
+  
+  .subscribeButton {
+    position: relative;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.75rem;
+  }
+}

@@ -4,8 +4,8 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Avenir,
     Helvetica, sans-serif;
-  background: #ffffff;
-  color: #333333;
+  background: #1a1a1a; /* Dark charcoal gray */
+  color: #f0f0f0; /* Light silver */
 }
 
 a {
@@ -23,16 +23,16 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #2d2d2d;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a2a6c;
+  background: #6a0dad; /* Deep purple */
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a4d69;
+  background: #7b1fa2; /* Slightly lighter purple */
 }
 
 /* Animation utilities */
@@ -88,7 +88,7 @@ button {
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 button:active {

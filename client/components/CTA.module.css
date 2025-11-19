@@ -1,0 +1,100 @@
+.ctaSection {
+  padding: 6rem 2rem;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d); /* Dark theme gradient */
+  color: #f0f0f0; /* Light silver */
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaSection::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(106, 13, 173, 0.1) 0%, transparent 70%); /* Deep purple */
+  animation: rotate 20s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ctaSection h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes textGlow {
+  from {
+    text-shadow: 0 0 10px rgba(106, 13, 173, 0.5); /* Deep purple */
+  }
+  to {
+    text-shadow: 0 0 20px rgba(106, 13, 173, 0.8), 0 0 30px rgba(106, 13, 173, 0.6);
+  }
+}
+
+.ctaSection p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  position: relative;
+  z-index: 1;
+}
+
+.largeButton {
+  padding: 1.2rem 3rem;
+  font-size: 1.2rem;
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(106, 13, 173, 0.4); /* Deep purple */
+  position: relative;
+  z-index: 1;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.largeButton:hover {
+  transform: translateY(-5px) translateZ(15px);
+  box-shadow: 0 8px 30px rgba(106, 13, 173, 0.6); /* Deep purple */
+}
+
+.largeButton:active {
+  transform: translateY(0) translateZ(10px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ctaSection {
+    padding: 4rem 1rem;
+  }
+  
+  .ctaSection h2 {
+    font-size: 2rem;
+  }
+  
+  .ctaSection p {
+    font-size: 1rem;
+  }
+  
+  .largeButton {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+}

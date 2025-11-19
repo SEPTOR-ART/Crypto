@@ -1,0 +1,120 @@
+.features {
+  padding: 4rem 2rem;
+  background: #1a1a1a; /* Dark charcoal gray */
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #f0f0f0; /* Light silver */
+  animation: slideInDown 1s ease-out;
+  transform-style: preserve-3d;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  text-align: center;
+  padding: 2rem;
+  border-radius: 15px;
+  background: #2d2d2d; /* Dark background */
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  border: 1px solid #3d3d3d; /* Dark border */
+}
+
+.featureCard3D {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.featureCard3D::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(106, 13, 173, 0.1), rgba(106, 13, 173, 0.01)); /* Deep purple */
+  z-index: 1;
+  pointer-events: none;
+}
+
+.featureCard3D:hover {
+  transform: translateY(-10px) rotateY(5deg) rotateX(5deg);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #2d2d2d, #3d3d3d); /* Darker gradient */
+  border-color: #6a0dad; /* Deep purple border */
+}
+
+.featureCard3D:hover .featureIcon {
+  transform: scale(1.2) rotate(10deg);
+  color: #6a0dad; /* Deep purple */
+}
+
+.featureIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  animation: iconPulse 2s infinite;
+  color: #f0f0f0; /* Light silver */
+}
+
+@keyframes iconPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.featureCard h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #f0f0f0; /* Light silver */
+}
+
+.featureCard p {
+  color: #cccccc; /* Light gray */
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .features {
+    padding: 2rem 1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 2rem;
+  }
+  
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+}

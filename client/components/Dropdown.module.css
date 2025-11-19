@@ -1,0 +1,103 @@
+.dropdown {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.dropdownButton {
+  width: 100%;
+  padding: 0.75rem;
+  background: #3d3d3d; /* Darker background */
+  color: #f0f0f0; /* Light silver */
+  border: 1px solid #4d4d4d; /* Dark border */
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.dropdownButton:hover {
+  background: #4d4d4d; /* Slightly lighter background */
+  border-color: #6a0dad; /* Deep purple */
+}
+
+.dropdownButton:focus {
+  outline: none;
+  border-color: #6a0dad; /* Deep purple */
+  box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.2); /* Deep purple with opacity */
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #2d2d2d; /* Dark background */
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+  z-index: 1000;
+  margin-top: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  padding: 0.75rem 1rem;
+  color: #f0f0f0; /* Light silver */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background: #3d3d3d; /* Slightly lighter background */
+}
+
+.dropdownItem.selected {
+  background: rgba(106, 13, 173, 0.2); /* Deep purple with opacity */
+  color: #6a0dad; /* Deep purple */
+}
+
+.dropdownItem.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropdownItem.disabled:hover {
+  background: none;
+}
+
+/* Searchable dropdown */
+.searchInput {
+  width: 100%;
+  padding: 0.75rem;
+  background: #3d3d3d; /* Darker background */
+  color: #f0f0f0; /* Light silver */
+  border: none;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+  border-radius: 8px 8px 0 0;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.noResults {
+  padding: 1rem;
+  text-align: center;
+  color: #cccccc; /* Light gray */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dropdownItem {
+    padding: 0.75rem;
+  }
+}

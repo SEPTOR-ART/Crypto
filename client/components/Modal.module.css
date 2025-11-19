@@ -1,0 +1,109 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: #2d2d2d; /* Dark background */
+  border-radius: 15px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid #3d3d3d; /* Dark border */
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.modalHeader h2 {
+  color: #f0f0f0; /* Light silver */
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #f0f0f0; /* Light silver */
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.closeButton:hover {
+  color: #6a0dad; /* Deep purple */
+}
+
+.modalBody {
+  color: #f0f0f0; /* Light silver */
+  margin-bottom: 1.5rem;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.primaryButton {
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
+}
+
+.primaryButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(106, 13, 173, 0.4); /* Deep purple */
+}
+
+.secondaryButton {
+  background: #3d3d3d; /* Darker background */
+  color: #f0f0f0; /* Light silver */
+  border: 1px solid #4d4d4d; /* Dark border */
+}
+
+.secondaryButton:hover {
+  background: #4d4d4d; /* Slightly lighter background */
+  border-color: #6a0dad; /* Deep purple */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modalContent {
+    padding: 1.5rem;
+  }
+  
+  .modalFooter {
+    flex-direction: column;
+  }
+  
+  .button {
+    width: 100%;
+  }
+}

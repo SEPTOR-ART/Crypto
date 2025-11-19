@@ -1,0 +1,67 @@
+.languageSwitcher {
+  position: relative;
+  display: inline-block;
+}
+
+.languageButton {
+  background: #2d2d2d; /* Dark background */
+  color: #f0f0f0; /* Light silver */
+  border: 1px solid #3d3d3d; /* Dark border */
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.languageButton:hover {
+  background: #3d3d3d; /* Slightly lighter background */
+  border-color: #6a0dad; /* Deep purple */
+}
+
+.languageMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #2d2d2d; /* Dark background */
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+  min-width: 150px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.languageItem {
+  padding: 0.75rem 1rem;
+  color: #f0f0f0; /* Light silver */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.languageItem:last-child {
+  border-bottom: none;
+}
+
+.languageItem:hover {
+  background: #3d3d3d; /* Slightly lighter background */
+  color: #6a0dad; /* Deep purple */
+}
+
+.languageItem.active {
+  background: rgba(106, 13, 173, 0.2); /* Deep purple with opacity */
+  color: #6a0dad; /* Deep purple */
+}
+
+.flagIcon {
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}

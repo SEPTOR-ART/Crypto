@@ -7,7 +7,7 @@
   padding: 1rem;
 }
 
-.loginCard {
+.registerCard {
   background: #2d2d2d; /* Dark background */
   border-radius: 15px;
   padding: 2rem;
@@ -19,7 +19,7 @@
   overflow: hidden;
 }
 
-.loginCard::before {
+.registerCard::before {
   content: '';
   position: absolute;
   top: -50%;
@@ -40,7 +40,7 @@
   }
 }
 
-.loginCard h1 {
+.registerCard h1 {
   text-align: center;
   color: #6a0dad; /* Deep purple */
   margin-bottom: 1.5rem;
@@ -77,7 +77,7 @@
   box-shadow: 0 0 0 2px rgba(106, 13, 173, 0.2); /* Deep purple with opacity */
 }
 
-.loginButton {
+.registerButton {
   width: 100%;
   padding: 0.75rem;
   background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
@@ -92,19 +92,19 @@
   z-index: 1;
 }
 
-.loginButton:hover {
+.registerButton:hover {
   transform: translateY(-3px);
   box-shadow: 0 4px 15px rgba(106, 13, 173, 0.4); /* Deep purple */
 }
 
-.loginButton:disabled {
+.registerButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.signupLink {
+.loginLink {
   text-align: center;
   margin-top: 1.5rem;
   color: #cccccc; /* Light gray */
@@ -112,14 +112,14 @@
   z-index: 1;
 }
 
-.signupLink a {
+.loginLink a {
   color: #6a0dad; /* Deep purple */
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
-.signupLink a:hover {
+.loginLink a:hover {
   color: #7b1fa2; /* Slightly lighter purple */
   text-decoration: underline;
 }

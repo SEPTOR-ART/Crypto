@@ -1,0 +1,66 @@
+.spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(45, 45, 45, 0.2); /* Dark background */
+  border-radius: 50%;
+  border-top-color: #6a0dad; /* Deep purple */
+  animation: spin 1s linear infinite;
+}
+
+.spinner.small {
+  width: 25px;
+  height: 25px;
+  border-width: 3px;
+}
+
+.spinner.large {
+  width: 75px;
+  height: 75px;
+  border-width: 7px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinnerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.spinnerText {
+  color: #f0f0f0; /* Light silver */
+  font-size: 1rem;
+  text-align: center;
+}
+
+/* Variants */
+.primary {
+  border-top-color: #6a0dad; /* Deep purple */
+}
+
+.success {
+  border-top-color: #4caf50; /* Green */
+}
+
+.warning {
+  border-top-color: #ff9800; /* Orange */
+}
+
+.danger {
+  border-top-color: #f44336; /* Red */
+}
+
+.info {
+  border-top-color: #2196f3; /* Blue */
+}

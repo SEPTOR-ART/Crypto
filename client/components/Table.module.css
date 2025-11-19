@@ -1,0 +1,67 @@
+.tableContainer {
+  overflow-x: auto;
+  background: #2d2d2d; /* Dark background */
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #f0f0f0; /* Light silver */
+}
+
+.table th {
+  background: #3d3d3d; /* Darker background */
+  color: #f0f0f0; /* Light silver */
+  text-align: left;
+  padding: 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid #4d4d4d; /* Dark border */
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.table tr:hover {
+  background: rgba(106, 13, 173, 0.05); /* Deep purple with low opacity */
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Striped variant */
+.striped tr:nth-child(even) {
+  background: rgba(61, 61, 61, 0.3); /* Darker background with opacity */
+}
+
+.striped tr:hover {
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
+}
+
+/* Bordered variant */
+.bordered th,
+.bordered td {
+  border: 1px solid #3d3d3d; /* Dark border */
+}
+
+.bordered th {
+  border-bottom: 2px solid #4d4d4d; /* Dark border */
+}
+
+/* Hover variant */
+.hoverOnly tr:hover {
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+  }
+}

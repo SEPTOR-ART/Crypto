@@ -1,0 +1,76 @@
+.card {
+  background: #2d2d2d; /* Dark background */
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d3d3d; /* Dark border */
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  border-color: #6a0dad; /* Deep purple */
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(106, 13, 173, 0.1), transparent); /* Deep purple */
+  transition: 0.5s;
+}
+
+.card:hover::before {
+  left: 100%;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.cardHeader h3 {
+  color: #f0f0f0; /* Light silver */
+  margin: 0;
+}
+
+.cardBody {
+  color: #f0f0f0; /* Light silver */
+}
+
+.cardFooter {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #3d3d3d; /* Dark border */
+}
+
+/* Variants */
+.primary {
+  border-top: 5px solid #6a0dad; /* Deep purple */
+}
+
+.success {
+  border-top: 5px solid #4caf50; /* Green */
+}
+
+.warning {
+  border-top: 5px solid #ff9800; /* Orange */
+}
+
+.danger {
+  border-top: 5px solid #f44336; /* Red */
+}
+
+.info {
+  border-top: 5px solid #2196f3; /* Blue */
+}

@@ -1,0 +1,107 @@
+.sidebar {
+  width: 250px;
+  background: #0d0d0d; /* Even darker background */
+  color: #f0f0f0; /* Light silver */
+  height: calc(100vh - 60px);
+  position: fixed;
+  top: 60px;
+  left: 0;
+  overflow-y: auto;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  border-right: 1px solid #3d3d3d; /* Dark border */
+  z-index: 999;
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+.sidebarOverlay {
+  display: none;
+}
+
+.sidebarHeader {
+  padding: 1rem;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.sidebarMenu {
+  padding: 1rem 0;
+}
+
+.sidebarMenuItem {
+  padding: 0.75rem 1rem;
+  color: #f0f0f0; /* Light silver */
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebarMenuItem:hover {
+  background: #1a1a1a; /* Dark charcoal */
+  color: #6a0dad; /* Deep purple */
+  border-left: 3px solid #6a0dad; /* Deep purple */
+}
+
+.sidebarMenuItem.active {
+  background: #1a1a1a; /* Dark charcoal */
+  color: #6a0dad; /* Deep purple */
+  border-left: 3px solid #6a0dad; /* Deep purple */
+}
+
+.sidebarMenuItemIcon {
+  width: 20px;
+  text-align: center;
+}
+
+.sidebarCollapseButton {
+  position: absolute;
+  top: 1rem;
+  right: -12px;
+  background: #2d2d2d; /* Dark background */
+  color: #f0f0f0; /* Light silver */
+  border: 1px solid #3d3d3d; /* Dark border */
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.sidebarCollapseButton:hover {
+  background: #3d3d3d; /* Slightly lighter background */
+  border-color: #6a0dad; /* Deep purple */
+}
+
+/* Mobile sidebar */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.expanded {
+    transform: translateX(0);
+  }
+  
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+  }
+  
+  .sidebarOverlay.hidden {
+    display: none;
+  }
+}

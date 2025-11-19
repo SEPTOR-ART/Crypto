@@ -1,0 +1,203 @@
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #f0f0f0; /* Light silver */
+}
+
+.parallaxBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d, #3d3d3d); /* Dark theme gradient */
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  z-index: -1;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.heroContent {
+  text-align: center;
+  max-width: 800px;
+  padding: 2rem;
+  z-index: 1;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(26, 26, 26, 0.7); /* Dark charcoal with opacity */
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: fadeInUp 1s ease-out;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes textGlow {
+  from {
+    text-shadow: 0 0 10px rgba(106, 13, 173, 0.5); /* Deep purple */
+  }
+  to {
+    text-shadow: 0 0 20px rgba(106, 13, 173, 0.8), 0 0 30px rgba(106, 13, 173, 0.6);
+  }
+}
+
+.highlight {
+  color: #6a0dad; /* Deep purple */
+  position: relative;
+  display: inline-block;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.highlight:hover {
+  transform: translateZ(20px);
+}
+
+.highlight::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #6a0dad, transparent); /* Deep purple */
+}
+
+.description {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  animation: fadeIn 1.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: slideInUp 1s ease-out 0.5s both;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.primaryButton, .secondaryButton {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.primaryButton {
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
+  box-shadow: 0 4px 15px rgba(106, 13, 173, 0.4); /* Deep purple */
+  transform: translateZ(0);
+}
+
+.primaryButton:hover {
+  transform: translateY(-5px) translateZ(10px);
+  box-shadow: 0 8px 25px rgba(106, 13, 173, 0.6); /* Deep purple */
+}
+
+.primaryButton:active {
+  transform: translateY(0) translateZ(5px);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: #f0f0f0; /* Light silver */
+  border: 2px solid #6a0dad; /* Deep purple */
+  transform: translateZ(0);
+}
+
+.secondaryButton:hover {
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
+  transform: translateY(-5px) translateZ(10px);
+}
+
+.secondaryButton:active {
+  transform: translateY(0) translateZ(5px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+  
+  .description {
+    font-size: 1.2rem;
+  }
+  
+  .heroContent {
+    padding: 1.5rem;
+  }
+  
+  .ctaButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .primaryButton, .secondaryButton {
+    width: 80%;
+  }
+}

@@ -12,7 +12,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: white;
+  color: #f0f0f0; /* Light silver */
 }
 
 .parallaxBackground {
@@ -21,7 +21,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #1a2a6c, #2a4d69, #4b86b4);
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d, #3d3d3d); /* Dark theme gradient */
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
   z-index: -1;
@@ -46,9 +46,9 @@
   z-index: 1;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(26, 26, 26, 0.7); /* Dark charcoal with opacity */
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   animation: fadeInUp 1s ease-out;
   transform-style: preserve-3d;
   perspective: 1000px;
@@ -69,21 +69,21 @@
   font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
   animation: textGlow 2s ease-in-out infinite alternate;
 }
 
 @keyframes textGlow {
   from {
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 10px rgba(106, 13, 173, 0.5); /* Deep purple */
   }
   to {
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.6);
+    text-shadow: 0 0 20px rgba(106, 13, 173, 0.8), 0 0 30px rgba(106, 13, 173, 0.6);
   }
 }
 
 .highlight {
-  color: #ffd700; /* Gold color for Asian-inspired theme */
+  color: #6a0dad; /* Deep purple */
   position: relative;
   display: inline-block;
   transform-style: preserve-3d;
@@ -101,7 +101,7 @@
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  background: linear-gradient(90deg, transparent, #6a0dad, transparent); /* Deep purple */
 }
 
 .description {
@@ -154,15 +154,15 @@
 }
 
 .primaryButton {
-  background: linear-gradient(45deg, #ffd700, #ffaa00);
-  color: #1a2a6c;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
+  box-shadow: 0 4px 15px rgba(106, 13, 173, 0.4); /* Deep purple */
   transform: translateZ(0);
 }
 
 .primaryButton:hover {
   transform: translateY(-5px) translateZ(10px);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 8px 25px rgba(106, 13, 173, 0.6); /* Deep purple */
 }
 
 .primaryButton:active {
@@ -171,13 +171,13 @@
 
 .secondaryButton {
   background: transparent;
-  color: white;
-  border: 2px solid white;
+  color: #f0f0f0; /* Light silver */
+  border: 2px solid #6a0dad; /* Deep purple */
   transform: translateZ(0);
 }
 
 .secondaryButton:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
   transform: translateY(-5px) translateZ(10px);
 }
 
@@ -188,7 +188,7 @@
 /* Price Tracker Section */
 .priceTracker {
   padding: 4rem 2rem;
-  background: #f8f9fa;
+  background: #2d2d2d; /* Darker background */
   position: relative;
   overflow: hidden;
 }
@@ -197,7 +197,7 @@
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 3rem;
-  color: #1a2a6c;
+  color: #f0f0f0; /* Light silver */
   animation: slideInDown 1s ease-out;
   transform-style: preserve-3d;
 }
@@ -222,21 +222,23 @@
 }
 
 .priceCard {
-  background: white;
+  background: #3d3d3d; /* Dark card background */
   border-radius: 15px;
   padding: 2rem;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   text-align: center;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transform-style: preserve-3d;
   perspective: 1000px;
   position: relative;
   overflow: hidden;
+  border: 1px solid #4d4d4d; /* Subtle border */
 }
 
 .priceCard:hover {
   transform: translateY(-15px) translateZ(20px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  border-color: #6a0dad; /* Deep purple border on hover */
 }
 
 .priceCard::before {
@@ -246,7 +248,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(106, 13, 173, 0.2), transparent); /* Deep purple */
   transition: 0.5s;
 }
 
@@ -258,6 +260,7 @@
   font-size: 2.5rem;
   margin-bottom: 1rem;
   animation: float 3s ease-in-out infinite;
+  color: #6a0dad; /* Deep purple */
 }
 
 @keyframes float {
@@ -291,14 +294,14 @@
 .priceCard h3 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: #2a4d69;
+  color: #f0f0f0; /* Light silver */
 }
 
 .price {
   font-size: 2rem;
   font-weight: 700;
   margin: 1rem 0;
-  color: #1a2a6c;
+  color: #f0f0f0; /* Light silver */
   animation: pulse 2s infinite;
 }
 
@@ -326,13 +329,13 @@
 }
 
 .trendUp {
-  color: #28a745;
-  background: rgba(40, 167, 69, 0.1);
+  color: #4caf50; /* Green */
+  background: rgba(76, 175, 80, 0.1); /* Green with opacity */
 }
 
 .trendDown {
-  color: #dc3545;
-  background: rgba(220, 53, 69, 0.1);
+  color: #f44336; /* Red */
+  background: rgba(244, 67, 54, 0.1); /* Red with opacity */
 }
 
 .trendArrow {
@@ -357,7 +360,7 @@
   text-align: center;
   padding: 2rem;
   font-size: 1.2rem;
-  color: #1a2a6c;
+  color: #f0f0f0; /* Light silver */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -367,8 +370,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid rgba(26, 42, 108, 0.2);
-  border-top: 5px solid #1a2a6c;
+  border: 5px solid rgba(45, 45, 45, 0.2); /* Dark background */
+  border-top: 5px solid #6a0dad; /* Deep purple */
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -381,12 +384,13 @@
 .errorContainer {
   text-align: center;
   padding: 2rem;
-  background: white;
+  background: #3d3d3d; /* Dark card background */
   border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   max-width: 600px;
   margin: 0 auto;
   animation: shake 0.5s ease-in-out;
+  border: 1px solid #6a0dad; /* Deep purple border */
 }
 
 @keyframes shake {
@@ -399,33 +403,34 @@
   font-size: 3rem;
   margin-bottom: 1rem;
   animation: pulse 1.5s infinite;
+  color: #f44336; /* Red */
 }
 
 .errorTitle {
-  color: #dc3545;
+  color: #f44336; /* Red */
   margin-bottom: 1rem;
 }
 
 .errorMessage {
-  color: #6c757d;
+  color: #cccccc; /* Light gray */
   margin-bottom: 1.5rem;
 }
 
 .retryButton {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(45deg, #1a2a6c, #2a4d69);
-  color: white;
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
   border: none;
   border-radius: 50px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(26, 42, 108, 0.3);
+  box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3); /* Deep purple */
 }
 
 .retryButton:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(26, 42, 108, 0.4);
+  box-shadow: 0 6px 15px rgba(106, 13, 173, 0.4); /* Deep purple */
 }
 
 .retryButton:disabled {
@@ -436,15 +441,15 @@
 .errorHelp {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-  color: #6c757d;
+  border-top: 1px solid #4d4d4d; /* Dark border */
+  color: #cccccc; /* Light gray */
   font-size: 0.9rem;
 }
 
 /* Features Section */
 .features {
   padding: 4rem 2rem;
-  background: white;
+  background: #1a1a1a; /* Dark charcoal gray */
 }
 
 .featureGrid {
@@ -459,16 +464,17 @@
   text-align: center;
   padding: 2rem;
   border-radius: 15px;
-  background: #f8f9fa;
+  background: #2d2d2d; /* Darker background */
   transition: all 0.3s ease;
   transform-style: preserve-3d;
   perspective: 1000px;
+  border: 1px solid #3d3d3d; /* Subtle border */
 }
 
 .featureCard3D {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .featureCard3D::before {
@@ -478,19 +484,21 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.01));
+  background: linear-gradient(135deg, rgba(106, 13, 173, 0.1), rgba(106, 13, 173, 0.01)); /* Deep purple */
   z-index: 1;
   pointer-events: none;
 }
 
 .featureCard3D:hover {
   transform: translateY(-10px) rotateY(5deg) rotateX(5deg);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #2d2d2d, #3d3d3d); /* Darker gradient */
+  border-color: #6a0dad; /* Deep purple border */
 }
 
 .featureCard3D:hover .featureIcon {
   transform: scale(1.2) rotate(10deg);
+  color: #6a0dad; /* Deep purple */
 }
 
 .featureIcon {
@@ -499,6 +507,7 @@
   transition: transform 0.3s ease;
   display: inline-block;
   animation: iconPulse 2s infinite;
+  color: #f0f0f0; /* Light silver */
 }
 
 @keyframes iconPulse {
@@ -516,19 +525,19 @@
 .featureCard h3 {
   font-size: 1.5rem;
   margin-bottom: 1rem;
-  color: #1a2a6c;
+  color: #f0f0f0; /* Light silver */
 }
 
 .featureCard p {
-  color: #495057;
+  color: #cccccc; /* Light gray */
   line-height: 1.6;
 }
 
 /* CTA Section */
 .ctaSection {
   padding: 6rem 2rem;
-  background: linear-gradient(135deg, #1a2a6c, #2a4d69);
-  color: white;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d); /* Dark theme gradient */
+  color: #f0f0f0; /* Light silver */
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -541,7 +550,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(106, 13, 173, 0.1) 0%, transparent 70%); /* Deep purple */
   animation: rotate 20s linear infinite;
   z-index: 0;
 }
@@ -574,14 +583,14 @@
 .largeButton {
   padding: 1.2rem 3rem;
   font-size: 1.2rem;
-  background: linear-gradient(45deg, #ffd700, #ffaa00);
-  color: #1a2a6c;
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
   border: none;
   border-radius: 50px;
   cursor: pointer;
   font-weight: 700;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(106, 13, 173, 0.4); /* Deep purple */
   position: relative;
   z-index: 1;
   transform-style: preserve-3d;
@@ -590,7 +599,7 @@
 
 .largeButton:hover {
   transform: translateY(-5px) translateZ(15px);
-  box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 8px 30px rgba(106, 13, 173, 0.6); /* Deep purple */
 }
 
 .largeButton:active {
@@ -599,8 +608,8 @@
 
 /* Footer */
 .footer {
-  background: #1a2a6c;
-  color: white;
+  background: #0d0d0d; /* Even darker background */
+  color: #f0f0f0; /* Light silver */
   padding: 4rem 2rem 2rem;
 }
 
@@ -615,13 +624,13 @@
 .footerColumn h3 {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
-  color: #ffd700;
+  color: #6a0dad; /* Deep purple */
 }
 
 .footerColumn h4 {
   font-size: 1.2rem;
   margin-bottom: 1rem;
-  color: #ffd700;
+  color: #6a0dad; /* Deep purple */
 }
 
 .footerColumn ul {
@@ -636,6 +645,7 @@
   transition: opacity 0.3s ease;
   position: relative;
   padding-left: 1rem;
+  color: #cccccc; /* Light gray */
 }
 
 .footerColumn ul li::before {
@@ -643,6 +653,7 @@
   position: absolute;
   left: 0;
   transition: transform 0.3s ease;
+  color: #6a0dad; /* Deep purple */
 }
 
 .footerColumn ul li:hover {
@@ -656,8 +667,9 @@
 .copyright {
   text-align: center;
   padding-top: 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(106, 13, 173, 0.1); /* Deep purple border */
   opacity: 0.7;
+  color: #cccccc; /* Light gray */
 }
 
 /* Responsive Design */

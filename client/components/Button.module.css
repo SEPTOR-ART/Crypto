@@ -1,0 +1,97 @@
+.button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.primary {
+  background: linear-gradient(45deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
+  color: #f0f0f0; /* Light silver */
+  box-shadow: 0 4px 15px rgba(106, 13, 173, 0.3); /* Deep purple */
+}
+
+.primary:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(106, 13, 173, 0.5); /* Deep purple */
+}
+
+.primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.secondary {
+  background: #3d3d3d; /* Darker background */
+  color: #f0f0f0; /* Light silver */
+  border: 1px solid #4d4d4d; /* Dark border */
+}
+
+.secondary:hover:not(:disabled) {
+  background: #4d4d4d; /* Slightly lighter background */
+  border-color: #6a0dad; /* Deep purple */
+  transform: translateY(-3px);
+}
+
+.secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.outline {
+  background: transparent;
+  color: #6a0dad; /* Deep purple */
+  border: 2px solid #6a0dad; /* Deep purple */
+}
+
+.outline:hover:not(:disabled) {
+  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
+  transform: translateY(-3px);
+}
+
+.outline:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.danger {
+  background: linear-gradient(45deg, #f44336, #ef5350); /* Red gradient */
+  color: #f0f0f0; /* Light silver */
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3); /* Red */
+}
+
+.danger:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.5); /* Red */
+}
+
+.danger:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+.fullWidth {
+  width: 100%;
+}
