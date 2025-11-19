@@ -1,12 +1,15 @@
 // API service for interacting with the backend
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL || 'ws://localhost:5000';
+const RAW_API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const RAW_WS = process.env.NEXT_PUBLIC_WS_BASE_URL || '';
+const isPlaceholder = /your-render-app-name/.test(RAW_API) || RAW_API === '';
+const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 
 // Helper function to make API requests
 const apiRequest = async (endpoint, options = {}) => {
   try {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const base = isPlaceholder ? '' : RAW_API;
+    const url = `${base}${endpoint}`;
     console.log(`Making API request to: ${url}`);
     
     const response = await fetch(url, {
@@ -91,13 +94,15 @@ export const cryptoService = {
 
   // Create WebSocket connection for real-time prices
   createPriceWebSocket: () => {
-    console.log(`Creating WebSocket connection to: ${WS_BASE_URL}`);
-    const ws = new WebSocket(WS_BASE_URL);
+    const originWS = (typeof window !== 'undefined') ? ((window.location.protocol === 'https:') ? 'wss' : 'ws') + '://' + window.location.host : '';
+    const target = isPlaceholderWS ? `${originWS}/ws` : RAW_WS;
+    console.log(`Creating WebSocket connection to: ${target}`);
+    const ws = new WebSocket(target);
     
     // Add reconnection logic
     ws.reconnect = () => {
       console.log('Attempting to reconnect WebSocket...');
-      return new WebSocket(WS_BASE_URL);
+      return new WebSocket(target);
     };
     
     return ws;
