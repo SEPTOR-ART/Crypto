@@ -1,9 +1,28 @@
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 
-// In-memory storage for mock transactions
-let mockTransactions = [];
-let transactionIdCounter = 1;
+// Simulate blockchain transaction processing
+const processBlockchainTransaction = async (transactionData) => {
+  // In a real implementation, this would interact with actual blockchain networks
+  // For demonstration, we'll simulate a successful transaction
+  
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Generate a mock transaction hash
+  const transactionHash = '0x' + Array.from({length: 64}, () => 
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+  
+  // Simulate 95% success rate
+  const isSuccess = Math.random() > 0.05;
+  
+  return {
+    success: isSuccess,
+    transactionHash: isSuccess ? transactionHash : null,
+    error: isSuccess ? null : 'Blockchain network error'
+  };
+};
 
 // Create transaction
 const createTransaction = async (req, res) => {
@@ -13,9 +32,8 @@ const createTransaction = async (req, res) => {
     // Calculate total
     const total = amount * price;
     
-    // Create transaction in mock storage
-    const transaction = {
-      _id: `txn_${transactionIdCounter++}`,
+    // Create transaction in database
+    const transaction = new Transaction({
       userId: req.user._id,
       type,
       asset,
@@ -25,12 +43,36 @@ const createTransaction = async (req, res) => {
       paymentMethod,
       toAddress,
       fromAddress,
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+      status: 'pending'
+    });
     
-    mockTransactions.push(transaction);
+    // Save to database
+    await transaction.save();
+    
+    // Process blockchain transaction
+    const blockchainResult = await processBlockchainTransaction({
+      type,
+      asset,
+      amount,
+      toAddress,
+      fromAddress
+    });
+    
+    if (blockchainResult.success) {
+      // Update transaction with blockchain hash and mark as completed
+      transaction.status = 'completed';
+      transaction.transactionHash = blockchainResult.transactionHash;
+      await transaction.save();
+    } else {
+      // Mark transaction as failed
+      transaction.status = 'failed';
+      await transaction.save();
+      
+      return res.status(400).json({ 
+        message: 'Blockchain transaction failed', 
+        error: blockchainResult.error 
+      });
+    }
     
     res.status(201).json(transaction);
   } catch (error) {
@@ -41,9 +83,8 @@ const createTransaction = async (req, res) => {
 // Get user transactions
 const getUserTransactions = async (req, res) => {
   try {
-    const transactions = mockTransactions
-      .filter(txn => txn.userId === req.user._id)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const transactions = await Transaction.find({ userId: req.user._id })
+      .sort({ createdAt: -1 });
     
     res.json(transactions);
   } catch (error) {
@@ -54,9 +95,10 @@ const getUserTransactions = async (req, res) => {
 // Get transaction by ID
 const getTransactionById = async (req, res) => {
   try {
-    const transaction = mockTransactions.find(
-      txn => txn._id === req.params.id && txn.userId === req.user._id
-    );
+    const transaction = await Transaction.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
     
     if (transaction) {
       res.json(transaction);
@@ -71,19 +113,18 @@ const getTransactionById = async (req, res) => {
 // Update transaction status
 const updateTransactionStatus = async (req, res) => {
   try {
-    const transactionIndex = mockTransactions.findIndex(
-      txn => txn._id === req.params.id && txn.userId === req.user._id
-    );
+    const transaction = await Transaction.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
     
-    if (transactionIndex !== -1) {
-      mockTransactions[transactionIndex] = {
-        ...mockTransactions[transactionIndex],
-        status: req.body.status || mockTransactions[transactionIndex].status,
-        updatedAt: new Date()
-      };
+    if (transaction) {
+      transaction.status = req.body.status || transaction.status;
+      transaction.updatedAt = Date.now();
       
-      const updatedTransaction = mockTransactions[transactionIndex];
-      res.json(updatedTransaction);
+      await transaction.save();
+      
+      res.json(transaction);
     } else {
       res.status(404).json({ message: 'Transaction not found' });
     }

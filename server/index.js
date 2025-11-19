@@ -11,12 +11,16 @@ const WebSocket = require('ws');
 // Load environment variables
 dotenv.config();
 
-// Connect to database
-connectDB();
-
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Connect to database
+connectDB().then(() => {
+  console.log('Database connection established');
+}).catch(err => {
+  console.error('Failed to connect to database:', err);
+});
 
 // Create HTTP server
 const server = http.createServer(app);

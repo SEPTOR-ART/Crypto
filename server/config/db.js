@@ -8,16 +8,16 @@ const connectDB = async () => {
       return;
     }
     
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // Remove deprecated options
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    return conn;
   } catch (error) {
     console.error(`Error: ${error.message}`);
     console.log('Running in mock mode without database connection');
     // Don't exit the process, allow the app to run without DB
+    return null;
   }
 };
 
