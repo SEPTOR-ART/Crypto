@@ -102,6 +102,13 @@ function csrfMiddleware(req, res, next) {
   const method = req.method.toUpperCase();
   const mutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
   if (!mutating) return next();
+  
+  // Skip CSRF check for user registration since it doesn't require auth
+  // The route is mounted at /api/users, so the actual path is /api/users/ for registration
+  if ((req.path === '/api/users' || req.path === '/api/users/') && method === 'POST') {
+    return next();
+  }
+  
   const hasAuth = !!req.headers.authorization;
   if (hasAuth) return next();
   const token = req.headers['x-csrf-token'];
