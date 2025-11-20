@@ -77,8 +77,13 @@ app.use(morgan('combined'));
 
 // Configure CORS for production and development
 if (process.env.NODE_ENV === 'production') {
+  // In production, allow specific origins or all origins if not specified
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : '*'; // Allow all origins if not specified
+  
   app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['https://your-netlify-domain.netlify.app'],
+    origin: allowedOrigins,
     credentials: true
   }));
 } else {

@@ -8,18 +8,18 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  NEXT_PUBLIC_API_BASE_URL = "https://your-render-app-name.onrender.com"
-  NEXT_PUBLIC_WS_BASE_URL = "wss://your-render-app-name.onrender.com"
+  NEXT_PUBLIC_API_BASE_URL = "https://crypto-r29t.onrender.com"
+  NEXT_PUBLIC_WS_BASE_URL = "wss://crypto-r29t.onrender.com"
 
 [functions]
   included_files = ["client/.next/server/**/*"]
 
 [[redirects]]
   from = "/api/*"
-  to = "https://your-render-app-name.onrender.com/api/:splat"
+  to = "https://crypto-r29t.onrender.com/api/:splat"
   status = 200
 
 [[redirects]]
   from = "/ws/*"
-  to = "wss://your-render-app-name.onrender.com/ws/:splat"
+  to = "wss://crypto-r29t.onrender.com/ws/:splat"
   status = 200

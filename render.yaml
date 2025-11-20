@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cryptozen-backend
+    name: crypto-r29t
     runtime: node
     plan: free
     buildCommand: npm install
@@ -15,9 +15,9 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: "*"
     domains:
-      - host: api
+      - host: crypto-r29t
         servicePath: /api
 
   - type: web
@@ -29,6 +29,6 @@ services:
       - key: NODE_VERSION
         value: "20"
       - key: NEXT_PUBLIC_API_BASE_URL
-        sync: false
+        value: "https://crypto-r29t.onrender.com"
       - key: NEXT_PUBLIC_WS_BASE_URL
-        sync: false
+        value: "wss://crypto-r29t.onrender.com"
