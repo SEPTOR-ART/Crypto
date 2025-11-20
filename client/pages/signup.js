@@ -74,6 +74,7 @@ export default function Signup() {
                 onChange={onChange}
                 required
                 placeholder="Enter your first name"
+                autoComplete="given-name"
               />
             </div>
             
@@ -87,6 +88,7 @@ export default function Signup() {
                 onChange={onChange}
                 required
                 placeholder="Enter your last name"
+                autoComplete="family-name"
               />
             </div>
           </div>
@@ -101,6 +103,7 @@ export default function Signup() {
               onChange={onChange}
               required
               placeholder="Enter your email"
+              autoComplete="email"
             />
           </div>
           
@@ -114,6 +117,7 @@ export default function Signup() {
               onChange={onChange}
               required
               placeholder="Create a password"
+              autoComplete="new-password"
             />
           </div>
           
@@ -127,6 +131,7 @@ export default function Signup() {
               onChange={onChange}
               required
               placeholder="Confirm your password"
+              autoComplete="new-password"
             />
           </div>
           

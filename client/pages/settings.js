@@ -150,6 +150,7 @@ export default function Settings() {
                   id="firstName"
                   value={profile.firstName}
                   onChange={(e) => setProfile({...profile, firstName: e.target.value})}
+                  autoComplete="given-name"
                 />
               </div>
               
@@ -160,6 +161,7 @@ export default function Settings() {
                   id="lastName"
                   value={profile.lastName}
                   onChange={(e) => setProfile({...profile, lastName: e.target.value})}
+                  autoComplete="family-name"
                 />
               </div>
               
@@ -170,6 +172,7 @@ export default function Settings() {
                   id="email"
                   value={profile.email}
                   onChange={(e) => setProfile({...profile, email: e.target.value})}
+                  autoComplete="email"
                 />
               </div>
               
@@ -180,6 +183,7 @@ export default function Settings() {
                   id="phone"
                   value={profile.phone}
                   onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                  autoComplete="tel"
                 />
               </div>
               

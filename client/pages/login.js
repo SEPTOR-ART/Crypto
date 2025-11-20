@@ -58,6 +58,7 @@ export default function Login() {
               placeholder="Enter your email"
               aria-invalid={!!emailError}
               aria-describedby="email-help"
+              autoComplete="email"
             />
             {emailError && <div id="email-help" className={styles.inputHelp}>{emailError}</div>}
           </div>
@@ -73,6 +74,7 @@ export default function Login() {
               placeholder="Enter your password"
               aria-invalid={!!passwordError}
               aria-describedby="password-help"
+              autoComplete="current-password"
             />
             <div id="password-help" className={styles.inputHelp}>{passwordError || 'Use a strong password for security'}</div>
           </div>
