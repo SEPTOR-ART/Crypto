@@ -14,9 +14,6 @@ app.set('trust proxy', 1); // Trust first proxy for rate limiting
 const PORT = process.env.PORT || 5000;
 
 // Validate required environment variables
-const requiredEnvVars = ['JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
 console.log('Environment variables check:');
 console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
 console.log('- JWT_SECRET set:', !!process.env.JWT_SECRET);
@@ -27,6 +24,11 @@ console.log('- MONGODB_URI set:', !!process.env.MONGODB_URI);
 if (process.env.MONGODB_URI) {
   console.log('- MONGODB_URI length:', process.env.MONGODB_URI.length);
 }
+
+// Remove MONGODB_URI from required environment variables check
+// Let the database connection logic handle this
+const requiredEnvVars = ['JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   console.error('Missing required environment variables:', missingEnvVars);
@@ -44,11 +46,8 @@ console.log('MONGODB_URI is set:', !!process.env.MONGODB_URI);
 if (process.env.MONGODB_URI) {
   console.log('MONGODB_URI length:', process.env.MONGODB_URI.length);
 } else {
-  console.error('MONGODB_URI is not set! This is required for database connection.');
-  if (process.env.NODE_ENV === 'production') {
-    console.error('In production environment, MONGODB_URI must be set. Exiting...');
-    process.exit(1);
-  }
+  console.log('MONGODB_URI is not set! Will attempt to connect through database connection logic...');
+  // Don't exit here, let the database connection logic handle it
 }
 
 // Connect to database
