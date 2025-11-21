@@ -32,6 +32,8 @@ const createTransaction = async (req, res) => {
     // Calculate total
     const total = amount * price;
     
+    console.log('Creating transaction:', { type, asset, amount, price, total });
+    
     // Create transaction in database
     const transaction = new Transaction({
       userId: req.user._id,
@@ -48,6 +50,7 @@ const createTransaction = async (req, res) => {
     
     // Save to database
     await transaction.save();
+    console.log('Transaction saved:', transaction._id);
     
     // Process blockchain transaction
     const blockchainResult = await processBlockchainTransaction({
@@ -63,33 +66,49 @@ const createTransaction = async (req, res) => {
       transaction.status = 'completed';
       transaction.transactionHash = blockchainResult.transactionHash;
       await transaction.save();
+      console.log('Transaction completed:', transaction._id);
       
       // Update user's balance based on transaction type
       const user = await User.findById(req.user._id);
       if (user) {
+        console.log('User found for balance update:', user.email);
+        
         // Initialize balance map if it doesn't exist
         if (!user.balance) {
           user.balance = new Map();
+          console.log('Initialized new balance map');
         }
         
         // Get current balance for this asset
         const currentBalance = user.balance.get(asset) || 0;
+        console.log(`Current balance for ${asset}:`, currentBalance);
         
         // Update balance based on transaction type
         if (type === 'buy') {
-          user.balance.set(asset, currentBalance + amount);
+          const newBalance = currentBalance + amount;
+          user.balance.set(asset, newBalance);
+          console.log(`Updated balance for ${asset} after buy:`, newBalance);
         } else if (type === 'sell') {
-          user.balance.set(asset, Math.max(0, currentBalance - amount));
+          const newBalance = Math.max(0, currentBalance - amount);
+          user.balance.set(asset, newBalance);
+          console.log(`Updated balance for ${asset} after sell:`, newBalance);
         }
         
         // Save updated user
         const updatedUser = await user.save();
         console.log('User balance updated:', updatedUser.balance);
+        
+        // Return the updated user data along with the transaction
+        return res.status(201).json({
+          transaction: transaction,
+          userBalance: Object.fromEntries(updatedUser.balance)
+        });
       }
     } else {
       // Mark transaction as failed
       transaction.status = 'failed';
       await transaction.save();
+      console.log('Transaction failed:', transaction._id);
       
       return res.status(400).json({ 
         message: 'Blockchain transaction failed', 

@@ -168,13 +168,15 @@ export const cryptoService = {
 export const transactionService = {
   // Create a new transaction
   createTransaction: async (transactionData, token) => {
-    return apiRequest('/api/transactions', {
+    const response = await apiRequest('/api/transactions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(transactionData),
     });
+    
+    return response;
   },
 
   // Get user transactions

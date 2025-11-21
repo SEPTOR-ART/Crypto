@@ -99,6 +99,13 @@ export default function Trade() {
       const result = await transactionService.createTransaction(transactionData, token);
       
       console.log('Trade executed:', result);
+      
+      // If the result includes userBalance, update the auth context
+      if (result.userBalance) {
+        // We would need to update the user's balance in the auth context here
+        // This would require modifying the AuthContext to support balance updates
+      }
+      
       setSuccess(true);
       setError('');
       
