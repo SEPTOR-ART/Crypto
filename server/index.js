@@ -27,10 +27,16 @@ if (process.env.JWT_SECRET) {
   console.log('JWT_SECRET length:', process.env.JWT_SECRET.length);
 }
 
-// Create Express app
-const app = express();
-app.set('trust proxy', 1); // Trust first proxy for rate limiting
-const PORT = process.env.PORT || 5000;
+console.log('MONGODB_URI is set:', !!process.env.MONGODB_URI);
+if (process.env.MONGODB_URI) {
+  console.log('MONGODB_URI length:', process.env.MONGODB_URI.length);
+} else {
+  console.error('MONGODB_URI is not set! This is required for database connection.');
+  if (process.env.NODE_ENV === 'production') {
+    console.error('In production environment, MONGODB_URI must be set. Exiting...');
+    process.exit(1);
+  }
+}
 
 // Connect to database
 connectDB().then(() => {
@@ -39,6 +45,7 @@ connectDB().then(() => {
   startServer();
 }).catch(err => {
   console.error('Failed to connect to database:', err);
+  console.error('Cannot start server without database connection');
   process.exit(1);
 });
 
@@ -110,6 +117,11 @@ const startServer = () => {
     console.log('SIGTERM received, shutting down gracefully');
     server.close(() => {
       console.log('Process terminated');
+      // Close database connection
+      mongoose.connection.close(() => {
+        console.log('MongoDB connection closed');
+        process.exit(0);
+      });
     });
   });
 
