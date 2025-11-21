@@ -15,7 +15,7 @@ export default function Trade() {
   const [orderBook, setOrderBook] = useState({ bids: [], asks: [] });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateUserBalance } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const router = useRouter();
   
@@ -102,8 +102,7 @@ export default function Trade() {
       
       // If the result includes userBalance, update the auth context
       if (result.userBalance) {
-        // We would need to update the user's balance in the auth context here
-        // This would require modifying the AuthContext to support balance updates
+        updateUserBalance(result.userBalance);
       }
       
       setSuccess(true);

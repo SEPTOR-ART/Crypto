@@ -75,6 +75,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user balance
+  const updateUserBalance = (newBalance) => {
+    if (user) {
+      setUser({
+        ...user,
+        balance: newBalance
+      });
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -82,6 +92,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfile,
+    updateUserBalance
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
