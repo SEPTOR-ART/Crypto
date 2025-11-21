@@ -222,11 +222,13 @@ const startServer = () => {
   const userRoutes = require('./routes/userRoutes');
   const transactionRoutes = require('./routes/transactionRoutes');
   const mfaRoutes = require('./routes/mfaRoutes');
+  const adminRoutes = require('./routes/adminRoutes');
 
   // Use routes
   app.use('/api/users', userRoutes);
   app.use('/api/transactions', transactionRoutes);
   app.use('/api/mfa', mfaRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // Create HTTP server
   const server = http.createServer(app);

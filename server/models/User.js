@@ -52,6 +52,10 @@ const userSchema = new mongoose.Schema({
     of: Number,
     default: {}
   },
+  isSuspended: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

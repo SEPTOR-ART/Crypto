@@ -6,7 +6,7 @@ const isPlaceholder = /your-render-app-name/.test(RAW_API) || RAW_API === '';
 const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 
 // Helper function to make API requests
-const apiRequest = async (endpoint, options = {}) => {
+export const apiRequest = async (endpoint, options = {}) => {
   try {
     // For relative paths in development or when no base URL is set, construct the full URL
     let url;

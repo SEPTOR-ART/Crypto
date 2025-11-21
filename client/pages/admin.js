@@ -3,14 +3,26 @@ import styles from '../styles/Admin.module.css';
 import ChatSupport from '../components/ChatSupport';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
+import { 
+  adminGetAllUsers, 
+  adminGetUserById, 
+  adminUpdateUserBalance,
+  adminGetAllTransactions,
+  adminUpdateTransactionStatus,
+  adminUpdateUserStatus
+} from '../services/adminService';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [editingBalance, setEditingBalance] = useState(false);
+  const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -34,28 +46,165 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
       
-      // In a real implementation, these would be API calls
-      // For now, we'll use mock data
-      const mockUsers = [
-        { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', kyc: 'verified', balance: 12500, createdAt: '2025-01-15' },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'active', kyc: 'pending', balance: 8750, createdAt: '2025-02-20' },
-        { id: 3, name: 'Robert Johnson', email: 'robert@example.com', status: 'suspended', kyc: 'verified', balance: 32000, createdAt: '2025-03-10' },
-        { id: 4, name: 'Emily Davis', email: 'emily@example.com', status: 'active', kyc: 'not started', balance: 5400, createdAt: '2025-04-05' },
-        { id: 5, name: 'Michael Wilson', email: 'michael@example.com', status: 'inactive', kyc: 'verified', balance: 18900, createdAt: '2025-05-12' }
-      ];
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
       
-      const mockTransactions = [
-        { id: 1, user: 'John Doe', type: 'buy', crypto: 'BTC', amount: 0.5, status: 'completed', date: '2025-11-15', price: 45000 },
-        { id: 2, user: 'Jane Smith', type: 'sell', crypto: 'ETH', amount: 2, status: 'pending', date: '2025-11-14', price: 3000 },
-        { id: 3, user: 'Robert Johnson', type: 'buy', crypto: 'LTC', amount: 10, status: 'completed', date: '2025-11-13', price: 150 },
-        { id: 4, user: 'Emily Davis', type: 'buy', crypto: 'XRP', amount: 500, status: 'failed', date: '2025-11-12', price: 1.2 }
-      ];
+      // Load users and transactions
+      const [usersData, transactionsData] = await Promise.all([
+        adminGetAllUsers(token),
+        adminGetAllTransactions(token)
+      ]);
       
-      setUsers(mockUsers);
-      setTransactions(mockTransactions);
+      setUsers(usersData);
+      setTransactions(transactionsData);
     } catch (err) {
-      setError('Failed to load admin data');
+      setError('Failed to load admin data: ' + err.message);
       console.error('Admin data load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load user details when selected
+  const loadUserDetails = async (userId) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      
+      const userDetails = await adminGetUserById(userId, token);
+      setSelectedUser(userDetails);
+      
+      // Initialize balance update form with first asset
+      if (userDetails.balance && Object.keys(userDetails.balance).length > 0) {
+        const firstAsset = Object.keys(userDetails.balance)[0];
+        setBalanceUpdate({
+          asset: firstAsset,
+          amount: userDetails.balance[firstAsset]
+        });
+      } else {
+        setBalanceUpdate({ asset: 'BTC', amount: 0 });
+      }
+    } catch (err) {
+      setError('Failed to load user details: ' + err.message);
+      console.error('User details load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update user balance
+  const handleUpdateBalance = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      
+      if (!selectedUser) {
+        throw new Error('No user selected');
+      }
+      
+      await adminUpdateUserBalance(
+        selectedUser._id, 
+        balanceUpdate.asset, 
+        parseFloat(balanceUpdate.amount), 
+        token
+      );
+      
+      setSuccess('User balance updated successfully');
+      
+      // Reload user details
+      await loadUserDetails(selectedUser._id);
+      
+      // Reload all users to reflect changes
+      await loadAdminData();
+      
+      setEditingBalance(false);
+    } catch (err) {
+      setError('Failed to update user balance: ' + err.message);
+      console.error('Balance update error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle user action
+  const handleUserAction = async (userId, action) => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      
+      switch (action) {
+        case 'view':
+          await loadUserDetails(userId);
+          break;
+        case 'suspend':
+        case 'activate':
+          await adminUpdateUserStatus(userId, action, token);
+          setSuccess(`User ${action}ed successfully`);
+          // Reload users to reflect changes
+          await loadAdminData();
+          break;
+        default:
+          break;
+      }
+    } catch (err) {
+      setError('Failed to perform user action: ' + err.message);
+      console.error('User action error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle transaction action
+  const handleTransactionAction = async (transactionId, action) => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      
+      switch (action) {
+        case 'approve':
+          await adminUpdateTransactionStatus(transactionId, 'completed', token);
+          setSuccess('Transaction approved successfully');
+          break;
+        case 'reject':
+          await adminUpdateTransactionStatus(transactionId, 'failed', token);
+          setSuccess('Transaction rejected successfully');
+          break;
+        default:
+          break;
+      }
+      
+      // Reload transactions to reflect changes
+      await loadAdminData();
+    } catch (err) {
+      setError('Failed to perform transaction action: ' + err.message);
+      console.error('Transaction action error:', err);
     } finally {
       setLoading(false);
     }
@@ -77,69 +226,18 @@ export default function AdminDashboard() {
   }
 
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleUserAction = (userId, action) => {
-    console.log(`Performing ${action} on user ${userId}`);
-    // In a real app, this would make an API call
-    switch (action) {
-      case 'view':
-        // View user details
-        alert(`Viewing details for user ${userId}`);
-        break;
-      case 'edit':
-        // Edit user details
-        alert(`Editing user ${userId}`);
-        break;
-      case 'suspend':
-        // Suspend user
-        setUsers(users.map(user => 
-          user.id === userId 
-            ? { ...user, status: user.status === 'suspended' ? 'active' : 'suspended' }
-            : user
-        ));
-        break;
-      case 'delete':
-        // Delete user
-        if (window.confirm('Are you sure you want to delete this user?')) {
-          setUsers(users.filter(user => user.id !== userId));
-        }
-        break;
-      default:
-        break;
+  // Calculate total platform volume
+  const platformVolume = transactions.reduce((total, transaction) => {
+    if (transaction.status === 'completed') {
+      return total + transaction.total;
     }
-  };
-
-  const handleTransactionAction = (transactionId, action) => {
-    console.log(`Performing ${action} on transaction ${transactionId}`);
-    // In a real app, this would make an API call
-    switch (action) {
-      case 'view':
-        // View transaction details
-        alert(`Viewing details for transaction ${transactionId}`);
-        break;
-      case 'approve':
-        // Approve transaction
-        setTransactions(transactions.map(transaction => 
-          transaction.id === transactionId 
-            ? { ...transaction, status: 'completed' }
-            : transaction
-        ));
-        break;
-      case 'reject':
-        // Reject transaction
-        setTransactions(transactions.map(transaction => 
-          transaction.id === transactionId 
-            ? { ...transaction, status: 'failed' }
-            : transaction
-        ));
-        break;
-      default:
-        break;
-    }
-  };
+    return total;
+  }, 0);
 
   return (
     <div className={styles.container}>
@@ -149,6 +247,7 @@ export default function AdminDashboard() {
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
+      {success && <div className={styles.success}>{success}</div>}
 
       {/* Stats Overview */}
       <div className={styles.statsOverview}>
@@ -160,7 +259,7 @@ export default function AdminDashboard() {
         
         <div className={styles.statCard}>
           <h3>Active Users</h3>
-          <p className={styles.statValue}>{users.filter(u => u.status === 'active').length}</p>
+          <p className={styles.statValue}>{users.filter(u => !u.isSuspended).length}</p>
           <div className={styles.statChange}>+8% last 30 days</div>
         </div>
         
@@ -172,7 +271,7 @@ export default function AdminDashboard() {
         
         <div className={styles.statCard}>
           <h3>Platform Volume</h3>
-          <p className={styles.statValue}>$12.5M</p>
+          <p className={styles.statValue}>${platformVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <div className={styles.statChange}>+22% last 30 days</div>
         </div>
       </div>
@@ -244,51 +343,43 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {filteredUsers.map(user => (
-                    <tr key={user.id}>
+                    <tr key={user._id}>
                       <td>
                         <div className={styles.userInfo}>
-                          <div className={styles.avatar}>{user.name.charAt(0)}</div>
-                          <span>{user.name}</span>
+                          <div className={styles.avatar}>{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
+                          <span>{user.firstName} {user.lastName}</span>
                         </div>
                       </td>
                       <td>{user.email}</td>
-                      <td>{user.createdAt}</td>
+                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                       <td>
-                        <span className={`${styles.statusBadge} ${styles[user.status]}`}>
-                          {user.status}
+                        <span className={`${styles.statusBadge} ${user.isSuspended ? styles.suspended : styles.active}`}>
+                          {user.isSuspended ? 'suspended' : 'active'}
                         </span>
                       </td>
                       <td>
-                        <span className={`${styles.kycBadge} ${styles[user.kyc.replace(' ', '')]}`}>
-                          {user.kyc}
+                        <span className={`${styles.kycBadge} ${styles[user.kycStatus?.replace(' ', '') || 'notstarted']}`}>
+                          {user.kycStatus || 'not started'}
                         </span>
                       </td>
-                      <td>${user.balance.toLocaleString()}</td>
+                      <td>
+                        {user.balance ? Object.entries(user.balance).map(([asset, amount]) => (
+                          <div key={asset}>{amount.toFixed(6)} {asset}</div>
+                        )) : '$0.00'}
+                      </td>
                       <td>
                         <div className={styles.actionButtons}>
                           <button 
                             className={styles.viewButton}
-                            onClick={() => handleUserAction(user.id, 'view')}
+                            onClick={() => handleUserAction(user._id, 'view')}
                           >
                             View
                           </button>
                           <button 
-                            className={styles.editButton}
-                            onClick={() => handleUserAction(user.id, 'edit')}
+                            className={user.isSuspended ? styles.activateButton : styles.suspendButton}
+                            onClick={() => handleUserAction(user._id, user.isSuspended ? 'activate' : 'suspend')}
                           >
-                            Edit
-                          </button>
-                          <button 
-                            className={user.status === 'suspended' ? styles.activateButton : styles.suspendButton}
-                            onClick={() => handleUserAction(user.id, 'suspend')}
-                          >
-                            {user.status === 'suspended' ? 'Activate' : 'Suspend'}
-                          </button>
-                          <button 
-                            className={styles.deleteButton}
-                            onClick={() => handleUserAction(user.id, 'delete')}
-                          >
-                            Delete
+                            {user.isSuspended ? 'Activate' : 'Suspend'}
                           </button>
                         </div>
                       </td>
@@ -297,6 +388,114 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+            
+            {/* User Detail View */}
+            {selectedUser && (
+              <div className={styles.userDetail}>
+                <div className={styles.detailHeader}>
+                  <h3>User Details: {selectedUser.firstName} {selectedUser.lastName}</h3>
+                  <button 
+                    className={styles.closeButton}
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+                
+                <div className={styles.detailContent}>
+                  <div className={styles.detailSection}>
+                    <h4>Personal Information</h4>
+                    <div className={styles.detailGrid}>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Email:</span>
+                        <span>{selectedUser.email}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Phone:</span>
+                        <span>{selectedUser.phone || 'Not provided'}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Member Since:</span>
+                        <span>{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>KYC Status:</span>
+                        <span className={styles[selectedUser.kycStatus?.replace(' ', '') || 'notstarted']}>
+                          {selectedUser.kycStatus || 'not started'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.detailSection}>
+                    <h4>Wallet Balances</h4>
+                    <div className={styles.balanceGrid}>
+                      {selectedUser.balance && Object.keys(selectedUser.balance).length > 0 ? (
+                        Object.entries(selectedUser.balance).map(([asset, amount]) => (
+                          <div key={asset} className={styles.balanceItem}>
+                            <span className={styles.assetName}>{asset}</span>
+                            <span className={styles.assetAmount}>{amount.toFixed(6)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p>No balances found</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.detailSection}>
+                    <h4>Update Balance</h4>
+                    {editingBalance ? (
+                      <form onSubmit={handleUpdateBalance} className={styles.balanceForm}>
+                        <div className={styles.formRow}>
+                          <div className={styles.formGroup}>
+                            <label>Asset</label>
+                            <select
+                              value={balanceUpdate.asset}
+                              onChange={(e) => setBalanceUpdate({...balanceUpdate, asset: e.target.value})}
+                              className={styles.formControl}
+                            >
+                              <option value="BTC">BTC</option>
+                              <option value="ETH">ETH</option>
+                              <option value="LTC">LTC</option>
+                              <option value="XRP">XRP</option>
+                            </select>
+                          </div>
+                          <div className={styles.formGroup}>
+                            <label>Amount</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              value={balanceUpdate.amount}
+                              onChange={(e) => setBalanceUpdate({...balanceUpdate, amount: e.target.value})}
+                              className={styles.formControl}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.formActions}>
+                          <button type="submit" className={styles.saveButton}>Save</button>
+                          <button 
+                            type="button" 
+                            className={styles.cancelButton}
+                            onClick={() => setEditingBalance(false)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <button 
+                        className={styles.editButton}
+                        onClick={() => setEditingBalance(true)}
+                      >
+                        Edit Balance
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -337,43 +536,37 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {transactions.map(transaction => (
-                    <tr key={transaction.id}>
-                      <td>#{transaction.id}</td>
-                      <td>{transaction.user}</td>
+                    <tr key={transaction._id}>
+                      <td>#{transaction._id.substring(0, 8)}</td>
+                      <td>{transaction.userId?.firstName} {transaction.userId?.lastName}</td>
                       <td>
                         <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
                           {transaction.type}
                         </span>
                       </td>
-                      <td>{transaction.crypto}</td>
-                      <td>{transaction.amount} {transaction.crypto}</td>
-                      <td>${transaction.price}</td>
-                      <td>${(transaction.amount * transaction.price).toFixed(2)}</td>
+                      <td>{transaction.asset}</td>
+                      <td>{transaction.amount} {transaction.asset}</td>
+                      <td>${transaction.price.toFixed(2)}</td>
+                      <td>${transaction.total.toFixed(2)}</td>
                       <td>
                         <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
                           {transaction.status}
                         </span>
                       </td>
-                      <td>{transaction.date}</td>
+                      <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
                       <td>
                         <div className={styles.actionButtons}>
-                          <button 
-                            className={styles.viewButton}
-                            onClick={() => handleTransactionAction(transaction.id, 'view')}
-                          >
-                            View
-                          </button>
                           {transaction.status === 'pending' && (
                             <>
                               <button 
                                 className={styles.approveButton}
-                                onClick={() => handleTransactionAction(transaction.id, 'approve')}
+                                onClick={() => handleTransactionAction(transaction._id, 'approve')}
                               >
                                 Approve
                               </button>
                               <button 
                                 className={styles.rejectButton}
-                                onClick={() => handleTransactionAction(transaction.id, 'reject')}
+                                onClick={() => handleTransactionAction(transaction._id, 'reject')}
                               >
                                 Reject
                               </button>
