@@ -117,10 +117,12 @@ function csrfMiddleware(req, res, next) {
   const mutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
   if (!mutating) return next();
   
-  // Skip CSRF check for user registration since it doesn't require auth
+  // Skip CSRF check for user registration and login since they don't require auth
   // Handle both mounted and direct paths
   const isRegistration = (req.path === '/api/users' || req.path === '/api/users/' || req.originalUrl === '/api/users') && method === 'POST';
-  if (isRegistration) {
+  const isLogin = (req.path === '/api/users/login' || req.path === '/api/users/login/') && method === 'POST';
+  
+  if (isRegistration || isLogin) {
     return next();
   }
   
