@@ -129,17 +129,32 @@ const authUser = async (req, res) => {
       // Find user in mock storage
       const user = mockUsers.find(user => user.email === email);
 
-      // Compare password with hashed password in mock storage
-      if (user && (await bcrypt.compare(password, user.password))) {
-        res.json({
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          kycStatus: user.kycStatus,
-          twoFactorEnabled: user.twoFactorEnabled,
-          token: generateToken(user._id)
-        });
+      if (user) {
+        // Handle both plain text and hashed passwords for backward compatibility
+        let passwordMatch = false;
+        
+        // Check if password is hashed (bcrypt hash starts with $2b$ or $2a$)
+        if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
+          // Password is hashed, use bcrypt comparison
+          passwordMatch = await bcrypt.compare(password, user.password);
+        } else {
+          // Password is plain text, use direct comparison
+          passwordMatch = user.password === password;
+        }
+        
+        if (passwordMatch) {
+          res.json({
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            kycStatus: user.kycStatus,
+            twoFactorEnabled: user.twoFactorEnabled,
+            token: generateToken(user._id)
+          });
+        } else {
+          res.status(401).json({ message: 'Invalid email or password' });
+        }
       } else {
         res.status(401).json({ message: 'Invalid email or password' });
       }
