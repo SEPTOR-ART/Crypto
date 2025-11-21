@@ -133,50 +133,110 @@
   font-weight: 600;
 }
 
-/* Tabs */
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #3d3d3d; /* Dark border */
-}
-
-.tab {
-  padding: 0.75rem 1.5rem;
-  background: transparent;
-  color: #cccccc; /* Light gray */
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.tab:hover {
-  color: #f0f0f0; /* Light silver */
-  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
-}
-
-.activeTab {
-  color: #6a0dad; /* Deep purple */
-  border-bottom: 3px solid #6a0dad; /* Deep purple */
-  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
-}
-
-/* Tab Content */
-.tabContent {
+/* Account Information */
+.accountInfo {
   background: #2d2d2d; /* Dark background */
   border-radius: 15px;
   padding: 2rem;
+  margin-bottom: 2rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   border: 1px solid #3d3d3d; /* Dark border */
 }
 
-/* Holdings Content */
-.holdingsContent {
-  overflow-x: auto;
+.accountInfo h2 {
+  color: #f0f0f0; /* Light silver */
+  margin-top: 0;
+  margin-bottom: 1.5rem;
 }
 
+.accountDetails {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #3d3d3d; /* Dark border */
+}
+
+.detailRow:last-child {
+  border-bottom: none;
+}
+
+.label {
+  color: #cccccc; /* Light gray */
+  font-weight: 500;
+}
+
+.value {
+  color: #f0f0f0; /* Light silver */
+  font-weight: 500;
+}
+
+.kycStatus {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.kycStatus.notstarted {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.kycStatus.pending {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+}
+
+.kycStatus.verified {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+}
+
+/* Holdings Grid for Overview Tab */
+.holdingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.holdingCard {
+  background: #3d3d3d; /* Darker background */
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid #4d4d4d; /* Dark border */
+  transition: transform 0.3s ease;
+}
+
+.holdingCard:hover {
+  transform: translateY(-5px);
+  border-color: #6a0dad; /* Deep purple */
+}
+
+.holdingHeader h4 {
+  color: #f0f0f0; /* Light silver */
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+}
+
+.holdingDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.holdingAmount, .holdingValue {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Holdings Table */
 .holdingsTable {
   width: 100%;
   border-collapse: collapse;
@@ -201,40 +261,7 @@
   background: rgba(106, 13, 173, 0.05); /* Deep purple with low opacity */
 }
 
-.assetInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.assetSymbol {
-  font-weight: 700;
-  color: #6a0dad; /* Deep purple */
-}
-
-.assetName {
-  font-size: 0.9rem;
-  color: #cccccc; /* Light gray */
-}
-
-.allocationBar {
-  width: 100%;
-  height: 8px;
-  background: #3d3d3d; /* Darker background */
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.allocationFill {
-  height: 100%;
-  background: linear-gradient(90deg, #6a0dad, #7b1fa2); /* Deep purple gradient */
-  border-radius: 4px;
-}
-
-/* Transactions Content */
-.transactionsContent {
-  overflow-x: auto;
-}
-
+/* Transactions Table */
 .transactionsTable {
   width: 100%;
   border-collapse: collapse;
@@ -259,33 +286,14 @@
   background: rgba(106, 13, 173, 0.05); /* Deep purple with low opacity */
 }
 
-.transactionType {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
 .buy {
-  background: rgba(76, 175, 80, 0.2); /* Green with opacity */
   color: #4caf50; /* Green */
+  font-weight: 600;
 }
 
 .sell {
-  background: rgba(244, 67, 54, 0.2); /* Red with opacity */
   color: #f44336; /* Red */
-}
-
-.deposit {
-  background: rgba(33, 150, 243, 0.2); /* Blue with opacity */
-  color: #2196f3; /* Blue */
-}
-
-.withdrawal {
-  background: rgba(255, 152, 0, 0.2); /* Orange with opacity */
-  color: #ff9800; /* Orange */
+  font-weight: 600;
 }
 
 /* Status badges */
@@ -299,7 +307,6 @@
   white-space: nowrap;
   vertical-align: baseline;
   border-radius: 0.25rem;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .status.pending {
@@ -318,89 +325,25 @@
 }
 
 .status.cancelled {
-  color: #fff;
+  color: #212529;
   background-color: #ffc107;
 }
 
-/* Overview Content */
-.overviewContent {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
-}
-
-.chartPlaceholder {
-  background: #3d3d3d; /* Darker background */
-  border-radius: 10px;
-  padding: 2rem;
+/* No data messages */
+.noHoldings, .noTransactions {
   text-align: center;
-  border: 1px solid #4d4d4d; /* Dark border */
-}
-
-.chartPlaceholder p {
   color: #cccccc; /* Light gray */
-  margin: 0;
+  font-style: italic;
+  padding: 2rem;
 }
 
-.chartArea {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6a0dad; /* Deep purple */
-  font-size: 1.2rem;
-  font-weight: 500;
-}
-
-.quickActions {
-  background: #3d3d3d; /* Darker background */
-  border-radius: 10px;
-  padding: 1.5rem;
-  border: 1px solid #4d4d4d; /* Dark border */
-}
-
-.quickActions h3 {
-  color: #f0f0f0; /* Light silver */
-  margin-top: 0;
-}
-
-.actionButtons {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.actionButton {
-  background: #2d2d2d; /* Dark background */
-  color: #f0f0f0; /* Light silver */
-  border: 1px solid #3d3d3d; /* Dark border */
-  padding: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-}
-
-.actionButton:hover {
-  background: #3d3d3d; /* Slightly lighter background */
-  border-color: #6a0dad; /* Deep purple */
-  transform: translateY(-3px);
-}
-
-/* Loading and Error States */
-.loading {
+/* Footer */
+.footer {
   text-align: center;
   padding: 2rem;
-  color: #f0f0f0; /* Light silver */
-}
-
-.error {
-  color: #f44336; /* Red */
-  background-color: rgba(244, 67, 54, 0.1); /* Red with opacity */
-  border: 1px solid #f44336; /* Red */
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.375rem;
-  margin-bottom: 1rem;
+  color: #cccccc; /* Light gray */
+  border-top: 1px solid #3d3d3d; /* Dark border */
+  margin-top: 2rem;
 }
 
 /* Responsive Design */

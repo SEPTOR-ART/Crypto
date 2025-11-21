@@ -26,6 +26,56 @@ export default function Dashboard() {
     }
   }, [user, authLoading, router]);
 
+  // Calculate holdings based on user transactions
+  const calculateHoldingsFromTransactions = (userTransactions, currentPrices) => {
+    // Initialize holdings map
+    const holdingsMap = {};
+    
+    // Process each transaction to calculate current holdings
+    userTransactions.forEach(transaction => {
+      const { asset, amount, type } = transaction;
+      
+      // Initialize asset in holdings map if not present
+      if (!holdingsMap[asset]) {
+        holdingsMap[asset] = {
+          symbol: asset,
+          name: getAssetName(asset),
+          amount: 0,
+          value: 0
+        };
+      }
+      
+      // Update amount based on transaction type
+      if (type === 'buy') {
+        holdingsMap[asset].amount += amount;
+      } else if (type === 'sell') {
+        holdingsMap[asset].amount -= amount;
+      }
+    });
+    
+    // Convert holdings map to array and calculate values
+    const holdingsArray = Object.values(holdingsMap)
+      .filter(holding => holding.amount > 0) // Only show assets with positive balance
+      .map(holding => {
+        const price = currentPrices[holding.symbol] || 0;
+        holding.value = (holding.amount * price).toFixed(2);
+        return holding;
+      });
+    
+    return holdingsArray;
+  };
+
+  // Get full name for asset symbol
+  const getAssetName = (symbol) => {
+    const names = {
+      'BTC': 'Bitcoin',
+      'ETH': 'Ethereum',
+      'LTC': 'Litecoin',
+      'XRP': 'Ripple'
+    };
+    return names[symbol] || symbol;
+  };
+
   // Fetch user transactions and account info
   useEffect(() => {
     const fetchData = async () => {
@@ -54,19 +104,12 @@ export default function Dashboard() {
           createdAt: user.createdAt
         });
         
-        // Calculate portfolio value based on real user data
-        // For now, we'll simulate this with mock data
-        // In a real implementation, this would come from the user's actual holdings
-        const mockHoldings = [
-          { id: 1, name: 'Bitcoin', symbol: 'BTC', amount: 0.5, value: (0.5 * (cryptoPrices.BTC || 45000)).toFixed(2) },
-          { id: 2, name: 'Ethereum', symbol: 'ETH', amount: 5, value: (5 * (cryptoPrices.ETH || 3000)).toFixed(2) },
-          { id: 3, name: 'Litecoin', symbol: 'LTC', amount: 20, value: (20 * (cryptoPrices.LTC || 150)).toFixed(2) },
-          { id: 4, name: 'Ripple', symbol: 'XRP', amount: 1000, value: (1000 * (cryptoPrices.XRP || 1.2)).toFixed(2) }
-        ];
-        setHoldings(mockHoldings);
+        // Calculate holdings based on real user transactions
+        const calculatedHoldings = calculateHoldingsFromTransactions(userTransactions, cryptoPrices);
+        setHoldings(calculatedHoldings);
         
         // Calculate total portfolio value
-        const totalValue = mockHoldings.reduce((sum, holding) => sum + parseFloat(holding.value), 0);
+        const totalValue = calculatedHoldings.reduce((sum, holding) => sum + parseFloat(holding.value), 0);
         setPortfolioValue(totalValue.toFixed(2));
       } catch (err) {
         console.error('Failed to fetch data:', err);
@@ -198,70 +241,73 @@ export default function Dashboard() {
         {/* Tab Content */}
         <div className={styles.tabContent}>
           {activeTab === 'overview' && (
-            <div className={styles.overviewContent}>
-              <div className={styles.chartPlaceholder}>
-                <p>Price Chart Visualization</p>
-                <div className={styles.chartArea}>
-                  {/* Chart would go here in a real implementation */}
+            <div className={styles.overviewTab}>
+              <h3>Portfolio Holdings</h3>
+              {holdings.length > 0 ? (
+                <div className={styles.holdingsGrid}>
+                  {holdings.map((holding) => (
+                    <div key={holding.symbol} className={styles.holdingCard}>
+                      <div className={styles.holdingHeader}>
+                        <h4>{holding.name} ({holding.symbol})</h4>
+                      </div>
+                      <div className={styles.holdingDetails}>
+                        <div className={styles.holdingAmount}>
+                          <span className={styles.label}>Amount:</span>
+                          <span className={styles.value}>{holding.amount.toFixed(6)}</span>
+                        </div>
+                        <div className={styles.holdingValue}>
+                          <span className={styles.label}>Value:</span>
+                          <span className={styles.value}>${holding.value}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              
-              <div className={styles.quickActions}>
-                <h3>Quick Actions</h3>
-                <div className={styles.actionButtons}>
-                  <button className={styles.actionButton}>Buy Crypto</button>
-                  <button className={styles.actionButton}>Sell Crypto</button>
-                  <button className={styles.actionButton}>Send</button>
-                  <button className={styles.actionButton}>Receive</button>
-                </div>
-              </div>
+              ) : (
+                <p className={styles.noHoldings}>No holdings yet. Start trading to build your portfolio!</p>
+              )}
             </div>
           )}
 
           {activeTab === 'holdings' && (
-            <div className={styles.holdingsContent}>
-              <table className={styles.holdingsTable}>
-                <thead>
-                  <tr>
-                    <th>Asset</th>
-                    <th>Holdings</th>
-                    <th>Price</th>
-                    <th>Value</th>
-                    <th>Allocation</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {holdings.map(holding => (
-                    <tr key={holding.id}>
-                      <td>
-                        <div className={styles.assetInfo}>
-                          <span className={styles.assetSymbol}>{holding.symbol}</span>
-                          <span className={styles.assetName}>{holding.name}</span>
-                        </div>
-                      </td>
-                      <td>{holding.amount} {holding.symbol}</td>
-                      <td>${cryptoPrices[holding.symbol] || 'N/A'}</td>
-                      <td>${holding.value}</td>
-                      <td>
-                        <div className={styles.allocationBar}>
-                          <div 
-                            className={styles.allocationFill} 
-                            style={{ width: `${(parseFloat(holding.value) / parseFloat(portfolioValue)) * 100 || 0}%` }}
-                          ></div>
-                        </div>
-                      </td>
+            <div className={styles.holdingsTab}>
+              <h3>Your Holdings</h3>
+              {holdings.length > 0 ? (
+                <table className={styles.holdingsTable}>
+                  <thead>
+                    <tr>
+                      <th>Asset</th>
+                      <th>Name</th>
+                      <th>Amount</th>
+                      <th>Price</th>
+                      <th>Value</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {holdings.map((holding) => (
+                      <tr key={holding.symbol}>
+                        <td>{holding.symbol}</td>
+                        <td>{holding.name}</td>
+                        <td>{holding.amount.toFixed(6)}</td>
+                        <td>${(cryptoPrices[holding.symbol] || 0).toFixed(2)}</td>
+                        <td>${holding.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className={styles.noHoldings}>No holdings yet. Start trading to build your portfolio!</p>
+              )}
             </div>
           )}
 
           {activeTab === 'transactions' && (
-            <div className={styles.transactionsContent}>
-              {transactionsError && <div className={styles.error}>{transactionsError}</div>}
+            <div className={styles.transactionsTab}>
+              <h3>Transaction History</h3>
               {loadingTransactions ? (
-                <div className={styles.loading}>Loading transactions...</div>
+                <p>Loading transactions...</p>
+              ) : transactionsError ? (
+                <p className={styles.error}>Error loading transactions: {transactionsError}</p>
               ) : transactions.length > 0 ? (
                 <table className={styles.transactionsTable}>
                   <thead>
@@ -276,38 +322,34 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map(transaction => (
+                    {transactions.map((transaction) => (
                       <tr key={transaction._id}>
                         <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                        <td>
-                          <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
-                            {transaction.type}
-                          </span>
-                        </td>
+                        <td className={styles[transaction.type]}>{transaction.type}</td>
                         <td>{transaction.asset}</td>
-                        <td>{transaction.amount} {transaction.asset}</td>
-                        <td>${transaction.price}</td>
-                        <td>${(transaction.amount * transaction.price).toFixed(2)}</td>
-                        <td>
-                          <span className={`${styles.status} ${styles[transaction.status]}`}>
-                            {transaction.status}
-                          </span>
-                        </td>
+                        <td>{transaction.amount}</td>
+                        <td>${transaction.price.toFixed(2)}</td>
+                        <td>${transaction.total.toFixed(2)}</td>
+                        <td className={styles[transaction.status]}>{transaction.status}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <div className={styles.noTransactions}>
-                  <p>No transactions found</p>
-                  <button className={styles.actionButton}>Buy Crypto</button>
-                </div>
+                <p className={styles.noTransactions}>No transactions yet.</p>
               )}
             </div>
           )}
         </div>
       </main>
+
+      {/* Chat Support */}
       <ChatSupport />
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <p>&copy; 2025 CryptoZen. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
