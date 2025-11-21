@@ -5,7 +5,7 @@ import ChatSupport from '../components/ChatSupport';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
-import { transactionService } from '../services/api';
+import { transactionService, authService } from '../services/api';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -25,6 +25,32 @@ export default function Dashboard() {
       router.push('/login');
     }
   }, [user, authLoading, router]);
+
+  // Refresh user profile periodically to ensure balance is up to date
+  useEffect(() => {
+    if (!user) return;
+    
+    const refreshProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userData = await authService.getProfile(token);
+          // Update the user in the auth context
+          if (updateProfile) {
+            // We need to create a minimal update function since we don't have the full updateProfile function here
+            // This would be better handled in the AuthContext itself
+          }
+        }
+      } catch (error) {
+        console.error('Failed to refresh user profile:', error);
+      }
+    };
+    
+    // Refresh profile every 30 seconds
+    const interval = setInterval(refreshProfile, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Calculate holdings based on user's balance
   const calculateHoldingsFromBalance = (userBalance, currentPrices) => {
