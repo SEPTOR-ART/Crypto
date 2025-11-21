@@ -28,13 +28,19 @@ export default function Dashboard() {
 
   // Calculate holdings based on user's balance
   const calculateHoldingsFromBalance = (userBalance, currentPrices) => {
+    console.log('Calculating holdings from balance:', userBalance);
+    console.log('Current prices:', currentPrices);
+    
     // Convert balance map to array and calculate values
     const holdingsArray = [];
     
     // Handle cases where userBalance might be undefined, null, or not an object
     if (userBalance && typeof userBalance === 'object') {
+      console.log('User balance is an object');
+      
       // For Map-like objects, we need to handle them differently
       if (userBalance instanceof Map || (typeof userBalance.forEach === 'function')) {
+        console.log('User balance is a Map-like object');
         userBalance.forEach((amount, asset) => {
           if (amount > 0) {
             const price = currentPrices[asset] || 0;
@@ -48,7 +54,9 @@ export default function Dashboard() {
         });
       } else {
         // For plain objects
+        console.log('User balance is a plain object');
         Object.entries(userBalance).forEach(([asset, amount]) => {
+          console.log(`Asset: ${asset}, Amount: ${amount}`);
           if (amount > 0) {
             const price = currentPrices[asset] || 0;
             holdingsArray.push({
@@ -60,8 +68,11 @@ export default function Dashboard() {
           }
         });
       }
+    } else {
+      console.log('User balance is not an object or is null/undefined');
     }
     
+    console.log('Calculated holdings array:', holdingsArray);
     return holdingsArray;
   };
 
@@ -104,6 +115,9 @@ export default function Dashboard() {
           createdAt: user.createdAt
         });
         
+        // Log user balance for debugging
+        console.log('User balance:', user.balance);
+        
         // Calculate holdings based on user's balance
         const calculatedHoldings = calculateHoldingsFromBalance(user.balance || {}, cryptoPrices);
         setHoldings(calculatedHoldings);
@@ -111,6 +125,8 @@ export default function Dashboard() {
         // Calculate total portfolio value
         const totalValue = calculatedHoldings.reduce((sum, holding) => sum + parseFloat(holding.value), 0);
         setPortfolioValue(totalValue.toFixed(2));
+        
+        console.log('Calculated holdings:', calculatedHoldings);
       } catch (err) {
         console.error('Failed to fetch data:', err);
         setTransactionsError(err.message || 'Failed to load data');
