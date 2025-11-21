@@ -39,7 +39,9 @@ export default function Trade() {
 
   // Update total when amount changes (must be declared before any early returns)
   useEffect(() => {
-    setTotal((amount * price).toFixed(2));
+    const numericAmount = parseFloat(amount) || 0;
+    const numericPrice = parseFloat(price) || 0;
+    setTotal((numericAmount * numericPrice).toFixed(2));
   }, [amount, price]);
 
   // Generate order book data based on real prices
@@ -48,14 +50,19 @@ export default function Trade() {
     const bids = [];
     const asks = [];
     
+    const numericPrice = parseFloat(price) || 0;
+    
     for (let i = 0; i < 10; i++) {
+      const bidPrice = numericPrice - (i * (numericPrice * 0.005));
+      const askPrice = numericPrice + (i * (numericPrice * 0.005));
+      
       bids.push({
-        price: (price - (i * (price * 0.005))).toFixed(2),
+        price: bidPrice.toFixed(2),
         amount: (Math.random() * 5).toFixed(4)
       });
       
       asks.push({
-        price: (price + (i * (price * 0.005))).toFixed(2),
+        price: askPrice.toFixed(2),
         amount: (Math.random() * 5).toFixed(4)
       });
     }
@@ -86,21 +93,24 @@ export default function Trade() {
       }
       
       // Validate amount
-      if (!amount || parseFloat(amount) <= 0) {
+      const numericAmount = parseFloat(amount);
+      if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
         throw new Error('Please enter a valid amount');
       }
       
       // For sell transactions, check if user has enough balance
-      if (tradeType === 'sell' && parseFloat(amount) > userBalance) {
+      if (tradeType === 'sell' && numericAmount > userBalance) {
         throw new Error(`Insufficient ${selectedCrypto} balance`);
       }
+      
+      const numericPrice = parseFloat(price) || 0;
       
       // Create transaction data
       const transactionData = {
         type: tradeType,
         asset: selectedCrypto,
-        amount: parseFloat(amount),
-        price: parseFloat(price),
+        amount: numericAmount,
+        price: numericPrice,
         paymentMethod,
         // For sell transactions, we might need a toAddress
         // For buy transactions, we might need a fromAddress

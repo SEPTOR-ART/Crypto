@@ -236,8 +236,8 @@ const startServer = () => {
     console.error('Server error:', error);
   });
 
-  // Create WebSocket server
-  const wss = new WebSocket.Server({ server });
+  // Create WebSocket server with proper path handling
+  const wss = new WebSocket.Server({ server, path: '/ws' });
 
   // Handle WebSocket connections
   wss.on('connection', (ws, request) => {

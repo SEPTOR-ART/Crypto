@@ -90,11 +90,16 @@ export default function Wallet() {
         throw new Error('Amount and address are required');
       }
       
+      const numericAmount = parseFloat(sendAmount);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        throw new Error('Please enter a valid amount');
+      }
+      
       // Create transaction data for sending
       const transactionData = {
-        type: 'send', // or 'withdrawal' depending on your backend model
+        type: 'send',
         asset: selectedCrypto,
-        amount: parseFloat(sendAmount),
+        amount: numericAmount,
         toAddress: sendAddress,
         // Price is not relevant for send transactions, but required by the model
         price: 0,
@@ -136,7 +141,12 @@ export default function Wallet() {
   const selectedWallet = walletBalances.find(wallet => wallet.symbol === selectedCrypto);
 
   // Calculate total balance
-  const totalBalance = walletBalances.reduce((total, wallet) => total + wallet.value, 0);
+  const totalBalance = walletBalances.reduce((total, wallet) => {
+    // Ensure we're working with numbers
+    const balance = parseFloat(wallet.balance) || 0;
+    const price = wallet.value / (balance || 1); // Avoid division by zero
+    return total + (balance * price);
+  }, 0);
 
   return (
     <div className={styles.container}>
@@ -174,12 +184,12 @@ export default function Wallet() {
           <div className={styles.infoRow}>
             <span>Balance</span>
             <span className={styles.balanceAmount}>
-              {selectedWallet?.balance.toFixed(6)} {selectedWallet?.symbol}
+              {(selectedWallet?.balance || 0).toFixed(6)} {selectedWallet?.symbol}
             </span>
           </div>
           <div className={styles.infoRow}>
             <span>Value</span>
-            <span className={styles.balanceValue}>${selectedWallet?.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className={styles.balanceValue}>${(selectedWallet?.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className={styles.infoRow}>
             <span>Address</span>
@@ -236,15 +246,15 @@ export default function Wallet() {
           <div className={styles.overviewContent}>
             <h3>Your Assets</h3>
             <div className={styles.assetsGrid}>
-              {walletBalances.filter(wallet => wallet.balance > 0).map(wallet => (
+              {walletBalances.filter(wallet => (wallet.balance || 0) > 0).map(wallet => (
                 <div key={wallet.symbol} className={styles.assetCard}>
                   <div className={styles.assetHeader}>
                     <span className={styles.assetSymbol}>{wallet.symbol}</span>
                     <span className={styles.assetName}>{wallet.name}</span>
                   </div>
                   <div className={styles.assetBalance}>
-                    <span>{wallet.balance.toFixed(6)} {wallet.symbol}</span>
-                    <span className={styles.assetValue}>${wallet.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>{(wallet.balance || 0).toFixed(6)} {wallet.symbol}</span>
+                    <span className={styles.assetValue}>${(wallet.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               ))}
