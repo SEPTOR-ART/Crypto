@@ -12,6 +12,7 @@ const generateToken = (id) => {
 // Register user
 const registerUser = async (req, res) => {
   try {
+    console.log('Registration request received:', req.body);
     const { firstName, lastName, email, password, phone } = req.body;
     
     // Validate input
@@ -26,12 +27,15 @@ const registerUser = async (req, res) => {
     }
 
     // Check if user already exists
+    console.log('Checking if user exists:', email);
     const userExists = await User.findOne({ email });
+    console.log('User exists result:', userExists ? 'Yes' : 'No');
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     // Create user in database
+    console.log('Creating user in database');
     const user = await User.create({
       firstName,
       lastName,
@@ -39,14 +43,17 @@ const registerUser = async (req, res) => {
       password,
       phone
     });
+    console.log('User created:', user ? user.email : 'Failed');
 
     if (user) {
+      const token = generateToken(user._id);
+      console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
       return res.status(201).json({
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        token: generateToken(user._id)
+        token: token
       });
     } else {
       return res.status(400).json({ message: 'Invalid user data' });
@@ -60,22 +67,37 @@ const registerUser = async (req, res) => {
 // Authenticate user
 const authUser = async (req, res) => {
   try {
+    console.log('Authentication request received:', req.body);
     const { email, password } = req.body;
 
     // Find user in database
+    console.log('Finding user in database:', email);
     const user = await User.findOne({ email });
+    console.log('User found:', user ? user.email : 'None');
 
-    if (user && (await user.comparePassword(password))) {
-      return res.json({
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        kycStatus: user.kycStatus,
-        twoFactorEnabled: user.twoFactorEnabled,
-        token: generateToken(user._id)
-      });
+    if (user) {
+      console.log('Comparing password for user:', email);
+      const isPasswordValid = await user.comparePassword(password);
+      console.log('Password valid:', isPasswordValid);
+      
+      if (isPasswordValid) {
+        const token = generateToken(user._id);
+        console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
+        return res.json({
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          kycStatus: user.kycStatus,
+          twoFactorEnabled: user.twoFactorEnabled,
+          token: token
+        });
+      } else {
+        console.log('Invalid password for user:', email);
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
     } else {
+      console.log('User not found:', email);
       return res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
