@@ -538,7 +538,7 @@ export default function AdminDashboard() {
                     <span className={styles.timestamp}>2025-11-20 14:30</span>
                   </div>
                   <div className={styles.messageContent}>
-                    I'm having trouble with my withdrawal. It's been pending for over 24 hours.
+                    I&apos;m having trouble with my withdrawal. It&apos;s been pending for over 24 hours.
                   </div>
                 </div>
                 <div className={`${styles.message} ${styles.admin}`}>
