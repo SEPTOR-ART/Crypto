@@ -10,18 +10,31 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
-  const { login } = useAuth();
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  
+  const { login } = useAuth();
 
   useEffect(() => {
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) setEmailError('Enter a valid email'); else setEmailError('');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address');
+    } else {
+      setEmailError('');
+    }
   }, [email]);
   
   useEffect(() => {
-    const ok = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
-    if (password && !ok) setPasswordError('Min 8 chars, include upper, lower, number'); else setPasswordError('');
+    if (password && password.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+    } else if (password && !/[A-Z]/.test(password)) {
+      setPasswordError('Password must contain at least one uppercase letter');
+    } else if (password && !/[a-z]/.test(password)) {
+      setPasswordError('Password must contain at least one lowercase letter');
+    } else if (password && !/\d/.test(password)) {
+      setPasswordError('Password must contain at least one number');
+    } else {
+      setPasswordError('');
+    }
   }, [password]);
 
   const handleSubmit = async (e) => {
@@ -80,6 +93,7 @@ export default function Login() {
               aria-invalid={!!emailError}
               aria-describedby="email-help"
               autoComplete="email"
+              className={emailError ? styles.inputError : ''}
             />
             {emailError && <div id="email-help" className={styles.inputHelp}>{emailError}</div>}
           </div>
@@ -97,6 +111,7 @@ export default function Login() {
                 aria-invalid={!!passwordError}
                 aria-describedby="password-help"
                 autoComplete="current-password"
+                className={passwordError ? styles.inputError : ''}
               />
               <button 
                 type="button" 
@@ -107,7 +122,9 @@ export default function Login() {
                 {showPassword ? '👁️' : '👁️‍🗨️'}
               </button>
             </div>
-            <div id="password-help" className={styles.inputHelp}>{passwordError || 'Use a strong password for security'}</div>
+            <div id="password-help" className={styles.inputHelp}>
+              {passwordError || 'Use 8+ chars with upper, lower, and number'}
+            </div>
           </div>
           
           <div className={styles.options}>
@@ -129,9 +146,14 @@ export default function Login() {
           <button 
             type="submit" 
             className={styles.loginButton}
-            disabled={loading || !!emailError || !!passwordError}
+            disabled={loading || !!emailError || !!passwordError || !email || !password}
           >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? (
+              <div className={styles.buttonContent}>
+                <div className={styles.spinner}></div>
+                Signing In...
+              </div>
+            ) : 'Sign In'}
           </button>
         </form>
         
@@ -151,7 +173,7 @@ export default function Login() {
         </div>
         
         <div className={styles.signupLink}>
-          Don’t have an account? <Link href="/signup">Sign Up</Link>
+          Don't have an account? <Link href="/signup">Sign Up</Link>
         </div>
       </div>
     </div>

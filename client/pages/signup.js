@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from '../styles/Signup.module.css';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
@@ -13,10 +13,43 @@ export default function Signup() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   
   const { register } = useAuth();
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
+
+  useEffect(() => {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address');
+    } else {
+      setEmailError('');
+    }
+  }, [email]);
+  
+  useEffect(() => {
+    if (password && password.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+    } else if (password && !/[A-Z]/.test(password)) {
+      setPasswordError('Password must contain at least one uppercase letter');
+    } else if (password && !/[a-z]/.test(password)) {
+      setPasswordError('Password must contain at least one lowercase letter');
+    } else if (password && !/\d/.test(password)) {
+      setPasswordError('Password must contain at least one number');
+    } else {
+      setPasswordError('');
+    }
+  }, [password]);
+  
+  useEffect(() => {
+    if (confirmPassword && confirmPassword !== password) {
+      setConfirmPasswordError('Passwords do not match');
+    } else {
+      setConfirmPasswordError('');
+    }
+  }, [confirmPassword, password]);
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,13 +58,24 @@ export default function Signup() {
   const onSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate form before submission
+    if (emailError || passwordError || confirmPasswordError) {
+      setError('Please fix the errors before submitting');
+      return;
+    }
+    
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
     
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
     
@@ -103,8 +147,12 @@ export default function Signup() {
               onChange={onChange}
               required
               placeholder="Enter your email"
+              aria-invalid={!!emailError}
+              aria-describedby="email-help"
               autoComplete="email"
+              className={emailError ? styles.inputError : ''}
             />
+            {emailError && <div id="email-help" className={styles.inputHelp}>{emailError}</div>}
           </div>
           
           <div className={styles.inputGroup}>
@@ -117,8 +165,14 @@ export default function Signup() {
               onChange={onChange}
               required
               placeholder="Create a password"
+              aria-invalid={!!passwordError}
+              aria-describedby="password-help"
               autoComplete="new-password"
+              className={passwordError ? styles.inputError : ''}
             />
+            <div id="password-help" className={styles.inputHelp}>
+              {passwordError || 'Use 8+ chars with upper, lower, and number'}
+            </div>
           </div>
           
           <div className={styles.inputGroup}>
@@ -131,16 +185,25 @@ export default function Signup() {
               onChange={onChange}
               required
               placeholder="Confirm your password"
+              aria-invalid={!!confirmPasswordError}
+              aria-describedby="confirm-password-help"
               autoComplete="new-password"
+              className={confirmPasswordError ? styles.inputError : ''}
             />
+            {confirmPasswordError && <div id="confirm-password-help" className={styles.inputHelp}>{confirmPasswordError}</div>}
           </div>
           
           <button 
             type="submit" 
             className={styles.signupButton}
-            disabled={loading}
+            disabled={loading || !!emailError || !!passwordError || !!confirmPasswordError || !firstName || !lastName || !email || !password || !confirmPassword}
           >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            {loading ? (
+              <div className={styles.buttonContent}>
+                <div className={styles.spinner}></div>
+                Creating Account...
+              </div>
+            ) : 'Sign Up'}
           </button>
         </form>
         

@@ -4,8 +4,8 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Avenir,
     Helvetica, sans-serif;
-  background: #1a1a1a; /* Dark charcoal gray */
-  color: #f0f0f0; /* Light silver */
+  background: #1a1a1a;
+  color: #f0f0f0;
 }
 
 a {
@@ -15,14 +15,14 @@ a {
 
 a:hover { text-decoration: underline; }
 a:active { opacity: 0.9; }
-a:visited { color: #2a4d69; }
+a:visited { color: #6a0dad; }
 
 * {
   box-sizing: border-box;
 }
 
 :focus-visible {
-  outline: 3px solid #ffd700;
+  outline: 3px solid #6a0dad;
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -37,12 +37,12 @@ a:visited { color: #2a4d69; }
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #6a0dad; /* Deep purple */
+  background: #6a0dad;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7b1fa2; /* Slightly lighter purple */
+  background: #7b1fa2;
 }
 
 /* Animation utilities */
@@ -103,6 +103,15 @@ button:hover {
 
 button:active {
   transform: translateY(0);
+}
+
+/* Input styling */
+input {
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  transform: translateY(-1px);
 }
 
 html[data-motion='off'] *, html[data-motion='off'] *::before, html[data-motion='off'] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
