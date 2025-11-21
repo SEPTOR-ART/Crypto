@@ -11,6 +11,16 @@ const WebSocket = require('ws');
 // Load environment variables
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = ['JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars);
+  console.error('Please set these variables in your environment or .env file');
+  process.exit(1);
+}
+
 // Create Express app
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for rate limiting
@@ -25,6 +35,11 @@ connectDB().then(() => {
 
 // Create HTTP server
 const server = http.createServer(app);
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+});
 
 // Create WebSocket server
 const wss = new WebSocket.Server({ server });
@@ -91,18 +106,6 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   app.use(cors());
 }
-
-// Add CORS headers to all responses
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-CSRF-Token');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
 
 app.use(express.json());
 
@@ -222,6 +225,8 @@ app.use('/api/mfa', mfaRoutes);
 // Start server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+}).on('error', (error) => {
+  console.error('Failed to start server:', error);
 });
 
 // Handle graceful shutdown
@@ -230,4 +235,16 @@ process.on('SIGTERM', () => {
   server.close(() => {
     console.log('Process terminated');
   });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
