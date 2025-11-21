@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs'); // Add bcrypt for password hashing in mock mode
 
 // In-memory storage for mock users (fallback when DB is not available)
 let mockUsers = [];
@@ -66,13 +67,17 @@ const registerUser = async (req, res) => {
         return res.status(400).json({ message: 'User already exists' });
       }
 
+      // Hash password before storing in mock storage
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
       // Create user in mock storage
       const user = {
         _id: userIdCounter++,
         firstName,
         lastName,
         email,
-        password, // In a real app, this would be hashed
+        password: hashedPassword, // Store hashed password
         phone,
         kycStatus: 'not started',
         twoFactorEnabled: false,
@@ -124,7 +129,8 @@ const authUser = async (req, res) => {
       // Find user in mock storage
       const user = mockUsers.find(user => user.email === email);
 
-      if (user && user.password === password) {
+      // Compare password with hashed password in mock storage
+      if (user && (await bcrypt.compare(password, user.password))) {
         res.json({
           _id: user._id,
           firstName: user.firstName,
