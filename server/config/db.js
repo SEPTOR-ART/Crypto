@@ -14,6 +14,7 @@ const connectDB = async () => {
     if (mongoUri) {
       console.log('MONGODB_URI length:', mongoUri.length);
       console.log('MONGODB_URI contains localhost:', mongoUri.includes('localhost'));
+      console.log('MONGODB_URI value:', mongoUri.substring(0, Math.min(100, mongoUri.length)) + (mongoUri.length > 100 ? '...' : ''));
     }
     
     if (process.env.NODE_ENV === 'production') {
