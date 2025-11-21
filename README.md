@@ -88,6 +88,8 @@ Crypto/
    ```
 
 4. **Configure environment variables:**
+
+   **For Development:**
    - Create a `.env` file in the `server` directory
    - Add the following variables:
      ```
@@ -96,6 +98,11 @@ Crypto/
      JWT_SECRET=your_jwt_secret_key_here
      MONGODB_URI=your_mongodb_connection_string
      ```
+
+   **For Production (Render Deployment):**
+   - Environment variables are automatically configured through `render.yaml`
+   - Do NOT set MONGODB_URI in the .env file for production
+   - JWT_SECRET should be set through Render dashboard as a secret
 
 ### Running the Application
 
@@ -114,6 +121,29 @@ Crypto/
 3. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000
+
+## Production Deployment
+
+### Render Deployment
+
+This application is configured for deployment on Render:
+
+1. **Backend Service**: The Node.js server is deployed as a web service
+2. **Frontend Service**: The Next.js client is deployed as a static site
+3. **Database**: MongoDB is deployed as a database service
+
+Environment variables are automatically configured through the `render.yaml` file:
+- `JWT_SECRET`: Must be set manually in Render dashboard as a secret
+- `MONGODB_URI`: Automatically provided by Render database service
+- `ALLOWED_ORIGINS`: Configured for CORS support
+
+### Environment Variables for Production
+
+Important: For production deployments, do not set MONGODB_URI in the .env file. Render will automatically provide this through the database service configuration.
+
+Required environment variables:
+- `JWT_SECRET`: A secure random string for JWT token signing
+- `NODE_ENV`: Should be set to "production"
 
 ## API Endpoints
 
@@ -142,7 +172,7 @@ Crypto/
 - **Input Validation**: Server-side validation for all user inputs
 - **HTTP Headers Security**: Helmet.js for secure HTTP headers
 - **CORS Protection**: Cross-Origin Resource Sharing protection
-- **Rate Limiting**: (To be implemented) API rate limiting for DDoS protection
+- **Rate Limiting**: API rate limiting for DDoS protection
 
 ## Future Enhancements
 

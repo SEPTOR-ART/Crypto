@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
 const protect = async (req, res, next) => {
   let token;
@@ -17,6 +18,12 @@ const protect = async (req, res, next) => {
       console.log('Verifying token with JWT_SECRET');
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log('Token decoded successfully:', decoded);
+
+      // Validate that the decoded ID is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+        console.log('Invalid user ID in token:', decoded.id);
+        return res.status(401).json({ message: 'Not authorized, invalid token' });
+      }
 
       // Get user from token
       console.log('Finding user by ID:', decoded.id);

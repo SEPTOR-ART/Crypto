@@ -1,12 +1,16 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 
 // Generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  console.log('Generating token for user ID:', id);
+  const token = jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
+  console.log('Token generated successfully');
+  return token;
 };
 
 // Register user
@@ -17,12 +21,14 @@ const registerUser = async (req, res) => {
     
     // Validate input
     if (!email || !password) {
+      console.log('Registration failed: Email and password are required');
       return res.status(400).json({ message: 'Email and password are required' });
     }
     
     // Check password strength
     const strong = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
     if (!strong) {
+      console.log('Registration failed: Password does not meet requirements');
       return res.status(400).json({ message: 'Password must be 8+ chars with upper, lower, number' });
     }
 
@@ -31,6 +37,7 @@ const registerUser = async (req, res) => {
     const userExists = await User.findOne({ email });
     console.log('User exists result:', userExists ? 'Yes' : 'No');
     if (userExists) {
+      console.log('Registration failed: User already exists');
       return res.status(400).json({ message: 'User already exists' });
     }
 
@@ -56,6 +63,7 @@ const registerUser = async (req, res) => {
         token: token
       });
     } else {
+      console.log('Registration failed: Invalid user data');
       return res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
@@ -109,10 +117,19 @@ const authUser = async (req, res) => {
 // Get user profile
 const getUserProfile = async (req, res) => {
   try {
+    console.log('Get user profile request for user ID:', req.user._id);
+    
+    // Validate that the user ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
+      console.log('Invalid user ID:', req.user._id);
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+    
     // Find user in database
     const user = await User.findById(req.user._id);
 
     if (user) {
+      console.log('User profile found for:', user.email);
       return res.json({
         _id: user._id,
         firstName: user.firstName,
@@ -125,9 +142,11 @@ const getUserProfile = async (req, res) => {
         createdAt: user.createdAt
       });
     } else {
+      console.log('User not found for ID:', req.user._id);
       return res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
+    console.error('Get user profile error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -135,10 +154,20 @@ const getUserProfile = async (req, res) => {
 // Update user profile
 const updateUserProfile = async (req, res) => {
   try {
+    console.log('Update user profile request for user ID:', req.user._id);
+    
+    // Validate that the user ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
+      console.log('Invalid user ID:', req.user._id);
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+    
     // Find user in database
     const user = await User.findById(req.user._id);
 
     if (user) {
+      console.log('User found for update:', user.email);
+      
       // Update user data
       user.firstName = req.body.firstName || user.firstName;
       user.lastName = req.body.lastName || user.lastName;
@@ -146,6 +175,7 @@ const updateUserProfile = async (req, res) => {
       user.phone = req.body.phone || user.phone;
 
       const updatedUser = await user.save();
+      console.log('User profile updated for:', updatedUser.email);
 
       return res.json({
         _id: updatedUser._id,
@@ -158,9 +188,11 @@ const updateUserProfile = async (req, res) => {
         token: generateToken(updatedUser._id)
       });
     } else {
+      console.log('User not found for update:', req.user._id);
       return res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
+    console.error('Update user profile error:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -1,16 +1,12 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
 const http = require('http');
 const WebSocket = require('ws');
-const mongoose = require('mongoose');
-
-// Load environment variables
-dotenv.config();
+const connectDB = require('./config/db');
 
 // Create Express app
 const app = express();
@@ -20,6 +16,17 @@ const PORT = process.env.PORT || 5000;
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+console.log('Environment variables check:');
+console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
+console.log('- JWT_SECRET set:', !!process.env.JWT_SECRET);
+if (process.env.JWT_SECRET) {
+  console.log('- JWT_SECRET length:', process.env.JWT_SECRET.length);
+}
+console.log('- MONGODB_URI set:', !!process.env.MONGODB_URI);
+if (process.env.MONGODB_URI) {
+  console.log('- MONGODB_URI length:', process.env.MONGODB_URI.length);
+}
 
 if (missingEnvVars.length > 0) {
   console.error('Missing required environment variables:', missingEnvVars);
@@ -77,7 +84,37 @@ const startServer = () => {
     app.use(cors());
   }
 
-  app.use(express.json());
+  // Add JSON parsing middleware with better error handling
+  app.use((req, res, next) => {
+    if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+      express.json({
+        limit: '10mb',
+        verify: (req, res, buf, encoding) => {
+          try {
+            // Try to parse the buffer to validate JSON
+            JSON.parse(buf.toString());
+          } catch (e) {
+            console.error('Invalid JSON detected:', e.message);
+            // We'll let the regular middleware handle the error
+          }
+        }
+      })(req, res, next);
+    } else {
+      express.json({ limit: '10mb' })(req, res, next);
+    }
+  });
+
+  // Global error handler for JSON parsing errors
+  app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+      console.error('JSON parsing error:', err.message);
+      return res.status(400).json({ 
+        message: 'Invalid JSON format in request body',
+        error: 'Bad Request'
+      });
+    }
+    next();
+  });
 
   // Basic rate limiting for auth endpoints
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
@@ -217,40 +254,34 @@ const startServer = () => {
         XRP: (Math.random() * 2 + 0.2).toFixed(4)
       }
     }));
-    
-    // Send price updates every 5 seconds
-    const priceInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: 'PRICE_UPDATE',
-          data: {
-            BTC: (Math.random() * 100000 + 30000).toFixed(2),
-            ETH: (Math.random() * 5000 + 1500).toFixed(2),
-            LTC: (Math.random() * 500 + 50).toFixed(2),
-            XRP: (Math.random() * 2 + 0.2).toFixed(4)
-          }
-        }));
-      }
+
+    // Send periodic updates
+    const interval = setInterval(() => {
+      ws.send(JSON.stringify({
+        type: 'PRICE_UPDATE',
+        data: {
+          BTC: (Math.random() * 100000 + 30000).toFixed(2),
+          ETH: (Math.random() * 5000 + 1500).toFixed(2),
+          LTC: (Math.random() * 500 + 50).toFixed(2),
+          XRP: (Math.random() * 2 + 0.2).toFixed(4)
+        }
+      }));
     }, 5000);
-    
-    // Handle WebSocket close
+
     ws.on('close', () => {
       console.log('WebSocket connection closed');
-      clearInterval(priceInterval);
+      clearInterval(interval);
     });
-    
-    // Handle WebSocket errors
+
     ws.on('error', (error) => {
       console.error('WebSocket error:', error);
-      clearInterval(priceInterval);
+      clearInterval(interval);
     });
   });
 
   // Start server
   server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  }).on('error', (error) => {
-    console.error('Failed to start server:', error);
+    console.log(`Server running on port ${PORT}`);
   });
 
   // Handle graceful shutdown
@@ -258,23 +289,6 @@ const startServer = () => {
     console.log('SIGTERM received, shutting down gracefully');
     server.close(() => {
       console.log('Process terminated');
-      // Close database connection
-      mongoose.connection.close(() => {
-        console.log('MongoDB connection closed');
-        process.exit(0);
-      });
     });
-  });
-
-  // Handle uncaught exceptions
-  process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-    process.exit(1);
-  });
-
-  // Handle unhandled promise rejections
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
   });
 };

@@ -13,7 +13,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: MONGODB_URI
-        fromService:
+        fromDatabase:
           name: crypto-r29t-db
           property: connectionString
       - key: ALLOWED_ORIGINS
