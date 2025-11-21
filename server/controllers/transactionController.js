@@ -63,6 +63,28 @@ const createTransaction = async (req, res) => {
       transaction.status = 'completed';
       transaction.transactionHash = blockchainResult.transactionHash;
       await transaction.save();
+      
+      // Update user's balance based on transaction type
+      const user = await User.findById(req.user._id);
+      if (user) {
+        // Initialize balance map if it doesn't exist
+        if (!user.balance) {
+          user.balance = new Map();
+        }
+        
+        // Get current balance for this asset
+        const currentBalance = user.balance.get(asset) || 0;
+        
+        // Update balance based on transaction type
+        if (type === 'buy') {
+          user.balance.set(asset, currentBalance + amount);
+        } else if (type === 'sell') {
+          user.balance.set(asset, Math.max(0, currentBalance - amount));
+        }
+        
+        // Save updated user
+        await user.save();
+      }
     } else {
       // Mark transaction as failed
       transaction.status = 'failed';

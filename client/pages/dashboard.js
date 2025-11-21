@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [loadingTransactions, setLoadingTransactions] = useState(true);
   const [transactionsError, setTransactionsError] = useState('');
   const [accountInfo, setAccountInfo] = useState({});
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateProfile } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const router = useRouter();
 
@@ -26,41 +26,25 @@ export default function Dashboard() {
     }
   }, [user, authLoading, router]);
 
-  // Calculate holdings based on user transactions
-  const calculateHoldingsFromTransactions = (userTransactions, currentPrices) => {
-    // Initialize holdings map
-    const holdingsMap = {};
+  // Calculate holdings based on user's balance
+  const calculateHoldingsFromBalance = (userBalance, currentPrices) => {
+    // Convert balance map to array and calculate values
+    const holdingsArray = [];
     
-    // Process each transaction to calculate current holdings
-    userTransactions.forEach(transaction => {
-      const { asset, amount, type } = transaction;
-      
-      // Initialize asset in holdings map if not present
-      if (!holdingsMap[asset]) {
-        holdingsMap[asset] = {
-          symbol: asset,
-          name: getAssetName(asset),
-          amount: 0,
-          value: 0
-        };
-      }
-      
-      // Update amount based on transaction type
-      if (type === 'buy') {
-        holdingsMap[asset].amount += amount;
-      } else if (type === 'sell') {
-        holdingsMap[asset].amount -= amount;
-      }
-    });
-    
-    // Convert holdings map to array and calculate values
-    const holdingsArray = Object.values(holdingsMap)
-      .filter(holding => holding.amount > 0) // Only show assets with positive balance
-      .map(holding => {
-        const price = currentPrices[holding.symbol] || 0;
-        holding.value = (holding.amount * price).toFixed(2);
-        return holding;
+    // Iterate through user's balance entries
+    if (userBalance && typeof userBalance === 'object') {
+      Object.entries(userBalance).forEach(([asset, amount]) => {
+        if (amount > 0) {
+          const price = currentPrices[asset] || 0;
+          holdingsArray.push({
+            symbol: asset,
+            name: getAssetName(asset),
+            amount: amount,
+            value: (amount * price).toFixed(2)
+          });
+        }
       });
+    }
     
     return holdingsArray;
   };
@@ -104,8 +88,8 @@ export default function Dashboard() {
           createdAt: user.createdAt
         });
         
-        // Calculate holdings based on real user transactions
-        const calculatedHoldings = calculateHoldingsFromTransactions(userTransactions, cryptoPrices);
+        // Calculate holdings based on user's balance
+        const calculatedHoldings = calculateHoldingsFromBalance(user.balance || {}, cryptoPrices);
         setHoldings(calculatedHoldings);
         
         // Calculate total portfolio value

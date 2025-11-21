@@ -138,7 +138,7 @@ const getUserProfile = async (req, res) => {
         phone: user.phone,
         kycStatus: user.kycStatus,
         twoFactorEnabled: user.twoFactorEnabled,
-        balance: user.balance,
+        balance: user.balance, // Include user's balance
         createdAt: user.createdAt
       });
     } else {
@@ -185,6 +185,7 @@ const updateUserProfile = async (req, res) => {
         phone: updatedUser.phone,
         kycStatus: updatedUser.kycStatus,
         twoFactorEnabled: updatedUser.twoFactorEnabled,
+        balance: updatedUser.balance, // Include user's balance
         token: generateToken(updatedUser._id)
       });
     } else {
