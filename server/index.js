@@ -13,6 +13,7 @@ dotenv.config();
 
 // Create Express app
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy for rate limiting
 const PORT = process.env.PORT || 5000;
 
 // Connect to database
@@ -102,6 +103,14 @@ function csrfMiddleware(req, res, next) {
   const method = req.method.toUpperCase();
   const mutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
   if (!mutating) return next();
+  
+  // Skip CSRF check for user registration since it doesn't require auth
+  // Handle both mounted and direct paths
+  const isRegistration = (req.path === '/api/users' || req.path === '/api/users/' || req.originalUrl === '/api/users') && method === 'POST';
+  if (isRegistration) {
+    return next();
+  }
+  
   const hasAuth = !!req.headers.authorization;
   if (hasAuth) return next();
   const token = req.headers['x-csrf-token'];

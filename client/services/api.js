@@ -8,8 +8,33 @@ const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 // Helper function to make API requests
 const apiRequest = async (endpoint, options = {}) => {
   try {
-    const base = isPlaceholder ? '' : RAW_API;
-    const url = `${base}${endpoint}`;
+    // For relative paths in development or when no base URL is set, construct the full URL
+    let url;
+    if (typeof window !== 'undefined') {
+      // In browser environment
+      if (isPlaceholder || RAW_API === '') {
+        // If we're in development or no API URL is set, construct from current origin
+        if (endpoint.startsWith('/')) {
+          // For relative API endpoints, construct full URL
+          url = `${window.location.origin}${endpoint}`;
+        } else {
+          // For absolute endpoints, use as is
+          url = endpoint;
+        }
+      } else {
+        // Production environment with explicit API URL
+        url = `${RAW_API}${endpoint}`;
+      }
+    } else {
+      // Server-side environment (for SSR)
+      if (isPlaceholder || RAW_API === '') {
+        // Default to localhost in development
+        url = `http://localhost:5000${endpoint}`;
+      } else {
+        url = `${RAW_API}${endpoint}`;
+      }
+    }
+    
     console.log(`Making API request to: ${url}`);
     
     const response = await fetch(url, {
@@ -18,7 +43,7 @@ const apiRequest = async (endpoint, options = {}) => {
         ...options.headers,
       },
       ...options,
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(15000) // Increase timeout to 15 seconds
     });
 
     const contentType = response.headers.get('content-type') || '';
@@ -42,7 +67,7 @@ const apiRequest = async (endpoint, options = {}) => {
   } catch (error) {
     console.error('API request failed:', error);
     if (error.name === 'AbortError') {
-      throw new Error('Request timeout');
+      throw new Error('Request timeout - please check your network connection');
     }
     throw new Error(`Failed to fetch: ${error.message}`);
   }
@@ -105,8 +130,27 @@ export const cryptoService = {
 
   // Create WebSocket connection for real-time prices
   createPriceWebSocket: () => {
-    const originWS = (typeof window !== 'undefined') ? ((window.location.protocol === 'https:') ? 'wss' : 'ws') + '://' + window.location.host : '';
-    const target = isPlaceholderWS ? `${originWS}/ws` : RAW_WS;
+    let target;
+    if (typeof window !== 'undefined') {
+      // In browser environment
+      if (isPlaceholderWS || RAW_WS === '') {
+        // If we're in development or no WS URL is set, construct from current origin
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        target = `${protocol}//${window.location.host}/ws`;
+      } else {
+        // Production environment with explicit WS URL
+        target = RAW_WS;
+      }
+    } else {
+      // Server-side environment (for SSR)
+      if (isPlaceholderWS || RAW_WS === '') {
+        // Default to localhost in development
+        target = 'ws://localhost:5000/ws';
+      } else {
+        target = RAW_WS;
+      }
+    }
+    
     console.log(`Creating WebSocket connection to: ${target}`);
     const ws = new WebSocket(target);
     
