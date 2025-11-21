@@ -41,14 +41,15 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user in database
+    // Create user in database with explicit empty balance
     console.log('Creating user in database');
     const user = await User.create({
       firstName,
       lastName,
       email,
       password,
-      phone
+      phone,
+      balance: new Map() // Explicitly initialize with empty Map
     });
     console.log('User created:', user ? user.email : 'Failed');
 

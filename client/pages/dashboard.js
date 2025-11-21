@@ -31,19 +31,35 @@ export default function Dashboard() {
     // Convert balance map to array and calculate values
     const holdingsArray = [];
     
-    // Iterate through user's balance entries
+    // Handle cases where userBalance might be undefined, null, or not an object
     if (userBalance && typeof userBalance === 'object') {
-      Object.entries(userBalance).forEach(([asset, amount]) => {
-        if (amount > 0) {
-          const price = currentPrices[asset] || 0;
-          holdingsArray.push({
-            symbol: asset,
-            name: getAssetName(asset),
-            amount: amount,
-            value: (amount * price).toFixed(2)
-          });
-        }
-      });
+      // For Map-like objects, we need to handle them differently
+      if (userBalance instanceof Map || (typeof userBalance.forEach === 'function')) {
+        userBalance.forEach((amount, asset) => {
+          if (amount > 0) {
+            const price = currentPrices[asset] || 0;
+            holdingsArray.push({
+              symbol: asset,
+              name: getAssetName(asset),
+              amount: amount,
+              value: (amount * price).toFixed(2)
+            });
+          }
+        });
+      } else {
+        // For plain objects
+        Object.entries(userBalance).forEach(([asset, amount]) => {
+          if (amount > 0) {
+            const price = currentPrices[asset] || 0;
+            holdingsArray.push({
+              symbol: asset,
+              name: getAssetName(asset),
+              amount: amount,
+              value: (amount * price).toFixed(2)
+            });
+          }
+        });
+      }
     }
     
     return holdingsArray;

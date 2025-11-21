@@ -83,7 +83,8 @@ const createTransaction = async (req, res) => {
         }
         
         // Save updated user
-        await user.save();
+        const updatedUser = await user.save();
+        console.log('User balance updated:', updatedUser.balance);
       }
     } else {
       // Mark transaction as failed
@@ -98,6 +99,7 @@ const createTransaction = async (req, res) => {
     
     res.status(201).json(transaction);
   } catch (error) {
+    console.error('Transaction creation error:', error);
     res.status(500).json({ message: error.message });
   }
 };
