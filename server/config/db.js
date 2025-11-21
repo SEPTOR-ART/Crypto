@@ -23,6 +23,12 @@ const connectDB = async () => {
       console.log('MONGODB_URI value:', mongoUri.substring(0, Math.min(100, mongoUri.length)) + (mongoUri.length > 100 ? '...' : ''));
     }
     
+    // If no environment variable is set, use the provided MongoDB Atlas connection string as fallback in development
+    if (!mongoUri && process.env.NODE_ENV !== 'production') {
+      console.log('Using provided MongoDB Atlas connection string as fallback in development');
+      mongoUri = 'mongodb+srv://sirprist1:Proprist1@cluster0.19difby.mongodb.net/?appName=Cluster0';
+    }
+    
     if (process.env.NODE_ENV === 'production') {
       console.log('Running in production mode');
       // In production, try to find any available MongoDB connection string
@@ -67,10 +73,10 @@ const connectDB = async () => {
       }
     } else {
       console.log('Running in development mode');
-      // In development, use .env file if MONGODB_URI is not set
+      // In development, use the provided MongoDB Atlas connection string if MONGODB_URI is not set
       if (!mongoUri) {
-        mongoUri = 'mongodb://localhost:27017/cryptozen';
-        console.log('Using default development MongoDB URI');
+        mongoUri = 'mongodb+srv://sirprist1:Proprist1@cluster0.19difby.mongodb.net/?appName=Cluster0';
+        console.log('Using provided MongoDB Atlas connection string for development');
       }
     }
     
@@ -83,11 +89,14 @@ const connectDB = async () => {
     const maskedUri = mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@');
     console.log('Attempting to connect to MongoDB with URI:', maskedUri);
     
-    // Remove deprecated options
+    // Configure MongoDB connection options for better reliability
     const conn = await mongoose.connect(mongoUri, {
       // Add connection options for better reliability
       serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of default 30s
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      // For MongoDB Atlas connections
+      tls: true,
+      retryWrites: true
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
