@@ -7,18 +7,62 @@ import { useRouter } from 'next/router';
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
-  const { user, loading } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+      } else if (user.email !== 'admin@cryptozen.com') {
+        router.push('/dashboard');
+      } else {
+        // Load admin data
+        loadAdminData();
+      }
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
+
+  // Load admin data
+  const loadAdminData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // In a real implementation, these would be API calls
+      // For now, we'll use mock data
+      const mockUsers = [
+        { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', kyc: 'verified', balance: 12500, createdAt: '2025-01-15' },
+        { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'active', kyc: 'pending', balance: 8750, createdAt: '2025-02-20' },
+        { id: 3, name: 'Robert Johnson', email: 'robert@example.com', status: 'suspended', kyc: 'verified', balance: 32000, createdAt: '2025-03-10' },
+        { id: 4, name: 'Emily Davis', email: 'emily@example.com', status: 'active', kyc: 'not started', balance: 5400, createdAt: '2025-04-05' },
+        { id: 5, name: 'Michael Wilson', email: 'michael@example.com', status: 'inactive', kyc: 'verified', balance: 18900, createdAt: '2025-05-12' }
+      ];
+      
+      const mockTransactions = [
+        { id: 1, user: 'John Doe', type: 'buy', crypto: 'BTC', amount: 0.5, status: 'completed', date: '2025-11-15', price: 45000 },
+        { id: 2, user: 'Jane Smith', type: 'sell', crypto: 'ETH', amount: 2, status: 'pending', date: '2025-11-14', price: 3000 },
+        { id: 3, user: 'Robert Johnson', type: 'buy', crypto: 'LTC', amount: 10, status: 'completed', date: '2025-11-13', price: 150 },
+        { id: 4, user: 'Emily Davis', type: 'buy', crypto: 'XRP', amount: 500, status: 'failed', date: '2025-11-12', price: 1.2 }
+      ];
+      
+      setUsers(mockUsers);
+      setTransactions(mockTransactions);
+    } catch (err) {
+      setError('Failed to load admin data');
+      console.error('Admin data load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Show loading state
-  if (loading) {
+  if (authLoading || loading) {
     return <div className={styles.loading}>Loading...</div>;
   }
 
@@ -27,21 +71,10 @@ export default function AdminDashboard() {
     return null;
   }
 
-  // Mock data for demonstration
-  const users = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', kyc: 'verified', balance: 12500 },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'active', kyc: 'pending', balance: 8750 },
-    { id: 3, name: 'Robert Johnson', email: 'robert@example.com', status: 'suspended', kyc: 'verified', balance: 32000 },
-    { id: 4, name: 'Emily Davis', email: 'emily@example.com', status: 'active', kyc: 'not started', balance: 5400 },
-    { id: 5, name: 'Michael Wilson', email: 'michael@example.com', status: 'inactive', kyc: 'verified', balance: 18900 }
-  ];
-
-  const transactions = [
-    { id: 1, user: 'John Doe', type: 'buy', crypto: 'BTC', amount: 0.5, status: 'completed', date: '2025-11-15' },
-    { id: 2, user: 'Jane Smith', type: 'sell', crypto: 'ETH', amount: 2, status: 'pending', date: '2025-11-14' },
-    { id: 3, user: 'Robert Johnson', type: 'buy', crypto: 'LTC', amount: 10, status: 'completed', date: '2025-11-13' },
-    { id: 4, user: 'Emily Davis', type: 'buy', crypto: 'XRP', amount: 500, status: 'failed', date: '2025-11-12' }
-  ];
+  // Check if user is admin
+  if (user.email !== 'admin@cryptozen.com') {
+    return null;
+  }
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,6 +84,61 @@ export default function AdminDashboard() {
   const handleUserAction = (userId, action) => {
     console.log(`Performing ${action} on user ${userId}`);
     // In a real app, this would make an API call
+    switch (action) {
+      case 'view':
+        // View user details
+        alert(`Viewing details for user ${userId}`);
+        break;
+      case 'edit':
+        // Edit user details
+        alert(`Editing user ${userId}`);
+        break;
+      case 'suspend':
+        // Suspend user
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { ...user, status: user.status === 'suspended' ? 'active' : 'suspended' }
+            : user
+        ));
+        break;
+      case 'delete':
+        // Delete user
+        if (window.confirm('Are you sure you want to delete this user?')) {
+          setUsers(users.filter(user => user.id !== userId));
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleTransactionAction = (transactionId, action) => {
+    console.log(`Performing ${action} on transaction ${transactionId}`);
+    // In a real app, this would make an API call
+    switch (action) {
+      case 'view':
+        // View transaction details
+        alert(`Viewing details for transaction ${transactionId}`);
+        break;
+      case 'approve':
+        // Approve transaction
+        setTransactions(transactions.map(transaction => 
+          transaction.id === transactionId 
+            ? { ...transaction, status: 'completed' }
+            : transaction
+        ));
+        break;
+      case 'reject':
+        // Reject transaction
+        setTransactions(transactions.map(transaction => 
+          transaction.id === transactionId 
+            ? { ...transaction, status: 'failed' }
+            : transaction
+        ));
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -60,23 +148,25 @@ export default function AdminDashboard() {
         <p>Manage users, transactions, and platform settings</p>
       </div>
 
+      {error && <div className={styles.error}>{error}</div>}
+
       {/* Stats Overview */}
       <div className={styles.statsOverview}>
         <div className={styles.statCard}>
           <h3>Total Users</h3>
-          <p className={styles.statValue}>1,250</p>
+          <p className={styles.statValue}>{users.length}</p>
           <div className={styles.statChange}>+12% last 30 days</div>
         </div>
         
         <div className={styles.statCard}>
           <h3>Active Users</h3>
-          <p className={styles.statValue}>890</p>
+          <p className={styles.statValue}>{users.filter(u => u.status === 'active').length}</p>
           <div className={styles.statChange}>+8% last 30 days</div>
         </div>
         
         <div className={styles.statCard}>
           <h3>Transactions</h3>
-          <p className={styles.statValue}>4,520</p>
+          <p className={styles.statValue}>{transactions.length}</p>
           <div className={styles.statChange}>+15% last 30 days</div>
         </div>
         
@@ -113,6 +203,12 @@ export default function AdminDashboard() {
         >
           Reports
         </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'support' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('support')}
+        >
+          Support Chat
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -139,6 +235,7 @@ export default function AdminDashboard() {
                   <tr>
                     <th>User</th>
                     <th>Email</th>
+                    <th>Member Since</th>
                     <th>Status</th>
                     <th>KYC Status</th>
                     <th>Balance</th>
@@ -155,6 +252,7 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                       <td>{user.email}</td>
+                      <td>{user.createdAt}</td>
                       <td>
                         <span className={`${styles.statusBadge} ${styles[user.status]}`}>
                           {user.status}
@@ -181,10 +279,16 @@ export default function AdminDashboard() {
                             Edit
                           </button>
                           <button 
-                            className={styles.suspendButton}
+                            className={user.status === 'suspended' ? styles.activateButton : styles.suspendButton}
                             onClick={() => handleUserAction(user.id, 'suspend')}
                           >
-                            Suspend
+                            {user.status === 'suspended' ? 'Activate' : 'Suspend'}
+                          </button>
+                          <button 
+                            className={styles.deleteButton}
+                            onClick={() => handleUserAction(user.id, 'delete')}
+                          >
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -224,6 +328,8 @@ export default function AdminDashboard() {
                     <th>Type</th>
                     <th>Asset</th>
                     <th>Amount</th>
+                    <th>Price</th>
+                    <th>Total</th>
                     <th>Status</th>
                     <th>Date</th>
                     <th>Actions</th>
@@ -241,6 +347,8 @@ export default function AdminDashboard() {
                       </td>
                       <td>{transaction.crypto}</td>
                       <td>{transaction.amount} {transaction.crypto}</td>
+                      <td>${transaction.price}</td>
+                      <td>${(transaction.amount * transaction.price).toFixed(2)}</td>
                       <td>
                         <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
                           {transaction.status}
@@ -249,8 +357,28 @@ export default function AdminDashboard() {
                       <td>{transaction.date}</td>
                       <td>
                         <div className={styles.actionButtons}>
-                          <button className={styles.viewButton}>View</button>
-                          <button className={styles.approveButton}>Approve</button>
+                          <button 
+                            className={styles.viewButton}
+                            onClick={() => handleTransactionAction(transaction.id, 'view')}
+                          >
+                            View
+                          </button>
+                          {transaction.status === 'pending' && (
+                            <>
+                              <button 
+                                className={styles.approveButton}
+                                onClick={() => handleTransactionAction(transaction.id, 'approve')}
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                className={styles.rejectButton}
+                                onClick={() => handleTransactionAction(transaction.id, 'reject')}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -315,6 +443,33 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+            
+            <div className={styles.settingsSection}>
+              <h3>User Management</h3>
+              <div className={styles.settingGroup}>
+                <div className={styles.settingItem}>
+                  <div>
+                    <h4>Email Verification</h4>
+                    <p>Require email verification for new accounts</p>
+                  </div>
+                  <label className={styles.switch}>
+                    <input type="checkbox" defaultChecked />
+                    <span className={styles.slider}></span>
+                  </label>
+                </div>
+                
+                <div className={styles.settingItem}>
+                  <div>
+                    <h4>Account Lockout</h4>
+                    <p>Lock accounts after 5 failed login attempts</p>
+                  </div>
+                  <label className={styles.switch}>
+                    <input type="checkbox" defaultChecked />
+                    <span className={styles.slider}></span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -345,6 +500,60 @@ export default function AdminDashboard() {
                 <h3>System Performance</h3>
                 <p>Monitor platform uptime and performance metrics</p>
                 <button className={styles.generateButton}>Generate Report</button>
+              </div>
+            </div>
+            
+            <div className={styles.reportFilters}>
+              <h3>Custom Report</h3>
+              <div className={styles.filterRow}>
+                <div className={styles.filterGroup}>
+                  <label>Date Range</label>
+                  <input type="date" className={styles.dateInput} />
+                  <span>to</span>
+                  <input type="date" className={styles.dateInput} />
+                </div>
+                <div className={styles.filterGroup}>
+                  <label>Report Type</label>
+                  <select className={styles.filterSelect}>
+                    <option>User Activity</option>
+                    <option>Financial</option>
+                    <option>Compliance</option>
+                    <option>Performance</option>
+                  </select>
+                </div>
+                <button className={styles.generateButton}>Generate</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'support' && (
+          <div className={styles.supportContent}>
+            <h2>Support Chat</h2>
+            <div className={styles.chatContainer}>
+              <div className={styles.chatMessages}>
+                <div className={`${styles.message}`}>
+                  <div className={styles.messageHeader}>
+                    <span className={styles.userName}>John Doe</span>
+                    <span className={styles.timestamp}>2025-11-20 14:30</span>
+                  </div>
+                  <div className={styles.messageContent}>
+                    I'm having trouble with my withdrawal. It's been pending for over 24 hours.
+                  </div>
+                </div>
+                <div className={`${styles.message} ${styles.admin}`}>
+                  <div className={styles.messageHeader}>
+                    <span className={styles.userName}>Admin</span>
+                    <span className={styles.timestamp}>2025-11-20 14:32</span>
+                  </div>
+                  <div className={styles.messageContent}>
+                    Hello John, I can see your withdrawal request. Let me check the status for you.
+                  </div>
+                </div>
+              </div>
+              <div className={styles.chatInput}>
+                <input type="text" placeholder="Type your message..." className={styles.messageInput} />
+                <button className={styles.sendButton}>Send</button>
               </div>
             </div>
           </div>

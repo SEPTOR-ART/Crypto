@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
   const [transactionsError, setTransactionsError] = useState('');
+  const [accountInfo, setAccountInfo] = useState({});
   const { user, loading: authLoading } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const router = useRouter();
@@ -25,9 +26,9 @@ export default function Dashboard() {
     }
   }, [user, authLoading, router]);
 
-  // Fetch user transactions
+  // Fetch user transactions and account info
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const fetchData = async () => {
       if (!user) return;
       
       try {
@@ -39,32 +40,44 @@ export default function Dashboard() {
           throw new Error('Authentication required');
         }
         
+        // Fetch user transactions
         const userTransactions = await transactionService.getUserTransactions(token);
         setTransactions(userTransactions);
+        
+        // Set account info from user data
+        setAccountInfo({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          kycStatus: user.kycStatus,
+          twoFactorEnabled: user.twoFactorEnabled,
+          createdAt: user.createdAt
+        });
+        
+        // Calculate portfolio value based on real user data
+        // For now, we'll simulate this with mock data
+        // In a real implementation, this would come from the user's actual holdings
+        const mockHoldings = [
+          { id: 1, name: 'Bitcoin', symbol: 'BTC', amount: 0.5, value: (0.5 * (cryptoPrices.BTC || 45000)).toFixed(2) },
+          { id: 2, name: 'Ethereum', symbol: 'ETH', amount: 5, value: (5 * (cryptoPrices.ETH || 3000)).toFixed(2) },
+          { id: 3, name: 'Litecoin', symbol: 'LTC', amount: 20, value: (20 * (cryptoPrices.LTC || 150)).toFixed(2) },
+          { id: 4, name: 'Ripple', symbol: 'XRP', amount: 1000, value: (1000 * (cryptoPrices.XRP || 1.2)).toFixed(2) }
+        ];
+        setHoldings(mockHoldings);
+        
+        // Calculate total portfolio value
+        const totalValue = mockHoldings.reduce((sum, holding) => sum + parseFloat(holding.value), 0);
+        setPortfolioValue(totalValue.toFixed(2));
       } catch (err) {
-        console.error('Failed to fetch transactions:', err);
-        setTransactionsError(err.message || 'Failed to load transactions');
+        console.error('Failed to fetch data:', err);
+        setTransactionsError(err.message || 'Failed to load data');
       } finally {
         setLoadingTransactions(false);
       }
     };
     
-    fetchTransactions();
-  }, [user]);
-
-  // Mock data for demonstration (must be declared before any early returns)
-  useEffect(() => {
-    // Simulate portfolio value
-    setPortfolioValue((Math.random() * 100000 + 50000).toFixed(2));
-    
-    // Simulate holdings
-    setHoldings([
-      { id: 1, name: 'Bitcoin', symbol: 'BTC', amount: 0.5, value: (0.5 * 45000).toFixed(2) },
-      { id: 2, name: 'Ethereum', symbol: 'ETH', amount: 5, value: (5 * 3000).toFixed(2) },
-      { id: 3, name: 'Litecoin', symbol: 'LTC', amount: 20, value: (20 * 150).toFixed(2) },
-      { id: 4, name: 'Ripple', symbol: 'XRP', amount: 1000, value: (1000 * 1.2).toFixed(2) }
-    ]);
-  }, []);
+    fetchData();
+  }, [user, cryptoPrices]);
 
   // Show loading state
   if (authLoading || pricesLoading) {
@@ -88,9 +101,14 @@ export default function Dashboard() {
           <Link href="/trade" className={styles.navLink}>Trade</Link>
           <Link href="/wallet" className={styles.navLink}>Wallet</Link>
           <Link href="/settings" className={styles.navLink}>Settings</Link>
+          {user.email === 'admin@cryptozen.com' && (
+            <Link href="/admin" className={styles.navLink}>Admin</Link>
+          )}
         </nav>
         <div className={styles.userMenu}>
-          <button className={styles.userButton}>User</button>
+          <button className={styles.userButton}>
+            {user.firstName ? `${user.firstName.charAt(0)}${user.lastName ? user.lastName.charAt(0) : ''}` : 'User'}
+          </button>
         </div>
       </header>
 
@@ -113,11 +131,44 @@ export default function Dashboard() {
             </div>
             <div className={styles.statCard}>
               <h3>Assets</h3>
-              <p>4 Cryptocurrencies</p>
+              <p>{holdings.length} Cryptocurrencies</p>
             </div>
             <div className={styles.statCard}>
               <h3>P&L</h3>
               <p className={styles.positiveChange}>+$5,420.75</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Account Information */}
+        <section className={styles.accountInfo}>
+          <h2>Account Information</h2>
+          <div className={styles.accountDetails}>
+            <div className={styles.detailRow}>
+              <span className={styles.label}>Name:</span>
+              <span className={styles.value}>{accountInfo.firstName} {accountInfo.lastName}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.label}>Email:</span>
+              <span className={styles.value}>{accountInfo.email}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.label}>Member Since:</span>
+              <span className={styles.value}>
+                {accountInfo.createdAt ? new Date(accountInfo.createdAt).toLocaleDateString() : 'N/A'}
+              </span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.label}>KYC Status:</span>
+              <span className={`${styles.value} ${styles.kycStatus} ${styles[accountInfo.kycStatus || 'notstarted']}`}>
+                {accountInfo.kycStatus || 'Not Started'}
+              </span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.label}>2FA:</span>
+              <span className={styles.value}>
+                {accountInfo.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+              </span>
             </div>
           </div>
         </section>
@@ -174,6 +225,7 @@ export default function Dashboard() {
                   <tr>
                     <th>Asset</th>
                     <th>Holdings</th>
+                    <th>Price</th>
                     <th>Value</th>
                     <th>Allocation</th>
                   </tr>
@@ -188,12 +240,13 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td>{holding.amount} {holding.symbol}</td>
+                      <td>${cryptoPrices[holding.symbol] || 'N/A'}</td>
                       <td>${holding.value}</td>
                       <td>
                         <div className={styles.allocationBar}>
                           <div 
                             className={styles.allocationFill} 
-                            style={{ width: `${Math.random() * 100}%` }}
+                            style={{ width: `${(parseFloat(holding.value) / parseFloat(portfolioValue)) * 100 || 0}%` }}
                           ></div>
                         </div>
                       </td>
@@ -209,7 +262,7 @@ export default function Dashboard() {
               {transactionsError && <div className={styles.error}>{transactionsError}</div>}
               {loadingTransactions ? (
                 <div className={styles.loading}>Loading transactions...</div>
-              ) : (
+              ) : transactions.length > 0 ? (
                 <table className={styles.transactionsTable}>
                   <thead>
                     <tr>
@@ -244,6 +297,11 @@ export default function Dashboard() {
                     ))}
                   </tbody>
                 </table>
+              ) : (
+                <div className={styles.noTransactions}>
+                  <p>No transactions found</p>
+                  <button className={styles.actionButton}>Buy Crypto</button>
+                </div>
               )}
             </div>
           )}

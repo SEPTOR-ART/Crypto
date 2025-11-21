@@ -9,6 +9,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuth();
   const [emailError, setEmailError] = useState('');
@@ -17,6 +18,7 @@ export default function Login() {
   useEffect(() => {
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) setEmailError('Enter a valid email'); else setEmailError('');
   }, [email]);
+  
   useEffect(() => {
     const ok = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
     if (password && !ok) setPasswordError('Min 8 chars, include upper, lower, number'); else setPasswordError('');
@@ -24,13 +26,32 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (emailError || passwordError) {
+      setError('Please fix the errors before submitting');
+      return;
+    }
+    
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     
     try {
       await login({ email, password });
     } catch (err) {
-      setError(err.message || 'Failed to login');
+      // Handle specific error messages
+      if (err.message.includes('Invalid email or password')) {
+        setError('Invalid email or password. Please try again.');
+      } else if (err.message.includes('Network Error')) {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError(err.message || 'Failed to login. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -65,17 +86,27 @@ export default function Login() {
           
           <div className={styles.inputGroup}>
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="Enter your password"
-              aria-invalid={!!passwordError}
-              aria-describedby="password-help"
-              autoComplete="current-password"
-            />
+            <div className={styles.passwordContainer}>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+                aria-invalid={!!passwordError}
+                aria-describedby="password-help"
+                autoComplete="current-password"
+              />
+              <button 
+                type="button" 
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
             <div id="password-help" className={styles.inputHelp}>{passwordError || 'Use a strong password for security'}</div>
           </div>
           
@@ -98,7 +129,7 @@ export default function Login() {
           <button 
             type="submit" 
             className={styles.loginButton}
-            disabled={loading}
+            disabled={loading || !!emailError || !!passwordError}
           >
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
