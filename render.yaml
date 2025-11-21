@@ -35,7 +35,7 @@ services:
       - key: NEXT_PUBLIC_API_BASE_URL
         value: "https://crypto-r29t.onrender.com"
       - key: NEXT_PUBLIC_WS_BASE_URL
-        value: "wss://crypto-r29t.onrender.com"
+        value: "wss://crypto-r29t.onrender.com/ws"
 
 databases:
   - name: crypto-r29t-db

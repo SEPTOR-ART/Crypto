@@ -141,11 +141,22 @@ export const cryptoService = {
         // Production environment with explicit WS URL
         // Ensure the WebSocket URL is correctly formatted
         if (RAW_WS.startsWith('wss://') || RAW_WS.startsWith('ws://')) {
-          target = RAW_WS;
+          // If it already has the protocol, use it as is but ensure /ws path
+          if (RAW_WS.endsWith('/ws')) {
+            target = RAW_WS;
+          } else if (RAW_WS.endsWith('/')) {
+            target = `${RAW_WS}ws`;
+          } else {
+            target = `${RAW_WS}/ws`;
+          }
         } else {
           // If no protocol is specified, default to wss for https and ws for http
           const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-          target = `${protocol}${RAW_WS}`;
+          if (RAW_WS.startsWith('/')) {
+            target = `${protocol}${RAW_WS.replace('//', '').replace('/ws', '')}/ws`;
+          } else {
+            target = `${protocol}${RAW_WS}/ws`;
+          }
         }
       }
     } else {
