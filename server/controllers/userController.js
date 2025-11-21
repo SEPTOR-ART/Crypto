@@ -70,6 +70,8 @@ const registerUser = async (req, res) => {
       // Hash password before storing in mock storage
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
+      
+      console.log('Hashed password for new user:', email, hashedPassword);
 
       // Create user in mock storage
       const user = {
@@ -85,6 +87,8 @@ const registerUser = async (req, res) => {
       };
 
       mockUsers.push(user);
+      
+      console.log('Added user to mock storage:', user);
 
       return res.status(201).json({
         _id: user._id,
@@ -95,6 +99,7 @@ const registerUser = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -136,11 +141,15 @@ const authUser = async (req, res) => {
         // Check if password is hashed (bcrypt hash starts with $2b$ or $2a$)
         if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
           // Password is hashed, use bcrypt comparison
+          console.log('Comparing hashed password for user:', email);
           passwordMatch = await bcrypt.compare(password, user.password);
         } else {
           // Password is plain text, use direct comparison
+          console.log('Comparing plain text password for user:', email);
           passwordMatch = user.password === password;
         }
+        
+        console.log('Password match result:', passwordMatch);
         
         if (passwordMatch) {
           res.json({
@@ -156,10 +165,12 @@ const authUser = async (req, res) => {
           res.status(401).json({ message: 'Invalid email or password' });
         }
       } else {
+        console.log('User not found in mock storage:', email);
         res.status(401).json({ message: 'Invalid email or password' });
       }
     }
   } catch (error) {
+    console.error('Authentication error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -283,9 +294,29 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// For debugging purposes - get all mock users (only in development)
+const getMockUsers = async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  
+  // Return mock users without sensitive information
+  const safeUsers = mockUsers.map(user => ({
+    _id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    kycStatus: user.kycStatus,
+    twoFactorEnabled: user.twoFactorEnabled
+  }));
+  
+  res.json(safeUsers);
+};
+
 module.exports = {
   registerUser,
   authUser,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  getMockUsers  // Export for debugging
 };

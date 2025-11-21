@@ -4,12 +4,14 @@ const {
   registerUser,
   authUser,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  getMockUsers
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/').post(registerUser);
 router.route('/login').post(authUser);
+router.route('/mock-users').get(getMockUsers); // Debug endpoint for mock users
 router
   .route('/profile')
   .get(protect, getUserProfile)
