@@ -26,18 +26,37 @@ const connectDB = async () => {
         if (process.env.DATABASE_URL) {
           mongoUri = process.env.DATABASE_URL;
           console.log('Using DATABASE_URL as fallback for MongoDB connection');
+          console.log('DATABASE_URL value:', process.env.DATABASE_URL.substring(0, Math.min(100, process.env.DATABASE_URL.length)) + (process.env.DATABASE_URL.length > 100 ? '...' : ''));
         } else {
-          console.log('DATABASE_URL also not set, will attempt to use default MongoDB connection');
-          // Fallback to a default MongoDB connection string
-          // This is just for testing - in production you should set the proper connection string
-          mongoUri = 'mongodb://localhost:27017/cryptozen';
+          console.log('DATABASE_URL also not set');
+          // Check for other common environment variables
+          const possibleEnvVars = ['MONGO_URL', 'MONGODB_CONNECTION_STRING'];
+          for (const varName of possibleEnvVars) {
+            if (process.env[varName]) {
+              mongoUri = process.env[varName];
+              console.log(`Using ${varName} as fallback for MongoDB connection`);
+              console.log(`${varName} value:`, process.env[varName].substring(0, Math.min(100, process.env[varName].length)) + (process.env[varName].length > 100 ? '...' : ''));
+              break;
+            }
+          }
+          
+          if (!mongoUri) {
+            console.log('No MongoDB connection string found in environment variables');
+            console.log('IMPORTANT: You need to set MONGODB_URI in your Render environment variables');
+            console.log('This should be set automatically by Render when using databases, but it is not working');
+            console.log('As a workaround, you can manually set MONGODB_URI in the Render dashboard');
+            // Fallback to a default MongoDB connection string
+            // This is just for testing - in production you should set the proper connection string
+            mongoUri = 'mongodb://localhost:27017/cryptozen';
+          }
         }
       }
       
       if (mongoUri.includes('localhost')) {
         console.log('Warning: Using localhost MongoDB in production. This will only work if MongoDB is running locally.');
+        console.log('For Render deployments, you should use a MongoDB Atlas cluster or Render database service');
       } else {
-        console.log('Using Render-provided MONGODB_URI');
+        console.log('Using Render-provided or manually configured MONGODB_URI');
       }
     } else {
       console.log('Running in development mode');
@@ -76,6 +95,11 @@ const connectDB = async () => {
     // In production, we want to exit if database connection fails
     if (process.env.NODE_ENV === 'production') {
       console.error('Production environment: Exiting due to database connection failure');
+      console.error('To fix this issue:');
+      console.error('1. Make sure your Render database service is created and running');
+      console.error('2. Check that the database name in render.yaml matches your service name');
+      console.error('3. Manually set MONGODB_URI in the Render dashboard if automatic linking is not working');
+      console.error('4. Consider using MongoDB Atlas for more reliable database connections');
       process.exit(1);
     } else {
       // In development, we'll throw the error to be handled by the caller
