@@ -21,6 +21,12 @@ if (missingEnvVars.length > 0) {
   process.exit(1);
 }
 
+// Log JWT secret status (without revealing the actual secret)
+console.log('JWT_SECRET is set:', !!process.env.JWT_SECRET);
+if (process.env.JWT_SECRET) {
+  console.log('JWT_SECRET length:', process.env.JWT_SECRET.length);
+}
+
 // Create Express app
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for rate limiting

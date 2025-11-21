@@ -16,6 +16,7 @@ const generateToken = (id) => {
 // Register user
 const registerUser = async (req, res) => {
   try {
+    console.log('Registration request received:', req.body);
     const { firstName, lastName, email, password, phone } = req.body;
     
     // Validate input
@@ -31,9 +32,11 @@ const registerUser = async (req, res) => {
 
     // Try to use database first
     try {
+      console.log('Attempting to register user in database');
       // Check if user already exists
       const userExists = await User.findOne({ email });
       if (userExists) {
+        console.log('User already exists in database:', email);
         return res.status(400).json({ message: 'User already exists' });
       }
 
@@ -47,6 +50,7 @@ const registerUser = async (req, res) => {
       });
 
       if (user) {
+        console.log('User created in database:', user.email);
         return res.status(201).json({
           _id: user._id,
           firstName: user.firstName,
@@ -59,11 +63,12 @@ const registerUser = async (req, res) => {
       }
     } catch (dbError) {
       // Fallback to mock implementation if database is not available
-      console.log('Database not available, using mock storage');
+      console.log('Database not available, using mock storage:', dbError.message);
       
       // Check if user exists in mock storage
       const userExists = mockUsers.find(user => user.email === email);
       if (userExists) {
+        console.log('User already exists in mock storage:', email);
         return res.status(400).json({ message: 'User already exists' });
       }
 
@@ -107,14 +112,18 @@ const registerUser = async (req, res) => {
 // Authenticate user
 const authUser = async (req, res) => {
   try {
+    console.log('Authentication request received:', req.body);
     const { email, password } = req.body;
 
     // Try to use database first
     try {
+      console.log('Attempting to authenticate user in database');
       // Find user in database
       const user = await User.findOne({ email });
+      console.log('User found in database:', user ? user.email : 'none');
 
       if (user && (await user.comparePassword(password))) {
+        console.log('Database authentication successful for user:', email);
         return res.json({
           _id: user._id,
           firstName: user.firstName,
@@ -125,14 +134,16 @@ const authUser = async (req, res) => {
           token: generateToken(user._id)
         });
       } else {
+        console.log('Database authentication failed for user:', email);
         return res.status(401).json({ message: 'Invalid email or password' });
       }
     } catch (dbError) {
       // Fallback to mock implementation if database is not available
-      console.log('Database not available, using mock storage');
+      console.log('Database not available, using mock storage for authentication:', dbError.message);
       
       // Find user in mock storage
       const user = mockUsers.find(user => user.email === email);
+      console.log('User found in mock storage:', user ? user.email : 'none');
 
       if (user) {
         // Handle both plain text and hashed passwords for backward compatibility
@@ -152,6 +163,7 @@ const authUser = async (req, res) => {
         console.log('Password match result:', passwordMatch);
         
         if (passwordMatch) {
+          console.log('Mock storage authentication successful for user:', email);
           res.json({
             _id: user._id,
             firstName: user.firstName,
@@ -162,6 +174,7 @@ const authUser = async (req, res) => {
             token: generateToken(user._id)
           });
         } else {
+          console.log('Mock storage authentication failed for user:', email);
           res.status(401).json({ message: 'Invalid email or password' });
         }
       } else {
