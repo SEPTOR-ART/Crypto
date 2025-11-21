@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/Trade.module.css';
 import ChatSupport from '../components/ChatSupport';
+import Chart from '../components/Chart';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
@@ -170,9 +171,12 @@ export default function Trade() {
 
         {/* Chart Area */}
         <div className={styles.chartArea}>
-          <div className={styles.chartPlaceholder}>
-            <p>Price Chart Visualization</p>
-          </div>
+          <Chart 
+            prices={cryptoPrices} 
+            selectedCrypto={selectedCrypto} 
+            loading={pricesLoading} 
+            error={null} 
+          />
         </div>
 
         {/* Order Book */}
