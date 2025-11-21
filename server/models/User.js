@@ -86,4 +86,19 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// Ensure balance is properly serialized to JSON
+userSchema.set('toJSON', {
+  transform: function(doc, ret, options) {
+    // Convert Map to plain object for JSON serialization
+    if (ret.balance instanceof Map) {
+      const balanceObj = {};
+      ret.balance.forEach((value, key) => {
+        balanceObj[key] = value;
+      });
+      ret.balance = balanceObj;
+    }
+    return ret;
+  }
+});
+
 module.exports = mongoose.model('User', userSchema);
