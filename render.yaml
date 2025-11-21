@@ -13,7 +13,9 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: MONGODB_URI
-        sync: false
+        fromService:
+          name: crypto-r29t-db
+          property: connectionString
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: CSRF_SECRET
@@ -34,3 +36,8 @@ services:
         value: "https://crypto-r29t.onrender.com"
       - key: NEXT_PUBLIC_WS_BASE_URL
         value: "wss://crypto-r29t.onrender.com"
+
+databases:
+  - name: crypto-r29t-db
+    plan: free
+    ipAllowList: []

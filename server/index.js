@@ -35,63 +35,96 @@ const PORT = process.env.PORT || 5000;
 // Connect to database
 connectDB().then(() => {
   console.log('Database connection established');
+  // Start server only after successful database connection
+  startServer();
 }).catch(err => {
   console.error('Failed to connect to database:', err);
+  process.exit(1);
 });
 
-// Create HTTP server
-const server = http.createServer(app);
+// Function to start the server
+const startServer = () => {
+  // Create HTTP server
+  const server = http.createServer(app);
 
-// Handle server errors
-server.on('error', (error) => {
-  console.error('Server error:', error);
-});
-
-// Create WebSocket server
-const wss = new WebSocket.Server({ server });
-
-// Handle WebSocket connections
-wss.on('connection', (ws, request) => {
-  console.log('New WebSocket connection');
-  
-  // Send initial price data
-  ws.send(JSON.stringify({
-    type: 'INITIAL_PRICES',
-    data: {
-      BTC: (Math.random() * 100000 + 30000).toFixed(2),
-      ETH: (Math.random() * 5000 + 1500).toFixed(2),
-      LTC: (Math.random() * 500 + 50).toFixed(2),
-      XRP: (Math.random() * 2 + 0.2).toFixed(4)
-    }
-  }));
-  
-  // Send price updates every 5 seconds
-  const priceInterval = setInterval(() => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'PRICE_UPDATE',
-        data: {
-          BTC: (Math.random() * 100000 + 30000).toFixed(2),
-          ETH: (Math.random() * 5000 + 1500).toFixed(2),
-          LTC: (Math.random() * 500 + 50).toFixed(2),
-          XRP: (Math.random() * 2 + 0.2).toFixed(4)
-        }
-      }));
-    }
-  }, 5000);
-  
-  // Handle WebSocket close
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
-    clearInterval(priceInterval);
+  // Handle server errors
+  server.on('error', (error) => {
+    console.error('Server error:', error);
   });
-  
-  // Handle WebSocket errors
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-    clearInterval(priceInterval);
+
+  // Create WebSocket server
+  const wss = new WebSocket.Server({ server });
+
+  // Handle WebSocket connections
+  wss.on('connection', (ws, request) => {
+    console.log('New WebSocket connection');
+    
+    // Send initial price data
+    ws.send(JSON.stringify({
+      type: 'INITIAL_PRICES',
+      data: {
+        BTC: (Math.random() * 100000 + 30000).toFixed(2),
+        ETH: (Math.random() * 5000 + 1500).toFixed(2),
+        LTC: (Math.random() * 500 + 50).toFixed(2),
+        XRP: (Math.random() * 2 + 0.2).toFixed(4)
+      }
+    }));
+    
+    // Send price updates every 5 seconds
+    const priceInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'PRICE_UPDATE',
+          data: {
+            BTC: (Math.random() * 100000 + 30000).toFixed(2),
+            ETH: (Math.random() * 5000 + 1500).toFixed(2),
+            LTC: (Math.random() * 500 + 50).toFixed(2),
+            XRP: (Math.random() * 2 + 0.2).toFixed(4)
+          }
+        }));
+      }
+    }, 5000);
+    
+    // Handle WebSocket close
+    ws.on('close', () => {
+      console.log('WebSocket connection closed');
+      clearInterval(priceInterval);
+    });
+    
+    // Handle WebSocket errors
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      clearInterval(priceInterval);
+    });
   });
-});
+
+  // Start server
+  server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  }).on('error', (error) => {
+    console.error('Failed to start server:', error);
+  });
+
+  // Handle graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('Process terminated');
+    });
+  });
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
+  });
+
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+  });
+};
 
 // Middleware
 app.use(helmet());
@@ -227,30 +260,3 @@ const mfaRoutes = require('./routes/mfaRoutes');
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/mfa', mfaRoutes);
-
-// Start server
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-}).on('error', (error) => {
-  console.error('Failed to start server:', error);
-});
-
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
-  });
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
