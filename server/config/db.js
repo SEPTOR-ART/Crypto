@@ -6,57 +6,64 @@ const connectDB = async () => {
     console.log('Environment:', process.env.NODE_ENV || 'Not set');
     console.log('Process environment keys:', Object.keys(process.env).filter(key => key.includes('MONGO') || key.includes('DB')).join(', '));
     
-    // In production, prioritize the environment variable set by Render
-    // In development, fall back to .env file
-    let mongoUri = process.env.MONGODB_URI;
+    // Check for various environment variables that might contain the MongoDB connection string
+    let mongoUri = process.env.MONGODB_URI || 
+                   process.env.DATABASE_URL || 
+                   process.env.MONGO_URL || 
+                   process.env.MONGODB_CONNECTION_STRING;
     
     console.log('Raw MONGODB_URI from environment:', mongoUri ? 'Set' : 'Not set');
     if (mongoUri) {
       console.log('MONGODB_URI length:', mongoUri.length);
       console.log('MONGODB_URI contains localhost:', mongoUri.includes('localhost'));
+      console.log('MONGODB_URI source:', process.env.MONGODB_URI ? 'MONGODB_URI' : 
+                                         process.env.DATABASE_URL ? 'DATABASE_URL' : 
+                                         process.env.MONGO_URL ? 'MONGO_URL' : 
+                                         process.env.MONGODB_CONNECTION_STRING ? 'MONGODB_CONNECTION_STRING' : 'Unknown');
       console.log('MONGODB_URI value:', mongoUri.substring(0, Math.min(100, mongoUri.length)) + (mongoUri.length > 100 ? '...' : ''));
     }
     
     if (process.env.NODE_ENV === 'production') {
       console.log('Running in production mode');
-      // In production, we must have a valid MONGODB_URI from Render
+      // In production, try to find any available MongoDB connection string
       if (!mongoUri) {
-        console.log('MONGODB_URI not set by Render, checking for DATABASE_URL as fallback...');
-        // Some Render environments use DATABASE_URL instead
-        if (process.env.DATABASE_URL) {
-          mongoUri = process.env.DATABASE_URL;
-          console.log('Using DATABASE_URL as fallback for MongoDB connection');
-          console.log('DATABASE_URL value:', process.env.DATABASE_URL.substring(0, Math.min(100, process.env.DATABASE_URL.length)) + (process.env.DATABASE_URL.length > 100 ? '...' : ''));
-        } else {
-          console.log('DATABASE_URL also not set');
-          // Check for other common environment variables
-          const possibleEnvVars = ['MONGO_URL', 'MONGODB_CONNECTION_STRING'];
-          for (const varName of possibleEnvVars) {
-            if (process.env[varName]) {
-              mongoUri = process.env[varName];
-              console.log(`Using ${varName} as fallback for MongoDB connection`);
-              console.log(`${varName} value:`, process.env[varName].substring(0, Math.min(100, process.env[varName].length)) + (process.env[varName].length > 100 ? '...' : ''));
-              break;
-            }
+        console.log('No MongoDB connection string found in standard environment variables');
+        console.log('Checking for Render-specific environment variables...');
+        
+        // Check for Render-specific environment variables
+        // Render sometimes exposes database connection info through other variables
+        const renderEnvVars = Object.keys(process.env).filter(key => 
+          key.includes('MONGO') || key.includes('DATABASE') || key.includes('DB')
+        );
+        
+        console.log('Found potential Render environment variables:', renderEnvVars);
+        
+        // Look for any variable that looks like a MongoDB connection string
+        for (const key of renderEnvVars) {
+          const value = process.env[key];
+          if (value && (value.startsWith('mongodb://') || value.startsWith('mongodb+srv://'))) {
+            mongoUri = value;
+            console.log(`Found MongoDB connection string in ${key}:`, value.substring(0, Math.min(100, value.length)) + (value.length > 100 ? '...' : ''));
+            break;
           }
-          
-          if (!mongoUri) {
-            console.log('No MongoDB connection string found in environment variables');
-            console.log('IMPORTANT: You need to set MONGODB_URI in your Render environment variables');
-            console.log('This should be set automatically by Render when using databases, but it is not working');
-            console.log('As a workaround, you can manually set MONGODB_URI in the Render dashboard');
-            // Fallback to a default MongoDB connection string
-            // This is just for testing - in production you should set the proper connection string
-            mongoUri = 'mongodb://localhost:27017/cryptozen';
-          }
+        }
+        
+        if (!mongoUri) {
+          console.log('Still no MongoDB connection string found');
+          console.log('IMPORTANT: For Render deployments, you should manually set one of these environment variables:');
+          console.log('- MONGODB_URI (recommended)');
+          console.log('- DATABASE_URL');
+          console.log('- MONGO_URL');
+          console.log('- MONGODB_CONNECTION_STRING');
+          console.log('You can get the connection string from your Render database service dashboard');
         }
       }
       
-      if (mongoUri.includes('localhost')) {
+      if (mongoUri && mongoUri.includes('localhost')) {
         console.log('Warning: Using localhost MongoDB in production. This will only work if MongoDB is running locally.');
         console.log('For Render deployments, you should use a MongoDB Atlas cluster or Render database service');
-      } else {
-        console.log('Using Render-provided or manually configured MONGODB_URI');
+      } else if (mongoUri) {
+        console.log('Using MongoDB connection string from environment variables');
       }
     } else {
       console.log('Running in development mode');
