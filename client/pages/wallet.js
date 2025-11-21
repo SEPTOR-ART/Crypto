@@ -13,6 +13,8 @@ export default function Wallet() {
   const [receiveAddress, setReceiveAddress] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -22,6 +24,27 @@ export default function Wallet() {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  // Fetch user transactions
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (user) {
+        try {
+          setLoadingTransactions(true);
+          const token = localStorage.getItem('token');
+          const userTransactions = await transactionService.getUserTransactions(token);
+          setTransactions(userTransactions);
+          setLoadingTransactions(false);
+        } catch (err) {
+          console.error('Failed to fetch transactions:', err);
+          setError('Failed to load transaction history');
+          setLoadingTransactions(false);
+        }
+      }
+    };
+
+    fetchTransactions();
+  }, [user]);
 
   // Show loading state
   if (loading) {
@@ -33,19 +56,25 @@ export default function Wallet() {
     return null;
   }
 
+  // Calculate wallet balances from user data
   const walletBalances = [
-    { symbol: 'BTC', name: 'Bitcoin', balance: 0.5, value: 22500, address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' },
-    { symbol: 'ETH', name: 'Ethereum', balance: 5, value: 15000, address: '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' },
-    { symbol: 'LTC', name: 'Litecoin', balance: 20, value: 3000, address: 'LZ1Q2W3E4R5T6Y7U8I9O0P1Q2W3E4R5T6Y7U8I9O0' },
-    { symbol: 'XRP', name: 'Ripple', balance: 1000, value: 1200, address: 'r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV' }
+    { symbol: 'BTC', name: 'Bitcoin', balance: user.balance?.BTC || 0, value: (user.balance?.BTC || 0) * 45000, address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' },
+    { symbol: 'ETH', name: 'Ethereum', balance: user.balance?.ETH || 0, value: (user.balance?.ETH || 0) * 3000, address: '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' },
+    { symbol: 'LTC', name: 'Litecoin', balance: user.balance?.LTC || 0, value: (user.balance?.LTC || 0) * 150, address: 'LZ1Q2W3E4R5T6Y7U8I9O0P1Q2W3E4R5T6Y7U8I9O0' },
+    { symbol: 'XRP', name: 'Ripple', balance: user.balance?.XRP || 0, value: (user.balance?.XRP || 0) * 1.2, address: 'r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV' }
   ];
 
-  const transactionHistory = [
-    { id: 1, type: 'received', crypto: 'BTC', amount: 0.1, from: '1BitcoinEater...', date: '2025-11-15', status: 'completed' },
-    { id: 2, type: 'sent', crypto: 'ETH', amount: 1, to: '0xUserAddress...', date: '2025-11-14', status: 'completed' },
-    { id: 3, type: 'received', crypto: 'LTC', amount: 5, from: 'LWalletAddress...', date: '2025-11-13', status: 'completed' },
-    { id: 4, type: 'sent', crypto: 'XRP', amount: 100, to: 'rUserAddress...', date: '2025-11-12', status: 'pending' }
-  ];
+  // Format transaction history from user transactions
+  const transactionHistory = transactions.map(transaction => ({
+    id: transaction._id,
+    type: transaction.type,
+    crypto: transaction.asset,
+    amount: transaction.amount,
+    from: transaction.fromAddress || 'N/A',
+    to: transaction.toAddress || 'N/A',
+    date: new Date(transaction.createdAt).toLocaleDateString(),
+    status: transaction.status
+  }));
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -79,6 +108,10 @@ export default function Wallet() {
       setSuccess(true);
       setError('');
       
+      // Refresh transactions
+      const userTransactions = await transactionService.getUserTransactions(token);
+      setTransactions(userTransactions);
+      
       // Reset form
       setSendAmount('');
       setSendAddress('');
@@ -102,6 +135,9 @@ export default function Wallet() {
 
   const selectedWallet = walletBalances.find(wallet => wallet.symbol === selectedCrypto);
 
+  // Calculate total balance
+  const totalBalance = walletBalances.reduce((total, wallet) => total + wallet.value, 0);
+
   return (
     <div className={styles.container}>
       <div className={styles.walletHeader}>
@@ -113,7 +149,7 @@ export default function Wallet() {
       <div className={styles.walletOverview}>
         <div className={styles.balanceCard}>
           <h2>Total Balance</h2>
-          <p className={styles.totalBalance}>$41,700.00</p>
+          <p className={styles.totalBalance}>${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <div className={styles.balanceChange}>+2.5% last 24h</div>
         </div>
         
@@ -138,12 +174,12 @@ export default function Wallet() {
           <div className={styles.infoRow}>
             <span>Balance</span>
             <span className={styles.balanceAmount}>
-              {selectedWallet?.balance} {selectedWallet?.symbol}
+              {selectedWallet?.balance.toFixed(6)} {selectedWallet?.symbol}
             </span>
           </div>
           <div className={styles.infoRow}>
             <span>Value</span>
-            <span className={styles.balanceValue}>${selectedWallet?.value.toLocaleString()}</span>
+            <span className={styles.balanceValue}>${selectedWallet?.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className={styles.infoRow}>
             <span>Address</span>
@@ -200,15 +236,15 @@ export default function Wallet() {
           <div className={styles.overviewContent}>
             <h3>Your Assets</h3>
             <div className={styles.assetsGrid}>
-              {walletBalances.map(wallet => (
+              {walletBalances.filter(wallet => wallet.balance > 0).map(wallet => (
                 <div key={wallet.symbol} className={styles.assetCard}>
                   <div className={styles.assetHeader}>
                     <span className={styles.assetSymbol}>{wallet.symbol}</span>
                     <span className={styles.assetName}>{wallet.name}</span>
                   </div>
                   <div className={styles.assetBalance}>
-                    <span>{wallet.balance} {wallet.symbol}</span>
-                    <span className={styles.assetValue}>${wallet.value.toLocaleString()}</span>
+                    <span>{wallet.balance.toFixed(6)} {wallet.symbol}</span>
+                    <span className={styles.assetValue}>${wallet.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               ))}
@@ -294,35 +330,43 @@ export default function Wallet() {
         {activeTab === 'history' && (
           <div className={styles.historyContent}>
             <h3>Transaction History</h3>
-            <div className={styles.historyList}>
-              {transactionHistory.map(transaction => (
-                <div key={transaction.id} className={styles.historyItem}>
-                  <div className={styles.transactionInfo}>
-                    <div className={styles.transactionHeader}>
-                      <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
-                        {transaction.type}
-                      </span>
-                      <span className={styles.transactionAmount}>
-                        {transaction.amount} {transaction.crypto}
-                      </span>
+            {loadingTransactions ? (
+              <div className={styles.loading}>Loading transactions...</div>
+            ) : (
+              <div className={styles.historyList}>
+                {transactionHistory.length > 0 ? (
+                  transactionHistory.map(transaction => (
+                    <div key={transaction.id} className={styles.historyItem}>
+                      <div className={styles.transactionInfo}>
+                        <div className={styles.transactionHeader}>
+                          <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
+                            {transaction.type}
+                          </span>
+                          <span className={styles.transactionAmount}>
+                            {transaction.amount} {transaction.crypto}
+                          </span>
+                        </div>
+                        <div className={styles.transactionDetails}>
+                          <span>
+                            {transaction.type === 'sent' 
+                              ? `To: ${transaction.to.substring(0, 10)}...` 
+                              : `From: ${transaction.from.substring(0, 10)}...`}
+                          </span>
+                          <span>{transaction.date}</span>
+                        </div>
+                      </div>
+                      <div className={styles.transactionStatus}>
+                        <span className={`${styles.status} ${styles[transaction.status]}`}>
+                          {transaction.status}
+                        </span>
+                      </div>
                     </div>
-                    <div className={styles.transactionDetails}>
-                      <span>
-                        {transaction.type === 'sent' 
-                          ? `To: ${transaction.to}` 
-                          : `From: ${transaction.from}`}
-                      </span>
-                      <span>{transaction.date}</span>
-                    </div>
-                  </div>
-                  <div className={styles.transactionStatus}>
-                    <span className={`${styles.status} ${styles[transaction.status]}`}>
-                      {transaction.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  ))
+                ) : (
+                  <p>No transactions found</p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

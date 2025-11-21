@@ -29,12 +29,12 @@ export default function Trade() {
     }
   }, [user, authLoading, router]);
 
-
+  // Cryptocurrencies with real data
   const cryptocurrencies = [
-    { symbol: 'BTC', name: 'Bitcoin', price: 45000 },
-    { symbol: 'ETH', name: 'Ethereum', price: 3000 },
-    { symbol: 'LTC', name: 'Litecoin', price: 150 },
-    { symbol: 'XRP', name: 'Ripple', price: 1.2 }
+    { symbol: 'BTC', name: 'Bitcoin' },
+    { symbol: 'ETH', name: 'Ethereum' },
+    { symbol: 'LTC', name: 'Litecoin' },
+    { symbol: 'XRP', name: 'Ripple' }
   ];
 
   // Update total when amount changes (must be declared before any early returns)
@@ -42,7 +42,7 @@ export default function Trade() {
     setTotal((amount * price).toFixed(2));
   }, [amount, price]);
 
-  // Mock order book data (must be declared before any early returns)
+  // Generate order book data based on real prices
   useEffect(() => {
     // Generate mock order book data
     const bids = [];
@@ -50,12 +50,12 @@ export default function Trade() {
     
     for (let i = 0; i < 10; i++) {
       bids.push({
-        price: (price - (i * 50)).toFixed(2),
+        price: (price - (i * (price * 0.005))).toFixed(2),
         amount: (Math.random() * 5).toFixed(4)
       });
       
       asks.push({
-        price: (price + (i * 50)).toFixed(2),
+        price: (price + (i * (price * 0.005))).toFixed(2),
         amount: (Math.random() * 5).toFixed(4)
       });
     }
@@ -73,6 +73,9 @@ export default function Trade() {
     return null;
   }
 
+  // Get user's balance for selected cryptocurrency
+  const userBalance = user.balance?.[selectedCrypto] || 0;
+
   const handleTrade = async (e) => {
     e.preventDefault();
     
@@ -80,6 +83,16 @@ export default function Trade() {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication required');
+      }
+      
+      // Validate amount
+      if (!amount || parseFloat(amount) <= 0) {
+        throw new Error('Please enter a valid amount');
+      }
+      
+      // For sell transactions, check if user has enough balance
+      if (tradeType === 'sell' && parseFloat(amount) > userBalance) {
+        throw new Error(`Insufficient ${selectedCrypto} balance`);
       }
       
       // Create transaction data
@@ -140,7 +153,7 @@ export default function Trade() {
           </select>
           
           <div className={styles.priceDisplay}>
-            <span className={styles.currentPrice}>${parseFloat(price).toLocaleString()}</span>
+            <span className={styles.currentPrice}>${parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             <span className={styles.priceChange}>+2.5%</span>
           </div>
         </div>
@@ -214,6 +227,9 @@ export default function Trade() {
               />
               <span className={styles.symbol}>{selectedCrypto}</span>
             </div>
+            <div className={styles.balanceInfo}>
+              Available: {userBalance.toFixed(6)} {selectedCrypto}
+            </div>
           </div>
 
           <div className={styles.formGroup}>
@@ -280,7 +296,7 @@ export default function Trade() {
             </div>
             <div className={styles.infoItem}>
               <span>Market Cap</span>
-              <span>${(parseFloat(price) * 1000000).toLocaleString()}</span>
+              <span>${(parseFloat(price) * 1000000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>

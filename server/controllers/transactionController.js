@@ -29,10 +29,31 @@ const createTransaction = async (req, res) => {
   try {
     const { type, asset, amount, price, paymentMethod, toAddress, fromAddress } = req.body;
     
+    // Validate required fields
+    if (!type || !asset || !amount || !price) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    
+    // Validate amount and price
+    if (isNaN(amount) || isNaN(price) || amount <= 0 || price <= 0) {
+      return res.status(400).json({ message: 'Invalid amount or price' });
+    }
+    
     // Calculate total
     const total = amount * price;
     
     console.log('Creating transaction:', { type, asset, amount, price, total });
+    
+    // For sell transactions, check if user has enough balance
+    if (type === 'sell') {
+      const user = await User.findById(req.user._id);
+      if (user) {
+        const currentBalance = user.balance.get(asset) || 0;
+        if (amount > currentBalance) {
+          return res.status(400).json({ message: `Insufficient ${asset} balance` });
+        }
+      }
+    }
     
     // Create transaction in database
     const transaction = new Transaction({

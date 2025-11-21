@@ -200,6 +200,12 @@
   pointer-events: none;
 }
 
+.balanceInfo {
+  color: #cccccc; /* Light gray */
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
 .paymentSelect {
   padding: 0.75rem;
   background: #3d3d3d; /* Darker background */
