@@ -43,7 +43,7 @@ export const apiRequest = async (endpoint, options = {}) => {
         ...options.headers,
       },
       ...options,
-      signal: AbortSignal.timeout(15000) // Increase timeout to 15 seconds
+      signal: AbortSignal.timeout(30000) // Increase timeout to 30 seconds for better reliability
     });
 
     const contentType = response.headers.get('content-type') || '';
