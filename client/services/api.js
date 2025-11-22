@@ -170,6 +170,15 @@ export const cryptoService = {
     }
     
     console.log(`Creating WebSocket connection to: ${target}`);
+    
+    // Validate WebSocket URL
+    try {
+      new URL(target);
+    } catch (e) {
+      console.error('Invalid WebSocket URL:', target);
+      throw new Error(`Invalid WebSocket URL: ${target}`);
+    }
+    
     const ws = new WebSocket(target);
     
     // Add reconnection logic

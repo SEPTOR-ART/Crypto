@@ -44,7 +44,7 @@ export const useCryptoPrices = () => {
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('WebSocket connection opened');
+          console.log('WebSocket connection opened successfully');
           retryCountRef.current = 0; // Reset retry count on successful connection
           setError(null);
         };
@@ -68,26 +68,32 @@ export const useCryptoPrices = () => {
         };
 
         ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          console.error('WebSocket error occurred:', error);
           setError('Failed to connect to real-time price updates');
         };
 
         ws.onclose = (event) => {
           console.log('WebSocket connection closed', event);
           
+          // Check if this is an abnormal closure (code 1006)
+          if (event.code === 1006) {
+            console.warn('WebSocket connection was closed abnormally. This may indicate a network issue or server problem.');
+            setError('Unable to establish real-time connection. Using periodic updates instead.');
+          }
+          
           // Only retry if not closed intentionally and retry count is less than max
           if (!event.wasClean && retryCountRef.current < maxRetries) {
             retryCountRef.current += 1;
             console.log(`Retrying WebSocket connection... Attempt ${retryCountRef.current}/${maxRetries}`);
             
-            // Exponential backoff
-            const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000);
+            // Exponential backoff with jitter
+            const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000) + Math.random() * 1000;
             
             retryTimeoutRef.current = setTimeout(() => {
               createWebSocketConnection();
             }, retryDelay);
           } else if (retryCountRef.current >= maxRetries) {
-            setError('Unable to establish real-time connection after multiple attempts. Please refresh the page.');
+            setError('Unable to establish real-time connection after multiple attempts. Using periodic updates.');
             if (!pollIntervalRef.current) {
               pollIntervalRef.current = setInterval(async () => {
                 try {
@@ -98,7 +104,7 @@ export const useCryptoPrices = () => {
                 } catch (e) {
                   console.error('Polling failed', e);
                 }
-              }, 5000);
+              }, 10000); // Increase polling interval to reduce server load
             }
           }
         };
@@ -109,7 +115,7 @@ export const useCryptoPrices = () => {
         // Retry with exponential backoff
         if (retryCountRef.current < maxRetries) {
           retryCountRef.current += 1;
-          const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000);
+          const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000) + Math.random() * 1000;
           
           retryTimeoutRef.current = setTimeout(() => {
             createWebSocketConnection();
@@ -127,7 +133,7 @@ export const useCryptoPrices = () => {
     // Clean up WebSocket connection and timeouts
     return () => {
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef.current.close(1000, 'Component unmounting'); // Graceful close
       }
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
