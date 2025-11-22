@@ -50,8 +50,8 @@ export default function Settings() {
       }
     };
     
-    // Refresh profile every 30 seconds
-    const interval = setInterval(refreshProfile, 30000);
+    // Refresh profile every 60 seconds to reduce API load
+    const interval = setInterval(refreshProfile, 60000);
     
     return () => clearInterval(interval);
   }, [user, refreshUser]);
