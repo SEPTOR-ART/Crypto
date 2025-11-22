@@ -19,6 +19,11 @@ const getAssetName = (symbol) => {
   return names[symbol] || symbol;
 };
 
+// Check if user is admin
+const isAdmin = (user) => {
+  return user.email === 'admin@cryptozen.com' || user.email === 'admin@cryptoasia.com' || user.isAdmin;
+};
+
 export default function Dashboard() {
   const [holdings, setHoldings] = useState([]);
   const [portfolioValue, setPortfolioValue] = useState('0.00');
@@ -164,7 +169,7 @@ export default function Dashboard() {
             <Link href="/trade" className={styles.navLink}>Trade</Link>
             <Link href="/wallet" className={styles.navLink}>Wallet</Link>
             <Link href="/settings" className={styles.navLink}>Settings</Link>
-            {user.email === 'admin@cryptozen.com' && (
+            {isAdmin(user) && (
               <Link href="/admin" className={styles.navLink}>Admin</Link>
             )}
           </nav>

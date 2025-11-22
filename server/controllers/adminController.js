@@ -2,11 +2,16 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
 
+// Check if user is admin
+const isAdmin = (user) => {
+  return user.email === 'admin@cryptozen.com' || user.email === 'admin@cryptoasia.com' || user.isAdmin;
+};
+
 // Get all users (admin only)
 const getAllUsers = async (req, res) => {
   try {
     // Only allow admin to access this endpoint
-    if (req.user.email !== 'admin@cryptozen.com') {
+    if (!isAdmin(req.user)) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
@@ -22,7 +27,7 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     // Only allow admin to access this endpoint
-    if (req.user.email !== 'admin@cryptozen.com') {
+    if (!isAdmin(req.user)) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
@@ -50,7 +55,7 @@ const getUserById = async (req, res) => {
 const updateUserBalance = async (req, res) => {
   try {
     // Only allow admin to access this endpoint
-    if (req.user.email !== 'admin@cryptozen.com') {
+    if (!isAdmin(req.user)) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
@@ -109,7 +114,7 @@ const updateUserBalance = async (req, res) => {
 const getAllTransactions = async (req, res) => {
   try {
     // Only allow admin to access this endpoint
-    if (req.user.email !== 'admin@cryptozen.com') {
+    if (!isAdmin(req.user)) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
@@ -128,7 +133,7 @@ const getAllTransactions = async (req, res) => {
 const updateTransactionStatus = async (req, res) => {
   try {
     // Only allow admin to access this endpoint
-    if (req.user.email !== 'admin@cryptozen.com') {
+    if (!isAdmin(req.user)) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
@@ -171,7 +176,7 @@ const updateTransactionStatus = async (req, res) => {
 const updateUserStatus = async (req, res) => {
   try {
     // Only allow admin to access this endpoint
-    if (req.user.email !== 'admin@cryptozen.com') {
+    if (!isAdmin(req.user)) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 

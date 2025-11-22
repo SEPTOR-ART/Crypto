@@ -6,6 +6,11 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  // Check if user is admin
+  const isAdmin = (user) => {
+    return user.email === 'admin@cryptozen.com' || user.email === 'admin@cryptoasia.com' || user.isAdmin;
+  };
+
   useEffect(() => {
     if (!loading) {
       // If authentication is required but user is not logged in
@@ -15,7 +20,7 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
       }
       
       // If admin access is required but user is not admin
-      if (requireAdmin && user && user.email !== 'admin@cryptozen.com') {
+      if (requireAdmin && user && !isAdmin(user)) {
         router.push('/dashboard');
         return;
       }
@@ -45,7 +50,7 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
   }
 
   // If access is granted, render children
-  if (!requireAuth || (user && !requireAdmin) || (user && requireAdmin && user.email === 'admin@cryptozen.com')) {
+  if (!requireAuth || (user && !requireAdmin) || (user && requireAdmin && isAdmin(user))) {
     return children;
   }
 
