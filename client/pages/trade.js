@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
 import { transactionService } from '../services/api';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function Trade() {
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
@@ -16,19 +17,12 @@ export default function Trade() {
   const [orderBook, setOrderBook] = useState({ bids: [], asks: [] });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { user, loading: authLoading, updateUserBalance } = useAuth();
+  const { user, loading: authLoading, updateUserBalance, refreshUser } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const router = useRouter();
   
   // Get current price for selected crypto
   const price = cryptoPrices[selectedCrypto] || 0;
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
 
   // Cryptocurrencies with real data
   const cryptocurrencies = [
@@ -71,14 +65,40 @@ export default function Trade() {
     setOrderBook({ bids, asks });
   }, [price]);
 
+  // Refresh user profile periodically to ensure balance is up to date
+  useEffect(() => {
+    if (!user) return;
+    
+    const refreshProfile = async () => {
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error('Failed to refresh user profile:', error);
+      }
+    };
+    
+    // Refresh profile every 30 seconds
+    const interval = setInterval(refreshProfile, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user, refreshUser]);
+
   // Show loading state
   if (authLoading || pricesLoading) {
-    return <div className={styles.loading}>Loading...</div>;
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <div className={styles.loading}>Loading...</div>
+      </ProtectedRoute>
+    );
   }
 
   // Show nothing if not authenticated (redirecting)
   if (!user) {
-    return null;
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <div></div>
+      </ProtectedRoute>
+    );
   }
 
   // Get user's balance for selected cryptocurrency
@@ -129,6 +149,9 @@ export default function Trade() {
         updateUserBalance(result.userBalance);
       }
       
+      // Refresh user data to ensure balance is up to date
+      await refreshUser();
+      
       setSuccess(true);
       setError('');
       
@@ -147,175 +170,143 @@ export default function Trade() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.tradingView}>
-        {/* Trading Pair Selector */}
-        <div className={styles.pairSelector}>
-          <select 
-            value={selectedCrypto} 
-            onChange={(e) => setSelectedCrypto(e.target.value)}
-            className={styles.cryptoSelect}
-          >
-            {cryptocurrencies.map(crypto => (
-              <option key={crypto.symbol} value={crypto.symbol}>
-                {crypto.symbol}/USD
-              </option>
-            ))}
-          </select>
-          
-          <div className={styles.priceDisplay}>
-            <span className={styles.currentPrice}>${parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className={styles.priceChange}>+2.5%</span>
-          </div>
-        </div>
-
-        {/* Chart Area */}
-        <div className={styles.chartArea}>
-          <Chart 
-            prices={cryptoPrices} 
-            selectedCrypto={selectedCrypto} 
-            loading={pricesLoading} 
-            error={null} 
-          />
-        </div>
-
-        {/* Order Book */}
-        <div className={styles.orderBook}>
-          <h3>Order Book</h3>
-          <div className={styles.orderBookContent}>
-            <div className={styles.asks}>
-              <h4>Asks</h4>
-              {orderBook.asks.slice(0, 5).map((ask, index) => (
-                <div key={index} className={styles.orderRow}>
-                  <span className={styles.askPrice}>{ask.price}</span>
-                  <span>{ask.amount}</span>
-                </div>
-              ))}
-            </div>
-            
-            <div className={styles.bids}>
-              <h4>Bids</h4>
-              {orderBook.bids.slice(0, 5).map((bid, index) => (
-                <div key={index} className={styles.orderRow}>
-                  <span className={styles.bidPrice}>{bid.price}</span>
-                  <span>{bid.amount}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Trading Panel */}
-      <div className={styles.tradingPanel}>
-        <div className={styles.panelHeader}>
-          <button 
-            className={`${styles.panelTab} ${tradeType === 'buy' ? styles.activeTab : ''}`}
-            onClick={() => setTradeType('buy')}
-          >
-            Buy
-          </button>
-          <button 
-            className={`${styles.panelTab} ${tradeType === 'sell' ? styles.activeTab : ''}`}
-            onClick={() => setTradeType('sell')}
-          >
-            Sell
-          </button>
-        </div>
-
-        <form onSubmit={handleTrade} className={styles.tradeForm}>
-          {error && <div className={styles.error}>{error}</div>}
-          {success && <div className={styles.success}>Trade executed successfully!</div>}
-          
-          <div className={styles.formGroup}>
-            <label>Amount</label>
-            <div className={styles.inputWithSymbol}>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                step="0.0001"
-                min="0"
-                required
-              />
-              <span className={styles.symbol}>{selectedCrypto}</span>
-            </div>
-            <div className={styles.balanceInfo}>
-              Available: {userBalance.toFixed(6)} {selectedCrypto}
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Price</label>
-            <div className={styles.inputWithSymbol}>
-              <input
-                type="number"
-                value={price}
-                readOnly
-              />
-              <span className={styles.symbol}>USD</span>
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Total</label>
-            <div className={styles.inputWithSymbol}>
-              <input
-                type="text"
-                value={total}
-                readOnly
-              />
-              <span className={styles.symbol}>USD</span>
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Payment Method</label>
+    <ProtectedRoute requireAuth={true}>
+      <div className={styles.container}>
+        <div className={styles.tradingView}>
+          {/* Trading Pair Selector */}
+          <div className={styles.pairSelector}>
             <select 
-              value={paymentMethod} 
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className={styles.paymentSelect}
+              value={selectedCrypto} 
+              onChange={(e) => setSelectedCrypto(e.target.value)}
+              className={styles.cryptoSelect}
             >
-              <option value="credit">Credit/Debit Card</option>
-              <option value="bank">Bank Transfer</option>
-              <option value="gift">Gift Card</option>
-              <option value="wallet">Digital Wallet</option>
+              {cryptocurrencies.map(crypto => (
+                <option key={crypto.symbol} value={crypto.symbol}>
+                  {crypto.symbol}/USD
+                </option>
+              ))}
             </select>
+            
+            <div className={styles.priceDisplay}>
+              <span className={styles.currentPrice}>${parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className={styles.priceChange}>+2.5%</span>
+            </div>
           </div>
 
-          <button 
-            type="submit" 
-            className={`${styles.tradeButton} ${tradeType === 'buy' ? styles.buyButton : styles.sellButton}`}
-          >
-            {tradeType === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
-          </button>
-        </form>
+          {/* Chart Area */}
+          <div className={styles.chartArea}>
+            <Chart 
+              prices={cryptoPrices} 
+              selectedCrypto={selectedCrypto} 
+              loading={pricesLoading} 
+              error={null} 
+            />
+          </div>
 
-        {/* Market Info */}
-        <div className={styles.marketInfo}>
-          <h3>Market Information</h3>
-          <div className={styles.infoGrid}>
-            <div className={styles.infoItem}>
-              <span>24h High</span>
-              <span>${(parseFloat(price) * 1.05).toFixed(2)}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span>24h Low</span>
-              <span>${(parseFloat(price) * 0.95).toFixed(2)}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span>24h Volume</span>
-              <span>{(Math.random() * 10000).toFixed(2)} {selectedCrypto}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span>Market Cap</span>
-              <span>${(parseFloat(price) * 1000000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          {/* Order Book */}
+          <div className={styles.orderBook}>
+            <h3>Order Book</h3>
+            <div className={styles.orderBookContent}>
+              <div className={styles.asks}>
+                <h4>Asks</h4>
+                {orderBook.asks.slice(0, 5).map((ask, index) => (
+                  <div key={index} className={styles.orderRow}>
+                    <span className={styles.askPrice}>{ask.price}</span>
+                    <span>{ask.amount}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className={styles.bids}>
+                <h4>Bids</h4>
+                {orderBook.bids.slice(0, 5).map((bid, index) => (
+                  <div key={index} className={styles.orderRow}>
+                    <span className={styles.bidPrice}>{bid.price}</span>
+                    <span>{bid.amount}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Trading Panel */}
+        <div className={styles.tradingPanel}>
+          <div className={styles.panelHeader}>
+            <button 
+              className={`${styles.panelTab} ${tradeType === 'buy' ? styles.activeTab : ''}`}
+              onClick={() => setTradeType('buy')}
+            >
+              Buy
+            </button>
+            <button 
+              className={`${styles.panelTab} ${tradeType === 'sell' ? styles.activeTab : ''}`}
+              onClick={() => setTradeType('sell')}
+            >
+              Sell
+            </button>
+          </div>
+
+          <div className={styles.panelContent}>
+            {error && <div className={styles.errorMessage}>{error}</div>}
+            {success && <div className={styles.successMessage}>Trade executed successfully!</div>}
+            
+            <form onSubmit={handleTrade} className={styles.tradeForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="amount">Amount</label>
+                <div className={styles.inputWithAddon}>
+                  <input
+                    type="number"
+                    id="amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    step="0.000001"
+                    className={styles.formControl}
+                    required
+                  />
+                  <span className={styles.addon}>{selectedCrypto}</span>
+                </div>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Total</label>
+                <div className={styles.totalDisplay}>
+                  <span className={styles.totalAmount}>${total}</span>
+                  <span className={styles.totalCurrency}>USD</span>
+                </div>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Payment Method</label>
+                <select 
+                  value={paymentMethod} 
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className={styles.formControl}
+                >
+                  <option value="credit">Credit Card</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="wallet">Wallet Balance</option>
+                </select>
+              </div>
+              
+              <div className={styles.balanceInfo}>
+                <span>Available Balance:</span>
+                <span>{userBalance.toFixed(6)} {selectedCrypto}</span>
+              </div>
+              
+              <button 
+                type="submit" 
+                className={`${styles.tradeButton} ${tradeType === 'buy' ? styles.buyButton : styles.sellButton}`}
+              >
+                {tradeType === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
+              </button>
+            </form>
+          </div>
+        </div>
+        
+        <ChatSupport />
       </div>
-      <ChatSupport />
-    </div>
+    </ProtectedRoute>
   );
 }

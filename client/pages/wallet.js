@@ -4,6 +4,7 @@ import ChatSupport from '../components/ChatSupport';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { transactionService } from '../services/api';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function Wallet() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -15,15 +16,8 @@ export default function Wallet() {
   const [success, setSuccess] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
 
   // Fetch user transactions
   useEffect(() => {
@@ -46,14 +40,40 @@ export default function Wallet() {
     fetchTransactions();
   }, [user]);
 
+  // Refresh user profile periodically to ensure balance is up to date
+  useEffect(() => {
+    if (!user) return;
+    
+    const refreshProfile = async () => {
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error('Failed to refresh user profile:', error);
+      }
+    };
+    
+    // Refresh profile every 30 seconds
+    const interval = setInterval(refreshProfile, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user, refreshUser]);
+
   // Show loading state
   if (loading) {
-    return <div className={styles.loading}>Loading...</div>;
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <div className={styles.loading}>Loading...</div>
+      </ProtectedRoute>
+    );
   }
 
   // Show nothing if not authenticated (redirecting)
   if (!user) {
-    return null;
+    return (
+      <ProtectedRoute requireAuth={true}>
+        <div></div>
+      </ProtectedRoute>
+    );
   }
 
   // Calculate wallet balances from user data
@@ -117,6 +137,9 @@ export default function Wallet() {
       const userTransactions = await transactionService.getUserTransactions(token);
       setTransactions(userTransactions);
       
+      // Refresh user data to update balance
+      await refreshUser();
+      
       // Reset form
       setSendAmount('');
       setSendAddress('');
@@ -149,175 +172,194 @@ export default function Wallet() {
   }, 0);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.walletHeader}>
-        <h1>Wallet</h1>
-        <p>Manage your cryptocurrency assets securely</p>
-      </div>
-
-      {/* Wallet Overview */}
-      <div className={styles.walletOverview}>
-        <div className={styles.balanceCard}>
-          <h2>Total Balance</h2>
-          <p className={styles.totalBalance}>${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <div className={styles.balanceChange}>+2.5% last 24h</div>
+    <ProtectedRoute requireAuth={true}>
+      <div className={styles.container}>
+        <div className={styles.walletHeader}>
+          <h1>Wallet</h1>
+          <p>Manage your cryptocurrency assets securely</p>
         </div>
-        
-        <div className={styles.cryptoSelector}>
-          <select 
-            value={selectedCrypto} 
-            onChange={(e) => setSelectedCrypto(e.target.value)}
-            className={styles.cryptoSelect}
-          >
-            {walletBalances.map(wallet => (
-              <option key={wallet.symbol} value={wallet.symbol}>
-                {wallet.symbol} - {wallet.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      {/* Wallet Details */}
-      <div className={styles.walletDetails}>
-        <div className={styles.walletInfo}>
-          <div className={styles.infoRow}>
-            <span>Balance</span>
-            <span className={styles.balanceAmount}>
-              {(selectedWallet?.balance || 0).toFixed(6)} {selectedWallet?.symbol}
-            </span>
+        {/* Wallet Overview */}
+        <div className={styles.walletOverview}>
+          <div className={styles.balanceCard}>
+            <h2>Total Balance</h2>
+            <p className={styles.totalBalance}>${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <div className={styles.balanceChange}>+2.5% last 24h</div>
           </div>
-          <div className={styles.infoRow}>
-            <span>Value</span>
-            <span className={styles.balanceValue}>${(selectedWallet?.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
-          <div className={styles.infoRow}>
-            <span>Address</span>
-            <div className={styles.addressContainer}>
-              <span className={styles.address}>{selectedWallet?.address}</span>
-              <button 
-                className={styles.copyButton}
-                onClick={() => copyToClipboard(selectedWallet?.address || '')}
-              >
-                Copy
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div className={styles.qrCode}>
-          <div className={styles.qrPlaceholder}>
-            <p>QR Code</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Tabs */}
-      <div className={styles.tabs}>
-        <button 
-          className={`${styles.tab} ${activeTab === 'overview' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Overview
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'send' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('send')}
-        >
-          Send
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'receive' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('receive')}
-        >
-          Receive
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'history' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          History
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      <div className={styles.tabContent}>
-        {activeTab === 'overview' && (
-          <div className={styles.overviewContent}>
-            <h3>Your Assets</h3>
-            <div className={styles.assetsGrid}>
-              {walletBalances.filter(wallet => (wallet.balance || 0) > 0).map(wallet => (
-                <div key={wallet.symbol} className={styles.assetCard}>
-                  <div className={styles.assetHeader}>
-                    <span className={styles.assetSymbol}>{wallet.symbol}</span>
-                    <span className={styles.assetName}>{wallet.name}</span>
-                  </div>
-                  <div className={styles.assetBalance}>
-                    <span>{(wallet.balance || 0).toFixed(6)} {wallet.symbol}</span>
-                    <span className={styles.assetValue}>${(wallet.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
+          
+          <div className={styles.cryptoSelector}>
+            <select 
+              value={selectedCrypto} 
+              onChange={(e) => setSelectedCrypto(e.target.value)}
+              className={styles.cryptoSelect}
+            >
+              {walletBalances.map(wallet => (
+                <option key={wallet.symbol} value={wallet.symbol}>
+                  {wallet.symbol} - {wallet.name}
+                </option>
               ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Wallet Details */}
+        <div className={styles.walletDetails}>
+          <div className={styles.walletInfo}>
+            <div className={styles.infoRow}>
+              <span>Balance</span>
+              <span className={styles.balanceAmount}>
+                {(selectedWallet?.balance || 0).toFixed(6)} {selectedWallet?.symbol}
+              </span>
+            </div>
+            <div className={styles.infoRow}>
+              <span>Value</span>
+              <span className={styles.balanceValue}>${(selectedWallet?.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span>Address</span>
+              <div className={styles.addressContainer}>
+                <span className={styles.address}>{selectedWallet?.address}</span>
+                <button 
+                  className={styles.copyButton}
+                  onClick={() => copyToClipboard(selectedWallet?.address || '')}
+                >
+                  Copy
+                </button>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {activeTab === 'send' && (
-          <div className={styles.sendContent}>
-            <h3>Send Cryptocurrency</h3>
-            {error && <div className={styles.error}>{error}</div>}
-            {success && <div className={styles.success}>Transaction sent successfully!</div>}
-            <form onSubmit={handleSend} className={styles.sendForm}>
-              <div className={styles.formGroup}>
-                <label>Amount</label>
-                <div className={styles.inputWithSymbol}>
+        {/* Wallet Tabs */}
+        <div className={styles.walletTabs}>
+          <button 
+            className={`${styles.tab} ${activeTab === 'overview' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'send' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('send')}
+          >
+            Send
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'receive' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('receive')}
+          >
+            Receive
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'history' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            Transaction History
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className={styles.tabContent}>
+          {activeTab === 'overview' && (
+            <div className={styles.overviewContent}>
+              <h2>Your Assets</h2>
+              <div className={styles.assetsGrid}>
+                {walletBalances.filter(wallet => wallet.balance > 0).map(wallet => (
+                  <div key={wallet.symbol} className={styles.assetCard}>
+                    <div className={styles.assetHeader}>
+                      <span className={styles.assetSymbol}>{wallet.symbol}</span>
+                      <span className={styles.assetName}>{wallet.name}</span>
+                    </div>
+                    <div className={styles.assetDetails}>
+                      <span className={styles.assetBalance}>{wallet.balance.toFixed(6)}</span>
+                      <span className={styles.assetValue}>${wallet.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'send' && (
+            <div className={styles.sendContent}>
+              <h2>Send Cryptocurrency</h2>
+              {error && <div className={styles.errorMessage}>{error}</div>}
+              {success && <div className={styles.successMessage}>Transaction sent successfully!</div>}
+              
+              <form onSubmit={handleSend} className={styles.sendForm}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="crypto">Cryptocurrency</label>
+                  <select 
+                    id="crypto"
+                    value={selectedCrypto} 
+                    onChange={(e) => setSelectedCrypto(e.target.value)}
+                    className={styles.formControl}
+                  >
+                    {walletBalances.filter(wallet => wallet.balance > 0).map(wallet => (
+                      <option key={wallet.symbol} value={wallet.symbol}>
+                        {wallet.symbol} - {wallet.name} (Balance: {wallet.balance.toFixed(6)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className={styles.formGroup}>
+                  <label htmlFor="amount">Amount</label>
                   <input
                     type="number"
+                    id="amount"
                     value={sendAmount}
                     onChange={(e) => setSendAmount(e.target.value)}
                     placeholder="0.00"
-                    step="0.0001"
-                    min="0"
+                    step="0.000001"
+                    className={styles.formControl}
                     required
                   />
-                  <span className={styles.symbol}>{selectedCrypto}</span>
+                  <button 
+                    type="button" 
+                    className={styles.maxButton}
+                    onClick={() => setSendAmount(selectedWallet?.balance || 0)}
+                  >
+                    MAX
+                  </button>
                 </div>
+                
+                <div className={styles.formGroup}>
+                  <label htmlFor="address">Recipient Address</label>
+                  <input
+                    type="text"
+                    id="address"
+                    value={sendAddress}
+                    onChange={(e) => setSendAddress(e.target.value)}
+                    placeholder="Enter recipient address"
+                    className={styles.formControl}
+                    required
+                  />
+                </div>
+                
+                <button type="submit" className={styles.sendButton}>
+                  Send {selectedCrypto}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'receive' && (
+            <div className={styles.receiveContent}>
+              <h2>Receive Cryptocurrency</h2>
+              <p>Send cryptocurrency to the address below:</p>
+              
+              <div className={styles.qrCode}>
+                <div className={styles.qrPlaceholder}>QR Code</div>
               </div>
               
-              <div className={styles.formGroup}>
-                <label>Recipient Address</label>
+              <div className={styles.addressDisplay}>
                 <input
                   type="text"
-                  value={sendAddress}
-                  onChange={(e) => setSendAddress(e.target.value)}
-                  placeholder="Enter recipient address"
-                  required
+                  value={selectedWallet?.address || ''}
+                  readOnly
+                  className={styles.addressInput}
                 />
-              </div>
-              
-              <div className={styles.feeInfo}>
-                <div className={styles.feeRow}>
-                  <span>Network Fee</span>
-                  <span>0.0005 {selectedCrypto}</span>
-                </div>
-                <div className={styles.feeRow}>
-                  <span>Total</span>
-                  <span>{sendAmount ? (parseFloat(sendAmount) + 0.0005).toFixed(4) : '0.0000'} {selectedCrypto}</span>
-                </div>
-              </div>
-              
-              <button type="submit" className={styles.sendButton}>Send {selectedCrypto}</button>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'receive' && (
-          <div className={styles.receiveContent}>
-            <h3>Receive Cryptocurrency</h3>
-            <div className={styles.receiveInfo}>
-              <p>Send only {selectedCrypto} to this address</p>
-              <div className={styles.addressDisplay}>
-                <span>{selectedWallet?.address}</span>
                 <button 
                   className={styles.copyButton}
                   onClick={() => copyToClipboard(selectedWallet?.address || '')}
@@ -325,62 +367,59 @@ export default function Wallet() {
                   Copy Address
                 </button>
               </div>
-              <div className={styles.qrContainer}>
-                <div className={styles.qrPlaceholder}>
-                  <p>QR Code</p>
-                </div>
+              
+              <div className={styles.warning}>
+                <p>Only send {selectedWallet?.name} ({selectedWallet?.symbol}) to this address.</p>
+                <p>Sending any other cryptocurrency may result in permanent loss.</p>
               </div>
-              <p className={styles.warning}>
-                Sending any other cryptocurrency to this address may result in the loss of your funds.
-              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'history' && (
-          <div className={styles.historyContent}>
-            <h3>Transaction History</h3>
-            {loadingTransactions ? (
-              <div className={styles.loading}>Loading transactions...</div>
-            ) : (
-              <div className={styles.historyList}>
-                {transactionHistory.length > 0 ? (
-                  transactionHistory.map(transaction => (
-                    <div key={transaction.id} className={styles.historyItem}>
-                      <div className={styles.transactionInfo}>
-                        <div className={styles.transactionHeader}>
-                          <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
-                            {transaction.type}
-                          </span>
-                          <span className={styles.transactionAmount}>
-                            {transaction.amount} {transaction.crypto}
-                          </span>
+          {activeTab === 'history' && (
+            <div className={styles.historyContent}>
+              <h2>Transaction History</h2>
+              {loadingTransactions ? (
+                <div className={styles.loading}>Loading transactions...</div>
+              ) : transactionHistory.length > 0 ? (
+                <div className={styles.transactionList}>
+                  {transactionHistory.map(transaction => (
+                    <div key={transaction.id} className={styles.transactionItem}>
+                      <div className={styles.transactionHeader}>
+                        <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
+                          {transaction.type}
+                        </span>
+                        <span className={styles.transactionCrypto}>{transaction.crypto}</span>
+                      </div>
+                      <div className={styles.transactionDetails}>
+                        <div className={styles.detailRow}>
+                          <span>Amount:</span>
+                          <span>{transaction.amount} {transaction.crypto}</span>
                         </div>
-                        <div className={styles.transactionDetails}>
-                          <span>
-                            {transaction.type === 'sent' 
-                              ? `To: ${transaction.to.substring(0, 10)}...` 
-                              : `From: ${transaction.from.substring(0, 10)}...`}
-                          </span>
+                        <div className={styles.detailRow}>
+                          <span>Date:</span>
                           <span>{transaction.date}</span>
                         </div>
-                      </div>
-                      <div className={styles.transactionStatus}>
-                        <span className={`${styles.status} ${styles[transaction.status]}`}>
-                          {transaction.status}
-                        </span>
+                        <div className={styles.detailRow}>
+                          <span>Status:</span>
+                          <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
+                            {transaction.status}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p>No transactions found</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <p>No transactions yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <ChatSupport />
       </div>
-      <ChatSupport />
-    </div>
+    </ProtectedRoute>
   );
 }

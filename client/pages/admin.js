@@ -11,6 +11,7 @@ import {
   adminUpdateTransactionStatus,
   adminUpdateUserStatus
 } from '../services/adminService';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
@@ -23,22 +24,8 @@ export default function AdminDashboard() {
   const [success, setSuccess] = useState('');
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
-
-  // Redirect to login if not authenticated or not admin
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push('/login');
-      } else if (user.email !== 'admin@cryptozen.com') {
-        router.push('/dashboard');
-      } else {
-        // Load admin data
-        loadAdminData();
-      }
-    }
-  }, [user, authLoading, router]);
 
   // Load admin data
   const loadAdminData = async () => {
@@ -210,21 +197,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Show loading state
-  if (authLoading || loading) {
-    return <div className={styles.loading}>Loading...</div>;
-  }
-
-  // Show nothing if not authenticated (redirecting)
-  if (!user) {
-    return null;
-  }
-
-  // Check if user is admin
-  if (user.email !== 'admin@cryptozen.com') {
-    return null;
-  }
-
   const filteredUsers = users.filter(user => 
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -239,520 +211,551 @@ export default function AdminDashboard() {
     return total;
   }, 0);
 
+  // Refresh admin data periodically
+  useEffect(() => {
+    loadAdminData();
+    
+    const interval = setInterval(() => {
+      loadAdminData();
+    }, 60000); // Refresh every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Refresh user profile periodically to ensure admin status is up to date
+  useEffect(() => {
+    if (!user) return;
+    
+    const refreshProfile = async () => {
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error('Failed to refresh user profile:', error);
+      }
+    };
+    
+    // Refresh profile every 30 seconds
+    const interval = setInterval(refreshProfile, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user, refreshUser]);
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Admin Dashboard</h1>
-        <p>Manage users, transactions, and platform settings</p>
-      </div>
-
-      {error && <div className={styles.error}>{error}</div>}
-      {success && <div className={styles.success}>{success}</div>}
-
-      {/* Stats Overview */}
-      <div className={styles.statsOverview}>
-        <div className={styles.statCard}>
-          <h3>Total Users</h3>
-          <p className={styles.statValue}>{users.length}</p>
-          <div className={styles.statChange}>+12% last 30 days</div>
+    <ProtectedRoute requireAuth={true} requireAdmin={true}>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1>Admin Dashboard</h1>
+          <p>Manage users, transactions, and platform settings</p>
         </div>
-        
-        <div className={styles.statCard}>
-          <h3>Active Users</h3>
-          <p className={styles.statValue}>{users.filter(u => !u.isSuspended).length}</p>
-          <div className={styles.statChange}>+8% last 30 days</div>
-        </div>
-        
-        <div className={styles.statCard}>
-          <h3>Transactions</h3>
-          <p className={styles.statValue}>{transactions.length}</p>
-          <div className={styles.statChange}>+15% last 30 days</div>
-        </div>
-        
-        <div className={styles.statCard}>
-          <h3>Platform Volume</h3>
-          <p className={styles.statValue}>${platformVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <div className={styles.statChange}>+22% last 30 days</div>
-        </div>
-      </div>
 
-      {/* Admin Tabs */}
-      <div className={styles.tabs}>
-        <button 
-          className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('users')}
-        >
-          User Management
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'transactions' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('transactions')}
-        >
-          Transactions
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'settings' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          Platform Settings
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'reports' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('reports')}
-        >
-          Reports
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'support' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('support')}
-        >
-          Support Chat
-        </button>
-      </div>
+        {error && <div className={styles.error}>{error}</div>}
+        {success && <div className={styles.success}>{success}</div>}
 
-      {/* Tab Content */}
-      <div className={styles.tabContent}>
-        {activeTab === 'users' && (
-          <div className={styles.usersContent}>
-            <div className={styles.contentHeader}>
-              <h2>User Management</h2>
-              <div className={styles.searchContainer}>
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={styles.searchInput}
-                />
-                <button className={styles.searchButton}>Search</button>
-              </div>
-            </div>
-            
-            <div className={styles.tableContainer}>
-              <table className={styles.usersTable}>
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Member Since</th>
-                    <th>Status</th>
-                    <th>KYC Status</th>
-                    <th>Balance</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map(user => (
-                    <tr key={user._id}>
-                      <td>
-                        <div className={styles.userInfo}>
-                          <div className={styles.avatar}>{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
-                          <span>{user.firstName} {user.lastName}</span>
-                        </div>
-                      </td>
-                      <td>{user.email}</td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${user.isSuspended ? styles.suspended : styles.active}`}>
-                          {user.isSuspended ? 'suspended' : 'active'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`${styles.kycBadge} ${styles[user.kycStatus?.replace(' ', '') || 'notstarted']}`}>
-                          {user.kycStatus || 'not started'}
-                        </span>
-                      </td>
-                      <td>
-                        {user.balance ? Object.entries(user.balance).map(([asset, amount]) => (
-                          <div key={asset}>{amount.toFixed(6)} {asset}</div>
-                        )) : '$0.00'}
-                      </td>
-                      <td>
-                        <div className={styles.actionButtons}>
-                          <button 
-                            className={styles.viewButton}
-                            onClick={() => handleUserAction(user._id, 'view')}
-                          >
-                            View
-                          </button>
-                          <button 
-                            className={user.isSuspended ? styles.activateButton : styles.suspendButton}
-                            onClick={() => handleUserAction(user._id, user.isSuspended ? 'activate' : 'suspend')}
-                          >
-                            {user.isSuspended ? 'Activate' : 'Suspend'}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* User Detail View */}
-            {selectedUser && (
-              <div className={styles.userDetail}>
-                <div className={styles.detailHeader}>
-                  <h3>User Details: {selectedUser.firstName} {selectedUser.lastName}</h3>
-                  <button 
-                    className={styles.closeButton}
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    Close
-                  </button>
+        {/* Stats Overview */}
+        <div className={styles.statsOverview}>
+          <div className={styles.statCard}>
+            <h3>Total Users</h3>
+            <p className={styles.statValue}>{users.length}</p>
+            <div className={styles.statChange}>+12% last 30 days</div>
+          </div>
+          
+          <div className={styles.statCard}>
+            <h3>Active Users</h3>
+            <p className={styles.statValue}>{users.filter(u => !u.isSuspended).length}</p>
+            <div className={styles.statChange}>+8% last 30 days</div>
+          </div>
+          
+          <div className={styles.statCard}>
+            <h3>Transactions</h3>
+            <p className={styles.statValue}>{transactions.length}</p>
+            <div className={styles.statChange}>+15% last 30 days</div>
+          </div>
+          
+          <div className={styles.statCard}>
+            <h3>Platform Volume</h3>
+            <p className={styles.statValue}>${platformVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <div className={styles.statChange}>+22% last 30 days</div>
+          </div>
+        </div>
+
+        {/* Admin Tabs */}
+        <div className={styles.tabs}>
+          <button 
+            className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            User Management
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'transactions' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('transactions')}
+          >
+            Transactions
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'settings' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            Platform Settings
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'reports' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            Reports
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'support' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('support')}
+          >
+            Support Chat
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className={styles.tabContent}>
+          {activeTab === 'users' && (
+            <div className={styles.usersContent}>
+              <div className={styles.contentHeader}>
+                <h2>User Management</h2>
+                <div className={styles.searchContainer}>
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={styles.searchInput}
+                  />
+                  <button className={styles.searchButton}>Search</button>
                 </div>
-                
-                <div className={styles.detailContent}>
-                  <div className={styles.detailSection}>
-                    <h4>Personal Information</h4>
-                    <div className={styles.detailGrid}>
-                      <div className={styles.detailItem}>
-                        <span className={styles.detailLabel}>Email:</span>
-                        <span>{selectedUser.email}</span>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <span className={styles.detailLabel}>Phone:</span>
-                        <span>{selectedUser.phone || 'Not provided'}</span>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <span className={styles.detailLabel}>Member Since:</span>
-                        <span>{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <div className={styles.detailItem}>
-                        <span className={styles.detailLabel}>KYC Status:</span>
-                        <span className={styles[selectedUser.kycStatus?.replace(' ', '') || 'notstarted']}>
-                          {selectedUser.kycStatus || 'not started'}
-                        </span>
-                      </div>
-                    </div>
+              </div>
+              
+              <div className={styles.tableContainer}>
+                <table className={styles.usersTable}>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Email</th>
+                      <th>Member Since</th>
+                      <th>Status</th>
+                      <th>KYC Status</th>
+                      <th>Balance</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map(user => (
+                      <tr key={user._id}>
+                        <td>
+                          <div className={styles.userInfo}>
+                            <div className={styles.avatar}>{user.firstName.charAt(0)}{user.lastName.charAt(0)}</div>
+                            <span>{user.firstName} {user.lastName}</span>
+                          </div>
+                        </td>
+                        <td>{user.email}</td>
+                        <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <span className={`${styles.statusBadge} ${user.isSuspended ? styles.suspended : styles.active}`}>
+                            {user.isSuspended ? 'suspended' : 'active'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`${styles.kycBadge} ${styles[user.kycStatus?.replace(' ', '') || 'notstarted']}`}>
+                            {user.kycStatus || 'not started'}
+                          </span>
+                        </td>
+                        <td>
+                          {user.balance ? Object.entries(user.balance).map(([asset, amount]) => (
+                            <div key={asset}>{amount.toFixed(6)} {asset}</div>
+                          )) : '$0.00'}
+                        </td>
+                        <td>
+                          <div className={styles.actionButtons}>
+                            <button 
+                              className={styles.viewButton}
+                              onClick={() => handleUserAction(user._id, 'view')}
+                            >
+                              View
+                            </button>
+                            <button 
+                              className={user.isSuspended ? styles.activateButton : styles.suspendButton}
+                              onClick={() => handleUserAction(user._id, user.isSuspended ? 'activate' : 'suspend')}
+                            >
+                              {user.isSuspended ? 'Activate' : 'Suspend'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* User Detail View */}
+              {selectedUser && (
+                <div className={styles.userDetail}>
+                  <div className={styles.detailHeader}>
+                    <h3>User Details: {selectedUser.firstName} {selectedUser.lastName}</h3>
+                    <button 
+                      className={styles.closeButton}
+                      onClick={() => setSelectedUser(null)}
+                    >
+                      Close
+                    </button>
                   </div>
                   
-                  <div className={styles.detailSection}>
-                    <h4>Wallet Balances</h4>
-                    <div className={styles.balanceGrid}>
-                      {selectedUser.balance && Object.keys(selectedUser.balance).length > 0 ? (
-                        Object.entries(selectedUser.balance).map(([asset, amount]) => (
-                          <div key={asset} className={styles.balanceItem}>
-                            <span className={styles.assetName}>{asset}</span>
-                            <span className={styles.assetAmount}>{amount.toFixed(6)}</span>
+                  <div className={styles.detailContent}>
+                    <div className={styles.detailSection}>
+                      <h4>Personal Information</h4>
+                      <div className={styles.detailGrid}>
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>Email:</span>
+                          <span>{selectedUser.email}</span>
+                        </div>
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>Phone:</span>
+                          <span>{selectedUser.phone || 'Not provided'}</span>
+                        </div>
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>Member Since:</span>
+                          <span>{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>KYC Status:</span>
+                          <span className={styles[selectedUser.kycStatus?.replace(' ', '') || 'notstarted']}>
+                            {selectedUser.kycStatus || 'not started'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className={styles.detailSection}>
+                      <h4>Wallet Balances</h4>
+                      <div className={styles.balanceGrid}>
+                        {selectedUser.balance && Object.keys(selectedUser.balance).length > 0 ? (
+                          Object.entries(selectedUser.balance).map(([asset, amount]) => (
+                            <div key={asset} className={styles.balanceItem}>
+                              <span className={styles.assetName}>{asset}</span>
+                              <span className={styles.assetAmount}>{amount.toFixed(6)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p>No balances found</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className={styles.detailSection}>
+                      <h4>Update Balance</h4>
+                      {editingBalance ? (
+                        <form onSubmit={handleUpdateBalance} className={styles.balanceForm}>
+                          <div className={styles.formRow}>
+                            <div className={styles.formGroup}>
+                              <label>Asset</label>
+                              <select
+                                value={balanceUpdate.asset}
+                                onChange={(e) => setBalanceUpdate({...balanceUpdate, asset: e.target.value})}
+                                className={styles.formControl}
+                              >
+                                <option value="BTC">BTC</option>
+                                <option value="ETH">ETH</option>
+                                <option value="LTC">LTC</option>
+                                <option value="XRP">XRP</option>
+                              </select>
+                            </div>
+                            <div className={styles.formGroup}>
+                              <label>Amount</label>
+                              <input
+                                type="number"
+                                step="0.000001"
+                                value={balanceUpdate.amount}
+                                onChange={(e) => setBalanceUpdate({...balanceUpdate, amount: e.target.value})}
+                                className={styles.formControl}
+                                required
+                              />
+                            </div>
                           </div>
-                        ))
+                          <div className={styles.formActions}>
+                            <button type="submit" className={styles.saveButton}>Save</button>
+                            <button 
+                              type="button" 
+                              className={styles.cancelButton}
+                              onClick={() => setEditingBalance(false)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
                       ) : (
-                        <p>No balances found</p>
+                        <button 
+                          className={styles.editButton}
+                          onClick={() => setEditingBalance(true)}
+                        >
+                          Edit Balance
+                        </button>
                       )}
                     </div>
                   </div>
-                  
-                  <div className={styles.detailSection}>
-                    <h4>Update Balance</h4>
-                    {editingBalance ? (
-                      <form onSubmit={handleUpdateBalance} className={styles.balanceForm}>
-                        <div className={styles.formRow}>
-                          <div className={styles.formGroup}>
-                            <label>Asset</label>
-                            <select
-                              value={balanceUpdate.asset}
-                              onChange={(e) => setBalanceUpdate({...balanceUpdate, asset: e.target.value})}
-                              className={styles.formControl}
-                            >
-                              <option value="BTC">BTC</option>
-                              <option value="ETH">ETH</option>
-                              <option value="LTC">LTC</option>
-                              <option value="XRP">XRP</option>
-                            </select>
-                          </div>
-                          <div className={styles.formGroup}>
-                            <label>Amount</label>
-                            <input
-                              type="number"
-                              step="0.000001"
-                              value={balanceUpdate.amount}
-                              onChange={(e) => setBalanceUpdate({...balanceUpdate, amount: e.target.value})}
-                              className={styles.formControl}
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className={styles.formActions}>
-                          <button type="submit" className={styles.saveButton}>Save</button>
-                          <button 
-                            type="button" 
-                            className={styles.cancelButton}
-                            onClick={() => setEditingBalance(false)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <button 
-                        className={styles.editButton}
-                        onClick={() => setEditingBalance(true)}
-                      >
-                        Edit Balance
-                      </button>
-                    )}
-                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
-        {activeTab === 'transactions' && (
-          <div className={styles.transactionsContent}>
-            <div className={styles.contentHeader}>
-              <h2>Transaction Management</h2>
-              <div className={styles.filters}>
-                <select className={styles.filterSelect}>
-                  <option>All Types</option>
-                  <option>Buy</option>
-                  <option>Sell</option>
-                </select>
-                <select className={styles.filterSelect}>
-                  <option>All Statuses</option>
-                  <option>Completed</option>
-                  <option>Pending</option>
-                  <option>Failed</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className={styles.tableContainer}>
-              <table className={styles.transactionsTable}>
-                <thead>
-                  <tr>
-                    <th>Transaction ID</th>
-                    <th>User</th>
-                    <th>Type</th>
-                    <th>Asset</th>
-                    <th>Amount</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map(transaction => (
-                    <tr key={transaction._id}>
-                      <td>#{transaction._id.substring(0, 8)}</td>
-                      <td>{transaction.userId?.firstName} {transaction.userId?.lastName}</td>
-                      <td>
-                        <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
-                          {transaction.type}
-                        </span>
-                      </td>
-                      <td>{transaction.asset}</td>
-                      <td>{transaction.amount} {transaction.asset}</td>
-                      <td>${transaction.price.toFixed(2)}</td>
-                      <td>${transaction.total.toFixed(2)}</td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
-                          {transaction.status}
-                        </span>
-                      </td>
-                      <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <div className={styles.actionButtons}>
-                          {transaction.status === 'pending' && (
-                            <>
-                              <button 
-                                className={styles.approveButton}
-                                onClick={() => handleTransactionAction(transaction._id, 'approve')}
-                              >
-                                Approve
-                              </button>
-                              <button 
-                                className={styles.rejectButton}
-                                onClick={() => handleTransactionAction(transaction._id, 'reject')}
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className={styles.settingsContent}>
-            <h2>Platform Settings</h2>
-            
-            <div className={styles.settingsSection}>
-              <h3>Security Settings</h3>
-              <div className={styles.settingGroup}>
-                <div className={styles.settingItem}>
-                  <div>
-                    <h4>Two-Factor Authentication</h4>
-                    <p>Require 2FA for all admin accounts</p>
-                  </div>
-                  <label className={styles.switch}>
-                    <input type="checkbox" defaultChecked />
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
-                
-                <div className={styles.settingItem}>
-                  <div>
-                    <h4>IP Whitelisting</h4>
-                    <p>Restrict admin access to specific IP addresses</p>
-                  </div>
-                  <label className={styles.switch}>
-                    <input type="checkbox" />
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div className={styles.settingsSection}>
-              <h3>Trading Settings</h3>
-              <div className={styles.settingGroup}>
-                <div className={styles.settingItem}>
-                  <div>
-                    <h4>Maintenance Mode</h4>
-                    <p>Temporarily disable trading for maintenance</p>
-                  </div>
-                  <label className={styles.switch}>
-                    <input type="checkbox" />
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
-                
-                <div className={styles.settingItem}>
-                  <div>
-                    <h4>Withdrawal Limits</h4>
-                    <p>Set daily withdrawal limits for users</p>
-                  </div>
-                  <button className={styles.editButton}>Configure</button>
-                </div>
-              </div>
-            </div>
-            
-            <div className={styles.settingsSection}>
-              <h3>User Management</h3>
-              <div className={styles.settingGroup}>
-                <div className={styles.settingItem}>
-                  <div>
-                    <h4>Email Verification</h4>
-                    <p>Require email verification for new accounts</p>
-                  </div>
-                  <label className={styles.switch}>
-                    <input type="checkbox" defaultChecked />
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
-                
-                <div className={styles.settingItem}>
-                  <div>
-                    <h4>Account Lockout</h4>
-                    <p>Lock accounts after 5 failed login attempts</p>
-                  </div>
-                  <label className={styles.switch}>
-                    <input type="checkbox" defaultChecked />
-                    <span className={styles.slider}></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'reports' && (
-          <div className={styles.reportsContent}>
-            <h2>Reports & Analytics</h2>
-            
-            <div className={styles.reportCards}>
-              <div className={styles.reportCard}>
-                <h3>User Activity Report</h3>
-                <p>View user login patterns and activity metrics</p>
-                <button className={styles.generateButton}>Generate Report</button>
-              </div>
-              
-              <div className={styles.reportCard}>
-                <h3>Financial Report</h3>
-                <p>Generate revenue and transaction volume reports</p>
-                <button className={styles.generateButton}>Generate Report</button>
-              </div>
-              
-              <div className={styles.reportCard}>
-                <h3>Compliance Report</h3>
-                <p>Export KYC and transaction compliance data</p>
-                <button className={styles.generateButton}>Generate Report</button>
-              </div>
-              
-              <div className={styles.reportCard}>
-                <h3>System Performance</h3>
-                <p>Monitor platform uptime and performance metrics</p>
-                <button className={styles.generateButton}>Generate Report</button>
-              </div>
-            </div>
-            
-            <div className={styles.reportFilters}>
-              <h3>Custom Report</h3>
-              <div className={styles.filterRow}>
-                <div className={styles.filterGroup}>
-                  <label>Date Range</label>
-                  <input type="date" className={styles.dateInput} />
-                  <span>to</span>
-                  <input type="date" className={styles.dateInput} />
-                </div>
-                <div className={styles.filterGroup}>
-                  <label>Report Type</label>
+          {activeTab === 'transactions' && (
+            <div className={styles.transactionsContent}>
+              <div className={styles.contentHeader}>
+                <h2>Transaction Management</h2>
+                <div className={styles.filters}>
                   <select className={styles.filterSelect}>
-                    <option>User Activity</option>
-                    <option>Financial</option>
-                    <option>Compliance</option>
-                    <option>Performance</option>
+                    <option>All Types</option>
+                    <option>Buy</option>
+                    <option>Sell</option>
+                  </select>
+                  <select className={styles.filterSelect}>
+                    <option>All Statuses</option>
+                    <option>Completed</option>
+                    <option>Pending</option>
+                    <option>Failed</option>
                   </select>
                 </div>
-                <button className={styles.generateButton}>Generate</button>
+              </div>
+              
+              <div className={styles.tableContainer}>
+                <table className={styles.transactionsTable}>
+                  <thead>
+                    <tr>
+                      <th>Transaction ID</th>
+                      <th>User</th>
+                      <th>Type</th>
+                      <th>Asset</th>
+                      <th>Amount</th>
+                      <th>Price</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map(transaction => (
+                      <tr key={transaction._id}>
+                        <td>#{transaction._id.substring(0, 8)}</td>
+                        <td>{transaction.userId?.firstName} {transaction.userId?.lastName}</td>
+                        <td>
+                          <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
+                            {transaction.type}
+                          </span>
+                        </td>
+                        <td>{transaction.asset}</td>
+                        <td>{transaction.amount} {transaction.asset}</td>
+                        <td>${transaction.price.toFixed(2)}</td>
+                        <td>${transaction.total.toFixed(2)}</td>
+                        <td>
+                          <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
+                            {transaction.status}
+                          </span>
+                        </td>
+                        <td>{new Date(transaction.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <div className={styles.actionButtons}>
+                            {transaction.status === 'pending' && (
+                              <>
+                                <button 
+                                  className={styles.approveButton}
+                                  onClick={() => handleTransactionAction(transaction._id, 'approve')}
+                                >
+                                  Approve
+                                </button>
+                                <button 
+                                  className={styles.rejectButton}
+                                  onClick={() => handleTransactionAction(transaction._id, 'reject')}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'support' && (
-          <div className={styles.supportContent}>
-            <h2>Support Chat</h2>
-            <div className={styles.chatContainer}>
-              <div className={styles.chatMessages}>
-                <div className={`${styles.message}`}>
-                  <div className={styles.messageHeader}>
-                    <span className={styles.userName}>John Doe</span>
-                    <span className={styles.timestamp}>2025-11-20 14:30</span>
+          {activeTab === 'settings' && (
+            <div className={styles.settingsContent}>
+              <h2>Platform Settings</h2>
+              
+              <div className={styles.settingsSection}>
+                <h3>Security Settings</h3>
+                <div className={styles.settingGroup}>
+                  <div className={styles.settingItem}>
+                    <div>
+                      <h4>Two-Factor Authentication</h4>
+                      <p>Require 2FA for all admin accounts</p>
+                    </div>
+                    <label className={styles.switch}>
+                      <input type="checkbox" defaultChecked />
+                      <span className={styles.slider}></span>
+                    </label>
                   </div>
-                  <div className={styles.messageContent}>
-                    I&apos;m having trouble with my withdrawal. It&apos;s been pending for over 24 hours.
-                  </div>
-                </div>
-                <div className={`${styles.message} ${styles.admin}`}>
-                  <div className={styles.messageHeader}>
-                    <span className={styles.userName}>Admin</span>
-                    <span className={styles.timestamp}>2025-11-20 14:32</span>
-                  </div>
-                  <div className={styles.messageContent}>
-                    Hello John, I can see your withdrawal request. Let me check the status for you.
+                  
+                  <div className={styles.settingItem}>
+                    <div>
+                      <h4>IP Whitelisting</h4>
+                      <p>Restrict admin access to specific IP addresses</p>
+                    </div>
+                    <label className={styles.switch}>
+                      <input type="checkbox" />
+                      <span className={styles.slider}></span>
+                    </label>
                   </div>
                 </div>
               </div>
-              <div className={styles.chatInput}>
-                <input type="text" placeholder="Type your message..." className={styles.messageInput} />
-                <button className={styles.sendButton}>Send</button>
+              
+              <div className={styles.settingsSection}>
+                <h3>Trading Settings</h3>
+                <div className={styles.settingGroup}>
+                  <div className={styles.settingItem}>
+                    <div>
+                      <h4>Maintenance Mode</h4>
+                      <p>Temporarily disable trading for maintenance</p>
+                    </div>
+                    <label className={styles.switch}>
+                      <input type="checkbox" />
+                      <span className={styles.slider}></span>
+                    </label>
+                  </div>
+                  
+                  <div className={styles.settingItem}>
+                    <div>
+                      <h4>Withdrawal Limits</h4>
+                      <p>Set daily withdrawal limits for users</p>
+                    </div>
+                    <button className={styles.editButton}>Configure</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className={styles.settingsSection}>
+                <h3>User Management</h3>
+                <div className={styles.settingGroup}>
+                  <div className={styles.settingItem}>
+                    <div>
+                      <h4>Email Verification</h4>
+                      <p>Require email verification for new accounts</p>
+                    </div>
+                    <label className={styles.switch}>
+                      <input type="checkbox" defaultChecked />
+                      <span className={styles.slider}></span>
+                    </label>
+                  </div>
+                  
+                  <div className={styles.settingItem}>
+                    <div>
+                      <h4>Account Lockout</h4>
+                      <p>Lock accounts after 5 failed login attempts</p>
+                    </div>
+                    <label className={styles.switch}>
+                      <input type="checkbox" defaultChecked />
+                      <span className={styles.slider}></span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {activeTab === 'reports' && (
+            <div className={styles.reportsContent}>
+              <h2>Reports & Analytics</h2>
+              
+              <div className={styles.reportCards}>
+                <div className={styles.reportCard}>
+                  <h3>User Activity Report</h3>
+                  <p>View user login patterns and activity metrics</p>
+                  <button className={styles.generateButton}>Generate Report</button>
+                </div>
+                
+                <div className={styles.reportCard}>
+                  <h3>Financial Report</h3>
+                  <p>Generate revenue and transaction volume reports</p>
+                  <button className={styles.generateButton}>Generate Report</button>
+                </div>
+                
+                <div className={styles.reportCard}>
+                  <h3>Compliance Report</h3>
+                  <p>Export KYC and transaction compliance data</p>
+                  <button className={styles.generateButton}>Generate Report</button>
+                </div>
+                
+                <div className={styles.reportCard}>
+                  <h3>System Performance</h3>
+                  <p>Monitor platform uptime and performance metrics</p>
+                  <button className={styles.generateButton}>Generate Report</button>
+                </div>
+              </div>
+              
+              <div className={styles.reportFilters}>
+                <h3>Custom Report</h3>
+                <div className={styles.filterRow}>
+                  <div className={styles.filterGroup}>
+                    <label>Date Range</label>
+                    <input type="date" className={styles.dateInput} />
+                    <span>to</span>
+                    <input type="date" className={styles.dateInput} />
+                  </div>
+                  <div className={styles.filterGroup}>
+                    <label>Report Type</label>
+                    <select className={styles.filterSelect}>
+                      <option>User Activity</option>
+                      <option>Financial</option>
+                      <option>Compliance</option>
+                      <option>Performance</option>
+                    </select>
+                  </div>
+                  <button className={styles.generateButton}>Generate</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'support' && (
+            <div className={styles.supportContent}>
+              <h2>Support Chat</h2>
+              <div className={styles.chatContainer}>
+                <div className={styles.chatMessages}>
+                  <div className={`${styles.message}`}>
+                    <div className={styles.messageHeader}>
+                      <span className={styles.userName}>John Doe</span>
+                      <span className={styles.timestamp}>2025-11-20 14:30</span>
+                    </div>
+                    <div className={styles.messageContent}>
+                      I&apos;m having trouble with my withdrawal. It&apos;s been pending for over 24 hours.
+                    </div>
+                  </div>
+                  <div className={`${styles.message} ${styles.admin}`}>
+                    <div className={styles.messageHeader}>
+                      <span className={styles.userName}>Admin</span>
+                      <span className={styles.timestamp}>2025-11-20 14:32</span>
+                    </div>
+                    <div className={styles.messageContent}>
+                      Hello John, I can see your withdrawal request. Let me check the status for you.
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.chatInput}>
+                  <input type="text" placeholder="Type your message..." className={styles.messageInput} />
+                  <button className={styles.sendButton}>Send</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <ChatSupport />
       </div>
-      <ChatSupport />
-    </div>
+    </ProtectedRoute>
   );
 }

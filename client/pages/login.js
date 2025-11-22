@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import styles from '../styles/Login.module.css';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
@@ -71,111 +72,113 @@ export default function Login() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.loginCard}>
-        <div className={styles.logo}>
-          <h1>CryptoZen</h1>
-          <p>Secure Asian-Inspired Crypto Exchange</p>
-        </div>
-        
-        {error && <div className={styles.error}>{error}</div>}
-        
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="Enter your email"
-              aria-invalid={!!emailError}
-              aria-describedby="email-help"
-              autoComplete="email"
-              className={emailError ? styles.inputError : ''}
-            />
-            {emailError && <div id="email-help" className={styles.inputHelp}>{emailError}</div>}
+    <ProtectedRoute requireAuth={false}>
+      <div className={styles.container}>
+        <div className={styles.loginCard}>
+          <div className={styles.logo}>
+            <h1>CryptoZen</h1>
+            <p>Secure Asian-Inspired Crypto Exchange</p>
           </div>
           
-          <div className={styles.inputGroup}>
-            <label htmlFor="password">Password</label>
-            <div className={styles.passwordContainer}>
+          {error && <div className={styles.error}>{error}</div>}
+          
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="email">Email Address</label>
               <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter your password"
-                aria-invalid={!!passwordError}
-                aria-describedby="password-help"
-                autoComplete="current-password"
-                className={passwordError ? styles.inputError : ''}
+                placeholder="Enter your email"
+                aria-invalid={!!emailError}
+                aria-describedby="email-help"
+                autoComplete="email"
+                className={emailError ? styles.inputError : ''}
               />
-              <button 
-                type="button" 
-                className={styles.togglePassword}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
+              {emailError && <div id="email-help" className={styles.inputHelp}>{emailError}</div>}
             </div>
-            <div id="password-help" className={styles.inputHelp}>
-              {passwordError || 'Use 8+ chars with upper, lower, and number'}
-            </div>
-          </div>
-          
-          <div className={styles.options}>
-            <label className={styles.checkboxContainer}>
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span className={styles.checkmark}></span>
-              Remember me
-            </label>
             
-            <Link href="/forgot-password" className={styles.forgotPassword}>
-              Forgot Password?
-            </Link>
+            <div className={styles.inputGroup}>
+              <label htmlFor="password">Password</label>
+              <div className={styles.passwordContainer}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
+                  aria-invalid={!!passwordError}
+                  aria-describedby="password-help"
+                  autoComplete="current-password"
+                  className={passwordError ? styles.inputError : ''}
+                />
+                <button 
+                  type="button" 
+                  className={styles.togglePassword}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+              <div id="password-help" className={styles.inputHelp}>
+                {passwordError || 'Use 8+ chars with upper, lower, and number'}
+              </div>
+            </div>
+            
+            <div className={styles.options}>
+              <label className={styles.checkboxContainer}>
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span className={styles.checkmark}></span>
+                Remember me
+              </label>
+              
+              <Link href="/forgot-password" className={styles.forgotPassword}>
+                Forgot Password?
+              </Link>
+            </div>
+            
+            <button 
+              type="submit" 
+              className={styles.loginButton}
+              disabled={loading || !!emailError || !!passwordError || !email || !password}
+            >
+              {loading ? (
+                <div className={styles.buttonContent}>
+                  <div className={styles.spinner}></div>
+                  Signing In...
+                </div>
+              ) : 'Sign In'}
+            </button>
+          </form>
+          
+          <div className={styles.divider}>
+            <span>or</span>
           </div>
           
-          <button 
-            type="submit" 
-            className={styles.loginButton}
-            disabled={loading || !!emailError || !!passwordError || !email || !password}
-          >
-            {loading ? (
-              <div className={styles.buttonContent}>
-                <div className={styles.spinner}></div>
-                Signing In...
-              </div>
-            ) : 'Sign In'}
-          </button>
-        </form>
-        
-        <div className={styles.divider}>
-          <span>or</span>
-        </div>
-        
-        <div className={styles.socialLogin}>
-          <button className={`${styles.socialButton} ${styles.google}`}>
-            <span className={styles.icon}>G</span>
-            Continue with Google
-          </button>
-          <button className={`${styles.socialButton} ${styles.facebook}`}>
-            <span className={styles.icon}>f</span>
-            Continue with Facebook
-          </button>
-        </div>
-        
-        <div className={styles.signupLink}>
-          Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
+          <div className={styles.socialLogin}>
+            <button className={`${styles.socialButton} ${styles.google}`}>
+              <span className={styles.icon}>G</span>
+              Continue with Google
+            </button>
+            <button className={`${styles.socialButton} ${styles.facebook}`}>
+              <span className={styles.icon}>f</span>
+              Continue with Facebook
+            </button>
+          </div>
+          
+          <div className={styles.signupLink}>
+            Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
+          </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
