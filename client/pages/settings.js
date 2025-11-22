@@ -280,7 +280,7 @@ export default function Settings() {
                     <h3>Government ID</h3>
                     {verification.idVerified && <span className={styles.verifiedBadge}>Verified</span>}
                   </div>
-                  <p>Upload a government-issued ID (passport, driver's license, etc.)</p>
+                  <p>Upload a government-issued ID (passport, driver&apos;s license, etc.)</p>
                   <button className={styles.uploadButton}>Upload ID</button>
                 </div>
                 

@@ -231,7 +231,7 @@ export default function Dashboard() {
                 ))
               ) : (
                 <div className={styles.emptyState}>
-                  <p>You don't have any assets yet.</p>
+                  <p>You don&apos;t have any assets yet.</p>
                   <Link href="/trade" className={styles.getStartedButton}>Get Started</Link>
                 </div>
               )}
