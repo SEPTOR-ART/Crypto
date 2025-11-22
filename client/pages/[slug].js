@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import styles from '../styles/globals.css';
+// import styles from '../styles/globals.css'; // Removed unused import
 
 const KNOWN = ['support','help-center','contact','fees','docs','terms','privacy','security','compliance','staking','forgot-password'];
 
