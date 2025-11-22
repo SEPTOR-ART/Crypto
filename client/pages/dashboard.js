@@ -168,6 +168,7 @@ export default function Dashboard() {
             <Link href="/dashboard" className={styles.navLink}>Dashboard</Link>
             <Link href="/trade" className={styles.navLink}>Trade</Link>
             <Link href="/wallet" className={styles.navLink}>Wallet</Link>
+            <Link href="/profile" className={styles.navLink}>Profile</Link>
             <Link href="/settings" className={styles.navLink}>Settings</Link>
             {isAdmin(user) && (
               <Link href="/admin" className={styles.navLink}>Admin</Link>
@@ -294,7 +295,7 @@ export default function Dashboard() {
           <section className={styles.accountSection}>
             <div className={styles.sectionHeader}>
               <h2>Account Information</h2>
-              <Link href="/settings" className={styles.editButton}>Edit</Link>
+              <Link href="/profile" className={styles.editButton}>Edit</Link>
             </div>
             
             <div className={styles.accountInfo}>
