@@ -60,7 +60,7 @@ export default function InfoPage({ slug }) {
     },
     'forgot-password': {
       title: 'Forgot Password',
-      description: 'Reset your password if you\'ve forgotten it.'
+      description: 'Reset your password if you&apos;ve forgotten it.'
     }
   };
   
@@ -86,7 +86,7 @@ export default function InfoPage({ slug }) {
           <div style={{marginTop:'2rem',padding:'1.5rem',backgroundColor:'#f8f9fa',borderRadius:'8px'}}>
             <h2 style={{color:'#6a0dad',marginBottom:'1rem'}}>Coming Soon</h2>
             <p style={{color:'#495057'}}>
-              This page is currently under development. We're working hard to bring you the best 
+              This page is currently under development. We&apos;re working hard to bring you the best 
               experience possible. Please check back soon for updates.
             </p>
           </div>
@@ -95,11 +95,11 @@ export default function InfoPage({ slug }) {
         <div>
           <h2 style={{color:'#6a0dad'}}>Page Not Found</h2>
           <p style={{color:'#495057',fontSize:'1.1rem',lineHeight:'1.6'}}>
-            We couldn't find the page you were looking for.
+            We couldn&apos;t find the page you were looking for.
           </p>
           <div style={{marginTop:'2rem'}}>
             <Link href="/" style={{color:'#6a0dad',textDecoration:'underline',fontSize:'1.1rem'}}>
-              ← Go back home
+              &#8592; Go back home
             </Link>
           </div>
         </div>
