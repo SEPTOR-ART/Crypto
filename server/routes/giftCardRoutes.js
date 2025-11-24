@@ -10,7 +10,7 @@ const {
   updateGiftCardStatus,
   addGiftCardBalance
 } = require('../controllers/giftCardController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 // Public routes
 router.route('/validate').post(validateGiftCard);
@@ -19,16 +19,16 @@ router.route('/process-payment').post(processGiftCardPayment);
 // User routes (protected)
 router.route('/my-cards').get(protect, getUserGiftCards);
 
-// Admin routes (protected and admin only)
+// Admin routes (protected only - admin check is done in controller)
 router.route('/')
-  .post(protect, admin, createGiftCard)
-  .get(protect, admin, getAllGiftCards);
+  .post(protect, createGiftCard)
+  .get(protect, getAllGiftCards);
 
 router.route('/:id')
-  .get(protect, admin, getGiftCardById)
-  .put(protect, admin, updateGiftCardStatus);
+  .get(protect, getGiftCardById)
+  .put(protect, updateGiftCardStatus);
 
 router.route('/:id/add-balance')
-  .put(protect, admin, addGiftCardBalance);
+  .put(protect, addGiftCardBalance);
 
 module.exports = router;

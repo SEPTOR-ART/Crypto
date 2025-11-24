@@ -3,6 +3,22 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const crypto = require('crypto');
 
+// Check if user is admin
+const isAdmin = (user) => {
+  // Check if user object exists
+  if (!user) return false;
+  
+  // Check for admin email addresses
+  const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
+  if (adminEmails.includes(user.email)) return true;
+  
+  // Check for isAdmin flag
+  if (user.isAdmin === true) return true;
+  
+  // User is not an admin
+  return false;
+};
+
 // Generate a random gift card number
 const generateGiftCardNumber = () => {
   return crypto.randomBytes(8).toString('hex').toUpperCase();
@@ -16,6 +32,11 @@ const generatePIN = () => {
 // Create a new gift card
 const createGiftCard = async (req, res) => {
   try {
+    // Only allow admin to access this endpoint
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    
     const { balance, currency, expiresAt } = req.body;
     
     // Validate input
@@ -196,6 +217,11 @@ const getUserGiftCards = async (req, res) => {
 // Get all gift cards (admin only)
 const getAllGiftCards = async (req, res) => {
   try {
+    // Only allow admin to access this endpoint
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -226,6 +252,11 @@ const getAllGiftCards = async (req, res) => {
 // Get gift card by ID (admin only)
 const getGiftCardById = async (req, res) => {
   try {
+    // Only allow admin to access this endpoint
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    
     const giftCard = await GiftCard.findById(req.params.id)
       .populate('issuedTo', 'firstName lastName email')
       .populate('transactions');
@@ -244,6 +275,11 @@ const getGiftCardById = async (req, res) => {
 // Update gift card status (admin only)
 const updateGiftCardStatus = async (req, res) => {
   try {
+    // Only allow admin to access this endpoint
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    
     const { status } = req.body;
     
     const giftCard = await GiftCard.findById(req.params.id);
@@ -278,6 +314,11 @@ const updateGiftCardStatus = async (req, res) => {
 // Add balance to gift card (admin only)
 const addGiftCardBalance = async (req, res) => {
   try {
+    // Only allow admin to access this endpoint
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    
     const { amount } = req.body;
     
     if (!amount || amount <= 0) {
