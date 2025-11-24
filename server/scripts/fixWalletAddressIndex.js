@@ -17,6 +17,8 @@ const connectDB = async () => {
   try {
     const conn = await mongoose.connect(mongoUri, {
       // Remove deprecated options
+      serverSelectionTimeoutMS: 10000, // 10 second timeout
+      socketTimeoutMS: 20000, // 20 second timeout
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
@@ -24,6 +26,7 @@ const connectDB = async () => {
     console.error(`Error connecting to MongoDB: ${error.message}`);
     console.log('Please ensure your MONGODB_URI is correctly set in your .env file');
     console.log('For Render deployments, this is typically set in the Render dashboard');
+    console.log('Also check your network connection and firewall settings');
     process.exit(1);
   }
 };
@@ -54,7 +57,7 @@ const fixWalletAddressIndex = async () => {
       await collection.dropIndex('walletAddress_1');
       console.log('Old walletAddress index dropped successfully');
     } else {
-      console.log('No problematic walletAddress index found');
+      console.log('No problematic walletAddress index found or already fixed');
     }
     
     // Create the new partial index with correct syntax
