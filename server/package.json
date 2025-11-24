@@ -6,7 +6,8 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "build": "echo 'No build required for Node.js server'",
-    "test": "cross-env NODE_ENV=test jest"
+    "test": "cross-env NODE_ENV=test jest",
+    "fix-wallet-index": "node scripts/fixWalletAddressIndex.js"
   },
   "keywords": [],
   "author": "",
