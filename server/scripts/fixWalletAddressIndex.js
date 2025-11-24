@@ -57,7 +57,7 @@ const fixWalletAddressIndex = async () => {
       console.log('No problematic walletAddress index found');
     }
     
-    // Create the new partial index
+    // Create the new partial index with correct syntax
     console.log('Creating new partial index for walletAddress...');
     await collection.createIndex(
       { walletAddress: 1 },
@@ -65,7 +65,8 @@ const fixWalletAddressIndex = async () => {
         unique: true,
         name: 'walletAddress_1',
         partialFilterExpression: {
-          walletAddress: { $type: 'string', $ne: '' }
+          walletAddress: { $type: 'string' },
+          $expr: { $ne: [{ $strLenCP: '$walletAddress' }, 0] }
         }
       }
     );
