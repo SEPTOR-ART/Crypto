@@ -181,7 +181,8 @@ export default function Dashboard() {
             <Link href="/wallet" className={styles.navLink}>Wallet</Link>
             <Link href="/profile" className={styles.navLink}>Profile</Link>
             <Link href="/settings" className={styles.navLink}>Settings</Link>
-            {isAdmin(user) && (
+            {/* Only show admin link for actual admin users */}
+            {user && isAdmin && isAdmin(user) && (
               <Link href="/admin" className={styles.navLink}>Admin</Link>
             )}
           </nav>
