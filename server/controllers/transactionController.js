@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const GiftCard = require('../models/GiftCard');
 
 // Simulate blockchain transaction processing
 const processBlockchainTransaction = async (transactionData) => {
@@ -24,10 +25,65 @@ const processBlockchainTransaction = async (transactionData) => {
   };
 };
 
+// Process gift card payment
+const processGiftCardPayment = async (cardNumber, pin, amount) => {
+  try {
+    // Find gift card
+    const giftCard = await GiftCard.findOne({ cardNumber });
+    
+    if (!giftCard) {
+      return { success: false, message: 'Gift card not found' };
+    }
+    
+    // Check if gift card is active
+    if (giftCard.status !== 'active') {
+      return { success: false, message: `Gift card is ${giftCard.status}` };
+    }
+    
+    // Check if gift card has expired
+    if (giftCard.expiresAt && new Date(giftCard.expiresAt) < new Date()) {
+      giftCard.status = 'expired';
+      await giftCard.save();
+      return { success: false, message: 'Gift card has expired' };
+    }
+    
+    // Check PIN
+    if (giftCard.pin !== pin) {
+      return { success: false, message: 'Invalid PIN' };
+    }
+    
+    // Check balance
+    if (!giftCard.hasSufficientBalance(amount)) {
+      return { 
+        success: false, 
+        message: 'Insufficient balance on gift card', 
+        availableBalance: giftCard.balance 
+      };
+    }
+    
+    // Deduct balance
+    const deductionSuccess = giftCard.deductBalance(amount);
+    if (!deductionSuccess) {
+      return { success: false, message: 'Failed to deduct balance from gift card' };
+    }
+    
+    await giftCard.save();
+    
+    return { 
+      success: true, 
+      message: 'Gift card payment processed successfully',
+      remainingBalance: giftCard.balance
+    };
+  } catch (error) {
+    console.error('Gift card payment processing error:', error);
+    return { success: false, message: 'Error processing gift card payment' };
+  }
+};
+
 // Create transaction
 const createTransaction = async (req, res) => {
   try {
-    const { type, asset, amount, price, paymentMethod, toAddress, fromAddress } = req.body;
+    const { type, asset, amount, price, paymentMethod, toAddress, fromAddress, giftCardDetails } = req.body;
     
     // Validate required fields
     if (!type || !asset || !amount || !price) {
@@ -52,6 +108,19 @@ const createTransaction = async (req, res) => {
         if (amount > currentBalance) {
           return res.status(400).json({ message: `Insufficient ${asset} balance` });
         }
+      }
+    }
+    
+    // If payment method is gift card, validate and process gift card payment
+    if (paymentMethod === 'gift' && giftCardDetails) {
+      const { cardNumber, pin } = giftCardDetails;
+      const giftCardResult = await processGiftCardPayment(cardNumber, pin, total);
+      
+      if (!giftCardResult.success) {
+        return res.status(400).json({ 
+          message: giftCardResult.message,
+          availableBalance: giftCardResult.availableBalance
+        });
       }
     }
     
@@ -89,6 +158,15 @@ const createTransaction = async (req, res) => {
       await transaction.save();
       console.log('Transaction completed:', transaction._id);
       
+      // If this was a gift card payment, associate the transaction with the gift card
+      if (paymentMethod === 'gift' && giftCardDetails) {
+        const giftCard = await GiftCard.findOne({ cardNumber: giftCardDetails.cardNumber });
+        if (giftCard) {
+          giftCard.transactions.push(transaction._id);
+          await giftCard.save();
+        }
+      }
+      
       // Update user's balance based on transaction type
       const user = await User.findById(req.user._id);
       if (user) {
@@ -122,7 +200,11 @@ const createTransaction = async (req, res) => {
         // Return the updated user data along with the transaction
         return res.status(201).json({
           transaction: transaction,
-          userBalance: Object.fromEntries(updatedUser.balance)
+          userBalance: Object.fromEntries(updatedUser.balance),
+          giftCardPayment: paymentMethod === 'gift' ? {
+            processed: true,
+            message: 'Gift card payment processed successfully'
+          } : undefined
         });
       }
     } else {

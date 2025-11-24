@@ -38,6 +38,11 @@ const transactionSchema = new mongoose.Schema({
     enum: ['credit', 'bank', 'gift', 'wallet'],
     required: true
   },
+  // Gift card specific fields
+  giftCardNumber: {
+    type: String,
+    trim: true
+  },
   fromAddress: {
     type: String
   },

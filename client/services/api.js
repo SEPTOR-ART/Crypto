@@ -60,6 +60,10 @@ export const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       const msg = data && (data.message || data.error) ? (data.message || data.error) : `HTTP ${response.status}`;
+      // Handle rate limit errors specifically
+      if (response.status === 429) {
+        throw new Error('Too many requests, please try again later.');
+      }
       throw new Error(msg);
     }
 
@@ -69,6 +73,10 @@ export const apiRequest = async (endpoint, options = {}) => {
     if (error.name === 'AbortError') {
       throw new Error('Request timeout - please check your network connection');
     }
+    // Handle rate limit errors in the catch block as well
+    if (error.message && error.message.includes('429')) {
+      throw new Error('Too many requests, please try again later.');
+    }
     throw new Error(`Failed to fetch: ${error.message}`);
   }
 };
@@ -77,38 +85,70 @@ export const apiRequest = async (endpoint, options = {}) => {
 export const authService = {
   // Register a new user
   register: async (userData) => {
-    return apiRequest('/api/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    try {
+      return await apiRequest('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 
   // Login user
   login: async (credentials) => {
-    return apiRequest('/api/users/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+    try {
+      return await apiRequest('/api/users/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 
   // Get user profile
   getProfile: async (token) => {
-    return apiRequest('/api/users/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      return await apiRequest('/api/users/profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 
   // Update user profile
   updateProfile: async (userData, token) => {
-    return apiRequest('/api/users/profile', {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(userData),
-    });
+    try {
+      return await apiRequest('/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 };
 
@@ -119,13 +159,25 @@ export const cryptoService = {
     try {
       return await apiRequest('/api/prices');
     } catch (e) {
+      // Handle rate limit errors
+      if (e.message && e.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
       return { BTC: 0, ETH: 0, LTC: 0, XRP: 0 };
     }
   },
 
   // Get available assets
   getAssets: async () => {
-    return apiRequest('/api/assets');
+    try {
+      return await apiRequest('/api/assets');
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 
   // Create WebSocket connection for real-time prices
@@ -195,32 +247,208 @@ export const cryptoService = {
 export const transactionService = {
   // Create a new transaction
   createTransaction: async (transactionData, token) => {
-    const response = await apiRequest('/api/transactions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(transactionData),
-    });
-    
-    return response;
+    try {
+      const response = await apiRequest('/api/transactions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(transactionData),
+      });
+      
+      return response;
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 
   // Get user transactions
   getUserTransactions: async (token) => {
-    return apiRequest('/api/transactions', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      return await apiRequest('/api/transactions', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 
   // Get transaction by ID
   getTransactionById: async (id, token) => {
-    return apiRequest(`/api/transactions/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      return await apiRequest(`/api/transactions/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+};
+
+// Gift Card services
+export const giftCardService = {
+  // Validate gift card
+  validateGiftCard: async (cardData) => {
+    try {
+      return await apiRequest('/api/gift-cards/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cardData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Process gift card payment
+  processGiftCardPayment: async (paymentData) => {
+    try {
+      return await apiRequest('/api/gift-cards/process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Get user's gift cards
+  getUserGiftCards: async (token) => {
+    try {
+      return await apiRequest('/api/gift-cards/my-cards', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Admin: Create gift card
+  createGiftCard: async (cardData, token) => {
+    try {
+      return await apiRequest('/api/gift-cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(cardData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Admin: Get all gift cards
+  getAllGiftCards: async (token, page = 1, limit = 10) => {
+    try {
+      return await apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Admin: Get gift card by ID
+  getGiftCardById: async (id, token) => {
+    try {
+      return await apiRequest(`/api/gift-cards/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Admin: Update gift card status
+  updateGiftCardStatus: async (id, statusData, token) => {
+    try {
+      return await apiRequest(`/api/gift-cards/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(statusData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Admin: Add balance to gift card
+  addGiftCardBalance: async (id, balanceData, token) => {
+    try {
+      return await apiRequest(`/api/gift-cards/${id}/add-balance`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(balanceData),
+      });
+    } catch (error) {
+      // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
   },
 };

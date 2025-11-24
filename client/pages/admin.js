@@ -12,6 +12,7 @@ import {
   adminUpdateUserStatus
 } from '../services/adminService';
 import ProtectedRoute from '../components/ProtectedRoute';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
@@ -47,7 +48,12 @@ export default function AdminDashboard() {
       setUsers(usersData);
       setTransactions(transactionsData);
     } catch (err) {
-      setError('Failed to load admin data: ' + err.message);
+      // Handle rate limit errors with user-friendly message
+      if (err.message && err.message.includes('429')) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else {
+        setError('Failed to load admin data: ' + err.message);
+      }
       console.error('Admin data load error:', err);
     } finally {
       setLoading(false);
@@ -79,7 +85,12 @@ export default function AdminDashboard() {
         setBalanceUpdate({ asset: 'BTC', amount: 0 });
       }
     } catch (err) {
-      setError('Failed to load user details: ' + err.message);
+      // Handle rate limit errors with user-friendly message
+      if (err.message && err.message.includes('429')) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else {
+        setError('Failed to load user details: ' + err.message);
+      }
       console.error('User details load error:', err);
     } finally {
       setLoading(false);
@@ -222,12 +233,27 @@ export default function AdminDashboard() {
         clearInterval(intervalId);
       }
       
-      intervalId = setInterval(() => {
-        loadAdminData();
-      }, 60000); // Refresh every minute
+      const refreshData = async () => {
+        try {
+          await loadAdminData();
+        } catch (error) {
+          console.error('Failed to refresh admin data:', error);
+          // Handle rate limit errors specifically
+          if (error.message && error.message.includes('429')) {
+            console.log('Rate limit hit, extending refresh interval');
+            // Extend the interval when rate limited
+            clearInterval(intervalId);
+            intervalId = setInterval(refreshData, 600000); // 10 minutes when rate limited
+          }
+        }
+      };
+      
+      // Refresh every 5 minutes (increased from 1 minute to reduce API load)
+      intervalId = setInterval(refreshData, 300000);
     };
     
-    loadAdminData();
+    // Load initial data
+    loadAdminData().catch(console.error);
     startInterval();
     
     return () => {
@@ -236,7 +262,7 @@ export default function AdminDashboard() {
       }
     };
   }, []);
-
+  
   // Refresh user profile periodically to ensure admin status is up to date
   useEffect(() => {
     if (!user) return;
@@ -255,11 +281,18 @@ export default function AdminDashboard() {
           await refreshUser();
         } catch (error) {
           console.error('Failed to refresh user profile:', error);
+          // Handle rate limit errors specifically
+          if (error.message && error.message.includes('429')) {
+            console.log('Rate limit hit, extending refresh interval');
+            // Extend the interval when rate limited
+            clearInterval(intervalId);
+            intervalId = setInterval(refreshProfile, 600000); // 10 minutes when rate limited
+          }
         }
       };
       
-      // Refresh profile every 60 seconds (increased from 30 seconds)
-      intervalId = setInterval(refreshProfile, 60000);
+      // Refresh profile every 5 minutes (increased from 60 seconds)
+      intervalId = setInterval(refreshProfile, 300000);
     };
     
     startInterval();
@@ -274,10 +307,18 @@ export default function AdminDashboard() {
   return (
     <ProtectedRoute requireAuth={true} requireAdmin={true}>
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h1>Admin Dashboard</h1>
-          <p>Manage users, transactions, and platform settings</p>
-        </div>
+        {/* Header with Navigation */}
+        <header className={styles.header}>
+          <div className={styles.logo}>
+            <h1>CryptoZen Admin</h1>
+          </div>
+          <nav className={styles.nav}>
+            <Link href="/admin" className={styles.navLink}>Dashboard</Link>
+            <Link href="/admin/users" className={styles.navLink}>Users</Link>
+            <Link href="/admin/transactions" className={styles.navLink}>Transactions</Link>
+            <Link href="/admin/gift-cards" className={styles.navLink}>Gift Cards</Link>
+          </nav>
+        </header>
 
         {error && <div className={styles.error}>{error}</div>}
         {success && <div className={styles.success}>{success}</div>}
@@ -322,6 +363,12 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab('transactions')}
           >
             Transactions
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'giftcards' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('giftcards')}
+          >
+            Gift Cards
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'settings' ? styles.activeTab : ''}`}
@@ -611,6 +658,43 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'giftcards' && (
+            <div className={styles.giftCardsContent}>
+              <div className={styles.contentHeader}>
+                <h2>Gift Card Management</h2>
+                <p>Manage gift cards and view transaction history</p>
+              </div>
+              
+              <div className={styles.infoBox}>
+                <h3>Gift Card Management</h3>
+                <p>Use the dedicated gift card management page for full functionality:</p>
+                <Link href="/admin/gift-cards" className={styles.primaryButton}>
+                  Go to Gift Card Management
+                </Link>
+              </div>
+              
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <h3>Active Gift Cards</h3>
+                  <p className={styles.statValue}>0</p>
+                  <div className={styles.statChange}>+0% last 30 days</div>
+                </div>
+                
+                <div className={styles.statCard}>
+                  <h3>Total Issued Value</h3>
+                  <p className={styles.statValue}>$0.00</p>
+                  <div className={styles.statChange}>+0% last 30 days</div>
+                </div>
+                
+                <div className={styles.statCard}>
+                  <h3>Redeemed Cards</h3>
+                  <p className={styles.statValue}>0</p>
+                  <div className={styles.statChange}>+0% last 30 days</div>
+                </div>
               </div>
             </div>
           )}

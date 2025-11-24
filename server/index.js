@@ -115,9 +115,32 @@ const startServer = () => {
     next();
   });
 
-  // Basic rate limiting for auth endpoints
-  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+  // Basic rate limiting for auth endpoints - increased limits for better user experience
+  const authLimiter = rateLimit({ 
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // Increased from 100 to 200 requests per window
+    message: {
+      error: 'Too many requests',
+      message: 'Too many requests, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+  });
   app.use('/api/users', authLimiter);
+  
+  // Rate limiting for general API endpoints
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // 500 requests per window
+    message: {
+      error: 'Too many requests',
+      message: 'Too many requests, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  app.use('/api/transactions', apiLimiter);
+  app.use('/api/gift-cards', apiLimiter);
 
   // CSRF protection in production for state-changing routes without Authorization
   function csrfMiddleware(req, res, next) {
@@ -223,12 +246,14 @@ const startServer = () => {
   const transactionRoutes = require('./routes/transactionRoutes');
   const mfaRoutes = require('./routes/mfaRoutes');
   const adminRoutes = require('./routes/adminRoutes');
+  const giftCardRoutes = require('./routes/giftCardRoutes');
 
   // Use routes
   app.use('/api/users', userRoutes);
   app.use('/api/transactions', transactionRoutes);
   app.use('/api/mfa', mfaRoutes);
   app.use('/api/admin', adminRoutes);
+  app.use('/api/gift-cards', giftCardRoutes);
 
   // Create HTTP server
   const server = http.createServer(app);

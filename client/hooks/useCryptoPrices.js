@@ -106,8 +106,26 @@ export const useCryptoPrices = () => {
                   setTimeout(() => setRefreshing(false), 300);
                 } catch (e) {
                   console.error('Polling failed', e);
+                  // Handle rate limit errors
+                  if (e.message && e.message.includes('429')) {
+                    console.log('Rate limit hit, reducing polling frequency');
+                    // Reduce polling frequency when rate limited
+                    if (pollIntervalRef.current) {
+                      clearInterval(pollIntervalRef.current);
+                    }
+                    pollIntervalRef.current = setInterval(async () => {
+                      try {
+                        const refreshed = await cryptoService.getPrices();
+                        setPrices(prev => ({ ...prev, ...refreshed }));
+                        setRefreshing(true);
+                        setTimeout(() => setRefreshing(false), 300);
+                      } catch (e) {
+                        console.error('Polling failed', e);
+                      }
+                    }, 60000); // Increase to 1 minute when rate limited
+                  }
                 }
-              }, 10000); // Increase polling interval to reduce server load
+              }, 30000); // Increase polling interval to 30 seconds to reduce server load
             }
           }
         };

@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
       clearInterval(refreshIntervalRef.current);
     }
     
-    // Set up new interval to refresh user data every 60 seconds
+    // Set up new interval to refresh user data every 5 minutes (increased from 60 seconds)
     refreshIntervalRef.current = setInterval(async () => {
       const token = localStorage.getItem('token');
       if (token && user) {
@@ -42,10 +42,14 @@ export const AuthProvider = ({ children }) => {
           setUser(userData);
         } catch (error) {
           console.error('Failed to refresh user data:', error);
+          // Check if it's a rate limit error
+          if (error.message && error.message.includes('429')) {
+            console.log('Rate limit hit, skipping refresh cycle');
+          }
           // Don't logout automatically on refresh failure to avoid disrupting user experience
         }
       }
-    }, 60000); // Refresh every 60 seconds
+    }, 300000); // Refresh every 5 minutes (increased from 60 seconds)
   }, [user]);
 
   // Stop token refresh interval
@@ -138,6 +142,10 @@ export const AuthProvider = ({ children }) => {
         return userData;
       } catch (error) {
         console.error('Failed to refresh user data:', error);
+        // Check if it's a rate limit error
+        if (error.message && error.message.includes('429')) {
+          throw new Error('Too many requests. Please wait a moment and try again.');
+        }
         // Only logout on manual refresh failure
         logout();
         throw error;

@@ -5,8 +5,9 @@ import Chart from '../components/Chart';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
-import { transactionService } from '../services/api';
+import { transactionService, giftCardService } from '../services/api';
 import ProtectedRoute from '../components/ProtectedRoute';
+import Link from 'next/link';
 
 export default function Trade() {
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
@@ -19,8 +20,12 @@ export default function Trade() {
   const [success, setSuccess] = useState(false);
   const { user, loading: authLoading, updateUserBalance, refreshUser } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
-  const router = useRouter();
-  
+  const [showGiftCardForm, setShowGiftCardForm] = useState(false);
+  const [giftCardNumber, setGiftCardNumber] = useState('');
+  const [giftCardPin, setGiftCardPin] = useState('');
+  const [giftCardInfo, setGiftCardInfo] = useState(null);
+  const [giftCardError, setGiftCardError] = useState('');
+
   // Get current price for selected crypto
   const price = cryptoPrices[selectedCrypto] || 0;
 
@@ -83,11 +88,18 @@ export default function Trade() {
           await refreshUser();
         } catch (error) {
           console.error('Failed to refresh user profile:', error);
+          // Handle rate limit errors specifically
+          if (error.message && error.message.includes('429')) {
+            console.log('Rate limit hit, extending refresh interval');
+            // Extend the interval when rate limited
+            clearInterval(intervalId);
+            intervalId = setInterval(refreshProfile, 300000); // 5 minutes when rate limited
+          }
         }
       };
       
-      // Refresh profile every 60 seconds to reduce API load
-      intervalId = setInterval(refreshProfile, 60000);
+      // Refresh profile every 2 minutes (increased from 60 seconds to reduce API load)
+      intervalId = setInterval(refreshProfile, 120000);
     };
     
     startInterval();
@@ -124,6 +136,9 @@ export default function Trade() {
     e.preventDefault();
     
     try {
+      setError('');
+      setSuccess(false);
+      
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication required');
@@ -131,24 +146,48 @@ export default function Trade() {
       
       // Validate amount
       const numericAmount = parseFloat(amount);
-      if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
+      const numericPrice = parseFloat(price);
+      
+      if (isNaN(numericAmount) || numericAmount <= 0) {
         throw new Error('Please enter a valid amount');
       }
       
-      // For sell transactions, check if user has enough balance
-      if (tradeType === 'sell' && numericAmount > userBalance) {
-        throw new Error(`Insufficient ${selectedCrypto} balance`);
+      if (isNaN(numericPrice) || numericPrice <= 0) {
+        throw new Error('Invalid price');
       }
       
-      const numericPrice = parseFloat(price) || 0;
+      // If using gift card, validate it first
+      let giftCardDetails = null;
+      if (paymentMethod === 'gift') {
+        if (!giftCardNumber || !giftCardPin) {
+          throw new Error('Please enter gift card number and PIN');
+        }
+        
+        // Validate gift card
+        const validationResponse = await giftCardService.validateGiftCard({
+          cardNumber: giftCardNumber,
+          pin: giftCardPin
+        });
+        
+        if (!validationResponse.valid) {
+          throw new Error(validationResponse.message || 'Invalid gift card');
+        }
+        
+        setGiftCardInfo(validationResponse);
+        giftCardDetails = {
+          cardNumber: giftCardNumber,
+          pin: giftCardPin
+        };
+      }
       
-      // Create transaction data
+      // Prepare transaction data
       const transactionData = {
         type: tradeType,
         asset: selectedCrypto,
         amount: numericAmount,
         price: numericPrice,
         paymentMethod,
+        giftCardDetails,
         // For sell transactions, we might need a toAddress
         // For buy transactions, we might need a fromAddress
         toAddress: tradeType === 'sell' ? 'recipient_address' : undefined,
@@ -165,6 +204,11 @@ export default function Trade() {
         updateUserBalance(result.userBalance);
       }
       
+      // If this was a gift card payment, show remaining balance
+      if (result.giftCardPayment && result.giftCardPayment.processed) {
+        console.log('Gift card payment processed successfully');
+      }
+      
       // Refresh user data to ensure balance is up to date
       await refreshUser();
       
@@ -174,13 +218,25 @@ export default function Trade() {
       // Reset form
       setAmount('');
       
+      // Clear gift card form if it was used
+      if (paymentMethod === 'gift') {
+        setGiftCardNumber('');
+        setGiftCardPin('');
+        setGiftCardInfo(null);
+      }
+      
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccess(false);
       }, 3000);
     } catch (err) {
       console.error('Trade execution failed:', err);
-      setError(err.message || 'Failed to execute trade');
+      // Handle rate limit errors with user-friendly message
+      if (err.message && err.message.includes('429')) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Failed to execute trade');
+      }
       setSuccess(false);
     }
   };
@@ -297,14 +353,62 @@ export default function Trade() {
                 <label>Payment Method</label>
                 <select 
                   value={paymentMethod} 
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  onChange={(e) => {
+                    setPaymentMethod(e.target.value);
+                    if (e.target.value === 'gift') {
+                      setShowGiftCardForm(true);
+                    } else {
+                      setShowGiftCardForm(false);
+                    }
+                  }}
                   className={styles.formControl}
                 >
                   <option value="credit">Credit Card</option>
                   <option value="bank">Bank Transfer</option>
                   <option value="wallet">Wallet Balance</option>
+                  <option value="gift">Gift Card</option>
                 </select>
               </div>
+              
+              {/* Gift Card Form */}
+              {showGiftCardForm && (
+                <div className={styles.giftCardForm}>
+                  <h4>Gift Card Details</h4>
+                  {giftCardError && <div className={styles.errorMessage}>{giftCardError}</div>}
+                  {giftCardInfo && (
+                    <div className={styles.giftCardInfo}>
+                      <p>Available Balance: ${giftCardInfo.balance}</p>
+                      {giftCardInfo.expiresAt && (
+                        <p>Expires: {new Date(giftCardInfo.expiresAt).toLocaleDateString()}</p>
+                      )}
+                    </div>
+                  )}
+                  <div className={styles.formGroup}>
+                    <label htmlFor="giftCardNumber">Card Number</label>
+                    <input
+                      type="text"
+                      id="giftCardNumber"
+                      value={giftCardNumber}
+                      onChange={(e) => setGiftCardNumber(e.target.value)}
+                      placeholder="Enter gift card number"
+                      className={styles.formControl}
+                      required={paymentMethod === 'gift'}
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="giftCardPin">PIN</label>
+                    <input
+                      type="password"
+                      id="giftCardPin"
+                      value={giftCardPin}
+                      onChange={(e) => setGiftCardPin(e.target.value)}
+                      placeholder="Enter PIN"
+                      className={styles.formControl}
+                      required={paymentMethod === 'gift'}
+                    />
+                  </div>
+                </div>
+              )}
               
               <div className={styles.balanceInfo}>
                 <span>Available Balance:</span>
