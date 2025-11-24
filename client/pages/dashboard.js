@@ -115,40 +115,6 @@ export default function Dashboard() {
     fetchData();
   }, [user, cryptoPrices]);
 
-  // Refresh user profile periodically to ensure balance is up to date
-  useEffect(() => {
-    if (!user) return;
-    
-    // Clear any existing interval
-    let intervalId;
-    
-    const startInterval = () => {
-      // Clear any existing interval
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-      
-      const refreshProfile = async () => {
-        try {
-          await refreshUser();
-        } catch (error) {
-          console.error('Failed to refresh user profile:', error);
-        }
-      };
-      
-      // Refresh profile every 60 seconds to reduce API load
-      intervalId = setInterval(refreshProfile, 60000);
-    };
-    
-    startInterval();
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [user, refreshUser]);
-
   // Show loading state
   if (authLoading || pricesLoading) {
     return (

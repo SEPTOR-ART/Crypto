@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { authService } from '../services/api';
 
@@ -7,70 +7,68 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tokenRefreshInterval, setTokenRefreshInterval] = useState(null);
   const router = useRouter();
+  const refreshIntervalRef = useRef(null);
 
   // Check if user is logged in
   const checkUserLogin = useCallback(async () => {
     const token = localStorage.getItem('token');
-    
     if (token) {
       try {
         const userData = await authService.getProfile(token);
         setUser(userData);
-        startTokenRefresh();
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
         localStorage.removeItem('token');
         setUser(null);
       }
     }
-    
     setLoading(false);
   }, []);
 
   // Start token refresh interval
   const startTokenRefresh = useCallback(() => {
     // Clear any existing interval
-    if (tokenRefreshInterval) {
-      clearInterval(tokenRefreshInterval);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
     }
     
-    // Set up new interval to refresh token every 15 minutes
-    const interval = setInterval(async () => {
+    // Set up new interval to refresh user data every 60 seconds
+    refreshIntervalRef.current = setInterval(async () => {
       const token = localStorage.getItem('token');
-      if (token) {
+      if (token && user) {
         try {
-          // In a real implementation, you would call a refresh endpoint
-          // For now, we'll just verify the token is still valid
           const userData = await authService.getProfile(token);
           setUser(userData);
         } catch (error) {
-          console.error('Token refresh failed:', error);
-          logout();
+          console.error('Failed to refresh user data:', error);
+          // Don't logout automatically on refresh failure to avoid disrupting user experience
         }
       }
-    }, 15 * 60 * 1000); // 15 minutes
-    
-    setTokenRefreshInterval(interval);
-  }, [tokenRefreshInterval]);
+    }, 60000); // Refresh every 60 seconds
+  }, [user]);
 
   // Stop token refresh interval
   const stopTokenRefresh = useCallback(() => {
-    if (tokenRefreshInterval) {
-      clearInterval(tokenRefreshInterval);
-      setTokenRefreshInterval(null);
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
     }
-  }, [tokenRefreshInterval]);
+  }, []);
 
   useEffect(() => {
     checkUserLogin();
+    
+    // Start refresh interval only if user is logged in
+    if (user) {
+      startTokenRefresh();
+    }
     
     // Cleanup interval on unmount
     return () => {
       stopTokenRefresh();
     };
-  }, [checkUserLogin, stopTokenRefresh]);
+  }, [checkUserLogin, user, startTokenRefresh, stopTokenRefresh]);
 
   // Register user
   const register = async (userData) => {
@@ -130,8 +128,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Refresh user data
-  const refreshUser = async () => {
+  // Refresh user data (manual refresh)
+  const refreshUser = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (token && user) {
       try {
@@ -140,11 +138,12 @@ export const AuthProvider = ({ children }) => {
         return userData;
       } catch (error) {
         console.error('Failed to refresh user data:', error);
+        // Only logout on manual refresh failure
         logout();
         throw error;
       }
     }
-  };
+  }, [user, logout]);
 
   // Check if user is admin with enhanced validation
   const isAdmin = useCallback((user) => {
