@@ -109,7 +109,12 @@ userSchema.set('toJSON', {
   }
 });
 
-// Create a compound index that ensures uniqueness only for non-null wallet addresses
-userSchema.index({ walletAddress: 1 }, { unique: true, partialFilterExpression: { walletAddress: { $type: 'string' } } });
+// Create a compound index that ensures uniqueness only for non-null, non-empty wallet addresses
+userSchema.index({ walletAddress: 1 }, { 
+  unique: true, 
+  partialFilterExpression: { 
+    walletAddress: { $exists: true, $ne: null, $ne: "" } 
+  } 
+});
 
 module.exports = mongoose.model('User', userSchema);
