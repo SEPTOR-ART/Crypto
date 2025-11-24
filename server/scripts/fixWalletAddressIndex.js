@@ -9,15 +9,21 @@ const User = require('../models/User');
 
 // Connect to MongoDB
 const connectDB = async () => {
+  // Use the MONGODB_URI from environment variables, or fallback to localhost
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/test';
+  
+  console.log(`Attempting to connect to MongoDB at: ${mongoUri}`);
+  
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/test', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    const conn = await mongoose.connect(mongoUri, {
+      // Remove deprecated options
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error connecting to MongoDB: ${error.message}`);
+    console.log('Please ensure your MONGODB_URI is correctly set in your .env file');
+    console.log('For Render deployments, this is typically set in the Render dashboard');
     process.exit(1);
   }
 };
