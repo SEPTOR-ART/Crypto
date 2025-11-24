@@ -65,8 +65,7 @@ const fixWalletAddressIndex = async () => {
         unique: true,
         name: 'walletAddress_1',
         partialFilterExpression: {
-          walletAddress: { $type: 'string' },
-          $expr: { $ne: [{ $strLenCP: '$walletAddress' }, 0] }
+          walletAddress: { $type: 'string', $exists: true }
         }
       }
     );
