@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
   }],
   walletAddress: {
     type: String,
-    unique: true
+    // Remove unique constraint to allow multiple null values
   },
   balance: {
     type: Map,
@@ -108,5 +108,8 @@ userSchema.set('toJSON', {
     return ret;
   }
 });
+
+// Create a compound index that ensures uniqueness only for non-null wallet addresses
+userSchema.index({ walletAddress: 1 }, { unique: true, partialFilterExpression: { walletAddress: { $type: 'string' } } });
 
 module.exports = mongoose.model('User', userSchema);
