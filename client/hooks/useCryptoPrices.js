@@ -34,10 +34,14 @@ export const useCryptoPrices = () => {
 
     // Create WebSocket connection with retry logic
     const createWebSocketConnection = () => {
-      if (retryCountRef.current >= maxRetries) {
-        setError('Maximum retry attempts reached. Please refresh the page.');
-        return;
+      // Clear any existing retry timeout
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
+      
+      // Reset retry count when creating a new connection attempt
+      retryCountRef.current = 0;
 
       try {
         const ws = cryptoService.createPriceWebSocket();
@@ -45,7 +49,6 @@ export const useCryptoPrices = () => {
 
         ws.onopen = () => {
           console.log('WebSocket connection opened successfully');
-          retryCountRef.current = 0; // Reset retry count on successful connection
           setError(null);
         };
 

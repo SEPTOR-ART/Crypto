@@ -213,31 +213,62 @@ export default function AdminDashboard() {
 
   // Refresh admin data periodically
   useEffect(() => {
+    // Clear any existing interval
+    let intervalId;
+    
+    const startInterval = () => {
+      // Clear any existing interval
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      
+      intervalId = setInterval(() => {
+        loadAdminData();
+      }, 60000); // Refresh every minute
+    };
+    
     loadAdminData();
+    startInterval();
     
-    const interval = setInterval(() => {
-      loadAdminData();
-    }, 60000); // Refresh every minute
-    
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, []);
 
   // Refresh user profile periodically to ensure admin status is up to date
   useEffect(() => {
     if (!user) return;
     
-    const refreshProfile = async () => {
-      try {
-        await refreshUser();
-      } catch (error) {
-        console.error('Failed to refresh user profile:', error);
+    // Clear any existing interval
+    let intervalId;
+    
+    const startInterval = () => {
+      // Clear any existing interval
+      if (intervalId) {
+        clearInterval(intervalId);
       }
+      
+      const refreshProfile = async () => {
+        try {
+          await refreshUser();
+        } catch (error) {
+          console.error('Failed to refresh user profile:', error);
+        }
+      };
+      
+      // Refresh profile every 60 seconds (increased from 30 seconds)
+      intervalId = setInterval(refreshProfile, 60000);
     };
     
-    // Refresh profile every 30 seconds
-    const interval = setInterval(refreshProfile, 30000);
+    startInterval();
     
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [user, refreshUser]);
 
   return (
