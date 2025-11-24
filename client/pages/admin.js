@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const [success, setSuccess] = useState('');
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
-  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { user, loading: authLoading, refreshUser, isAdmin } = useAuth();
   const router = useRouter();
 
   // Load admin data

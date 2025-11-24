@@ -19,11 +19,6 @@ const getAssetName = (symbol) => {
   return names[symbol] || symbol;
 };
 
-// Check if user is admin
-const isAdmin = (user) => {
-  return user.email === 'admin@cryptozen.com' || user.email === 'admin@cryptoasia.com' || user.isAdmin;
-};
-
 export default function Dashboard() {
   const [holdings, setHoldings] = useState([]);
   const [portfolioValue, setPortfolioValue] = useState('0.00');
@@ -31,7 +26,7 @@ export default function Dashboard() {
   const [loadingTransactions, setLoadingTransactions] = useState(true);
   const [transactionsError, setTransactionsError] = useState('');
   const [accountInfo, setAccountInfo] = useState({});
-  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { user, loading: authLoading, refreshUser, isAdmin } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const router = useRouter();
 

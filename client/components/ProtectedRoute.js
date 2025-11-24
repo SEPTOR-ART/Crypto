@@ -6,9 +6,20 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Check if user is admin
+  // Check if user is admin with enhanced validation
   const isAdmin = (user) => {
-    return user.email === 'admin@cryptozen.com' || user.email === 'admin@cryptoasia.com' || user.isAdmin;
+    // Check if user object exists
+    if (!user) return false;
+    
+    // Check for admin email addresses
+    const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
+    if (adminEmails.includes(user.email)) return true;
+    
+    // Check for isAdmin flag
+    if (user.isAdmin === true) return true;
+    
+    // User is not an admin
+    return false;
   };
 
   useEffect(() => {
@@ -21,7 +32,8 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
       
       // If admin access is required but user is not admin
       if (requireAdmin && user && !isAdmin(user)) {
-        router.push('/dashboard');
+        // Redirect to dashboard with an error message
+        router.push('/dashboard?error=unauthorized');
         return;
       }
       
