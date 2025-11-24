@@ -113,7 +113,7 @@ userSchema.set('toJSON', {
 userSchema.index({ walletAddress: 1 }, { 
   unique: true, 
   partialFilterExpression: { 
-    walletAddress: { $exists: true, $ne: null, $ne: "" } 
+    walletAddress: { $type: 'string', $ne: '' } 
   } 
 });
 
