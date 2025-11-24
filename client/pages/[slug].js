@@ -116,7 +116,7 @@ export async function getStaticPaths() {
   
   return {
     paths,
-    fallback: false, // false means pages not returned by paths will return a 404
+    fallback: true, // true means pages not returned by paths will be generated on demand
   };
 }
 
