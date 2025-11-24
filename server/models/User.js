@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
   walletAddress: {
     type: String,
     // Remove unique constraint to allow multiple null values
+    default: null
   },
   balance: {
     type: Map,
@@ -104,6 +105,10 @@ userSchema.set('toJSON', {
         balanceObj[key] = value;
       });
       ret.balance = balanceObj;
+    }
+    // Explicitly handle walletAddress for JSON serialization
+    if (ret.walletAddress === undefined) {
+      ret.walletAddress = null;
     }
     return ret;
   }

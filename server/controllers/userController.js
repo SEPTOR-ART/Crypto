@@ -41,7 +41,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user in database with explicit empty balance
+    // Create user in database with explicit empty balance and null walletAddress
     console.log('Creating user in database');
     const user = await User.create({
       firstName,
@@ -49,6 +49,7 @@ const registerUser = async (req, res) => {
       email,
       password,
       phone,
+      walletAddress: null, // Explicitly set walletAddress to null
       balance: new Map() // Explicitly initialize with empty Map
     });
     console.log('User created:', user ? user.email : 'Failed');
@@ -140,6 +141,7 @@ const getUserProfile = async (req, res) => {
         kycStatus: user.kycStatus,
         twoFactorEnabled: user.twoFactorEnabled,
         balance: user.balance, // Include user's balance
+        walletAddress: user.walletAddress, // Include walletAddress
         createdAt: user.createdAt
       });
     } else {
@@ -174,6 +176,10 @@ const updateUserProfile = async (req, res) => {
       user.lastName = req.body.lastName || user.lastName;
       user.email = req.body.email || user.email;
       user.phone = req.body.phone || user.phone;
+      // Only update walletAddress if provided in the request
+      if (req.body.walletAddress !== undefined) {
+        user.walletAddress = req.body.walletAddress;
+      }
 
       const updatedUser = await user.save();
       console.log('User profile updated for:', updatedUser.email);
@@ -187,6 +193,7 @@ const updateUserProfile = async (req, res) => {
         kycStatus: updatedUser.kycStatus,
         twoFactorEnabled: updatedUser.twoFactorEnabled,
         balance: updatedUser.balance, // Include user's balance
+        walletAddress: updatedUser.walletAddress, // Include walletAddress
         token: generateToken(updatedUser._id)
       });
     } else {
