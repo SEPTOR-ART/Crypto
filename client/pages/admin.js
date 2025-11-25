@@ -9,7 +9,8 @@ import {
   adminUpdateUserBalance,
   adminGetAllTransactions,
   adminUpdateTransactionStatus,
-  adminUpdateUserStatus
+  adminUpdateUserStatus,
+  adminGetAllGiftCards
 } from '../services/adminService';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Link from 'next/link';
@@ -40,13 +41,25 @@ export default function AdminDashboard() {
       }
       
       // Load users and transactions
-      const [usersData, transactionsData] = await Promise.all([
+      const [usersData, transactionsData, giftCardsData] = await Promise.all([
         adminGetAllUsers(token),
-        adminGetAllTransactions(token)
+        adminGetAllTransactions(token),
+        adminGetAllGiftCards(token, 1, 100) // Get first 100 gift cards for stats
       ]);
       
       setUsers(usersData);
       setTransactions(transactionsData);
+      
+      // Calculate gift card stats
+      if (giftCardsData && giftCardsData.giftCards) {
+        const activeGiftCards = giftCardsData.giftCards.filter(card => card.status === 'active').length;
+        const totalIssuedValue = giftCardsData.giftCards.reduce((total, card) => total + card.initialBalance, 0);
+        const redeemedCards = giftCardsData.giftCards.filter(card => card.status === 'used').length;
+        
+        // Store these stats in state or use them directly in the render
+        // For now, we'll just log them
+        console.log('Gift card stats:', { activeGiftCards, totalIssuedValue, redeemedCards });
+      }
     } catch (err) {
       // Handle rate limit errors with user-friendly message
       if (err.message && err.message.includes('429')) {
