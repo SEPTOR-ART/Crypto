@@ -106,7 +106,10 @@ export const cryptoService = {
   // Create WebSocket connection for real-time prices
   createPriceWebSocket: () => {
     const originWS = (typeof window !== 'undefined') ? ((window.location.protocol === 'https:') ? 'wss' : 'ws') + '://' + window.location.host : '';
-    const target = isPlaceholderWS ? `${originWS}/ws` : RAW_WS;
+    if (isPlaceholderWS) {
+      return null;
+    }
+    const target = RAW_WS;
     console.log(`Creating WebSocket connection to: ${target}`);
     const ws = new WebSocket(target);
     

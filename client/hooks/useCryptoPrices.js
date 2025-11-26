@@ -42,6 +42,21 @@ export const useCryptoPrices = () => {
       try {
         const ws = cryptoService.createPriceWebSocket();
         wsRef.current = ws;
+        if (!ws) {
+          if (!pollIntervalRef.current) {
+            pollIntervalRef.current = setInterval(async () => {
+              try {
+                const refreshed = await cryptoService.getPrices();
+                setPrices(prev => ({ ...prev, ...refreshed }));
+                setRefreshing(true);
+                setTimeout(() => setRefreshing(false), 300);
+              } catch (e) {
+                console.error('Polling failed', e);
+              }
+            }, 5000);
+          }
+          return;
+        }
 
         ws.onopen = () => {
           console.log('WebSocket connection opened');
