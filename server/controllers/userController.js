@@ -2,12 +2,13 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 // Generate JWT token
 const generateToken = (id) => {
   console.log('Generating token for user ID:', id);
   const token = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
+    expiresIn: '8h'
   });
   console.log('Token generated successfully');
   return token;
@@ -56,13 +57,30 @@ const registerUser = async (req, res) => {
 
     if (user) {
       const token = generateToken(user._id);
-      console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
+      const csrfToken = crypto.randomBytes(24).toString('hex');
+      const isProd = process.env.NODE_ENV === 'production';
+      // Set HttpOnly session cookie
+      res.cookie('session', token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'Strict',
+        maxAge: 8 * 60 * 60 * 1000, // 8 hours
+        path: '/',
+      });
+      // Double-submit CSRF cookie (readable by JS)
+      res.cookie('csrf_token', csrfToken, {
+        httpOnly: false,
+        secure: isProd,
+        sameSite: 'Strict',
+        maxAge: 8 * 60 * 60 * 1000,
+        path: '/',
+      });
+      console.log('Set session and CSRF cookies for user:', user.email);
       return res.status(201).json({
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
-        token: token
+        email: user.email
       });
     } else {
       console.log('Registration failed: Invalid user data');
@@ -92,15 +110,30 @@ const authUser = async (req, res) => {
       
       if (isPasswordValid) {
         const token = generateToken(user._id);
-        console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
+        const csrfToken = crypto.randomBytes(24).toString('hex');
+        const isProd = process.env.NODE_ENV === 'production';
+        res.cookie('session', token, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: 'Strict',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+        res.cookie('csrf_token', csrfToken, {
+          httpOnly: false,
+          secure: isProd,
+          sameSite: 'Strict',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+        console.log('Set session and CSRF cookies for user:', user.email);
         return res.json({
           _id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
           kycStatus: user.kycStatus,
-          twoFactorEnabled: user.twoFactorEnabled,
-          token: token
+          twoFactorEnabled: user.twoFactorEnabled
         });
       } else {
         console.log('Invalid password for user:', email);
@@ -194,7 +227,7 @@ const updateUserProfile = async (req, res) => {
         twoFactorEnabled: updatedUser.twoFactorEnabled,
         balance: updatedUser.balance, // Include user's balance
         walletAddress: updatedUser.walletAddress, // Include walletAddress
-        token: generateToken(updatedUser._id)
+        // Do not expose new token here; session cookie remains valid
       });
     } else {
       console.log('User not found for update:', req.user._id);
@@ -210,5 +243,18 @@ module.exports = {
   registerUser,
   authUser,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  logoutUser
+};
+// Logout user
+const logoutUser = async (req, res) => {
+  try {
+    res.clearCookie('session', { path: '/' });
+    res.clearCookie('csrf_token', { path: '/' });
+    console.log('User logged out, cookies cleared');
+    return res.status(200).json({ message: 'Logged out' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ message: error.message });
+  }
 };

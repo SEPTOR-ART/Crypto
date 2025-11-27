@@ -80,7 +80,7 @@ const startServer = () => {
       optionsSuccessStatus: 200 // Some legacy browsers choke on 204
     }));
   } else {
-    app.use(cors());
+    app.use(cors({ origin: true, credentials: true }));
   }
 
   // Add JSON parsing middleware with better error handling
@@ -142,27 +142,38 @@ const startServer = () => {
   app.use('/api/transactions', apiLimiter);
   app.use('/api/gift-cards', apiLimiter);
 
-  // CSRF protection in production for state-changing routes without Authorization
+  // CSRF protection (double-submit cookie) in production for mutating routes
   function csrfMiddleware(req, res, next) {
     if (process.env.NODE_ENV !== 'production') return next();
     const method = req.method.toUpperCase();
     const mutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
     if (!mutating) return next();
-    
-    // Skip CSRF check for user registration and login since they don't require auth
-    // Handle both mounted and direct paths
-    const isRegistration = (req.path === '/api/users' || req.path === '/api/users/' || req.originalUrl === '/api/users') && method === 'POST';
-    const isLogin = (req.path === '/api/users/login' || req.path === '/api/users/login/') && method === 'POST';
-    
-    if (isRegistration || isLogin) {
+
+    // Skip CSRF for auth endpoints that set cookies
+    const isAuthEndpoint = (
+      (req.path === '/api/users' && method === 'POST') ||
+      (req.path === '/api/users/login' && method === 'POST') ||
+      (req.path === '/api/users/logout' && method === 'POST')
+    );
+    if (isAuthEndpoint) return next();
+
+    // Read cookies
+    let csrfCookie;
+    if (req.headers.cookie) {
+      const cookies = Object.fromEntries(
+        req.headers.cookie.split(';').map(c => {
+          const [k, ...v] = c.trim().split('=');
+          return [k, decodeURIComponent(v.join('='))];
+        })
+      );
+      csrfCookie = cookies.csrf_token;
+    }
+    const headerToken = req.headers['x-csrf-token'];
+
+    if (csrfCookie && headerToken && csrfCookie === headerToken) {
       return next();
     }
-    
-    const hasAuth = !!req.headers.authorization;
-    if (hasAuth) return next();
-    const token = req.headers['x-csrf-token'];
-    const expected = process.env.CSRF_SECRET;
-    if (expected && token === expected) return next();
+    console.warn('CSRF validation failed');
     return res.status(403).json({ message: 'CSRF validation failed' });
   }
   app.use(csrfMiddleware);
@@ -318,3 +329,6 @@ const startServer = () => {
     });
   });
 };
+
+// Export app for testing
+module.exports = app;

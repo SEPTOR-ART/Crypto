@@ -72,13 +72,29 @@ export const apiRequest = async (endpoint, options = {}) => {
 
     console.log(`Making API request to: ${url}`);
     
+    // Attach CSRF header for mutating requests (double-submit cookie)
+    const methodUpper = (options.method || 'GET').toUpperCase();
+    const mutating = methodUpper === 'POST' || methodUpper === 'PUT' || methodUpper === 'DELETE' || methodUpper === 'PATCH';
+    let csrfHeader = {};
+    if (mutating && typeof document !== 'undefined') {
+      const cookieMap = Object.fromEntries(document.cookie.split(';').map(c => {
+        const [k, ...v] = c.trim().split('=');
+        return [k, decodeURIComponent(v.join('='))];
+      }));
+      if (cookieMap.csrf_token) {
+        csrfHeader['X-CSRF-Token'] = cookieMap.csrf_token;
+      }
+    }
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
+        ...csrfHeader,
         ...options.headers,
       },
+      credentials: 'include',
       ...options,
-      signal: AbortSignal.timeout(30000) // Increase timeout to 30 seconds for better reliability
+      signal: AbortSignal.timeout(30000)
     });
 
     const contentType = response.headers.get('content-type') || '';
@@ -155,17 +171,21 @@ export const authService = {
     }
   },
 
-  // Get user profile
-  getProfile: async (token) => {
+  // Logout user (clear cookies)
+  logout: async () => {
     try {
-      if (!token) {
-        throw new Error('Not authorized, no token');
-      }
-      return await apiRequest('/api/users/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      return await apiRequest('/api/users/logout', {
+        method: 'POST'
       });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get user profile (cookie-based session)
+  getProfile: async () => {
+    try {
+      return await apiRequest('/api/users/profile');
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -176,13 +196,10 @@ export const authService = {
   },
 
   // Update user profile
-  updateProfile: async (userData, token) => {
+  updateProfile: async (userData) => {
     try {
       return await apiRequest('/api/users/profile', {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(userData),
       });
     } catch (error) {
@@ -289,16 +306,10 @@ export const cryptoService = {
 // Transaction services
 export const transactionService = {
   // Create a new transaction
-  createTransaction: async (transactionData, token) => {
+  createTransaction: async (transactionData) => {
     try {
-      if (!token) {
-        throw new Error('Not authorized, no token');
-      }
       const response = await apiRequest('/api/transactions', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(transactionData),
       });
       
@@ -313,16 +324,9 @@ export const transactionService = {
   },
 
   // Get user transactions
-  getUserTransactions: async (token) => {
+  getUserTransactions: async () => {
     try {
-      if (!token) {
-        throw new Error('Not authorized, no token');
-      }
-      return await apiRequest('/api/transactions', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest('/api/transactions');
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -333,13 +337,9 @@ export const transactionService = {
   },
 
   // Get transaction by ID
-  getTransactionById: async (id, token) => {
+  getTransactionById: async (id) => {
     try {
-      return await apiRequest(`/api/transactions/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest(`/api/transactions/${id}`);
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -391,16 +391,9 @@ export const giftCardService = {
   },
 
   // Get user's gift cards
-  getUserGiftCards: async (token) => {
+  getUserGiftCards: async () => {
     try {
-      if (!token) {
-        throw new Error('Not authorized, no token');
-      }
-      return await apiRequest('/api/gift-cards/my-cards', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest('/api/gift-cards/my-cards');
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -411,13 +404,12 @@ export const giftCardService = {
   },
 
   // Admin: Create gift card
-  createGiftCard: async (cardData, token) => {
+  createGiftCard: async (cardData) => {
     try {
       return await apiRequest('/api/gift-cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(cardData),
       });
@@ -431,13 +423,9 @@ export const giftCardService = {
   },
 
   // Admin: Get all gift cards
-  getAllGiftCards: async (token, page = 1, limit = 10) => {
+  getAllGiftCards: async (page = 1, limit = 10) => {
     try {
-      return await apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`);
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -448,13 +436,9 @@ export const giftCardService = {
   },
 
   // Admin: Get gift card by ID
-  getGiftCardById: async (id, token) => {
+  getGiftCardById: async (id) => {
     try {
-      return await apiRequest(`/api/gift-cards/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest(`/api/gift-cards/${id}`);
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -465,13 +449,12 @@ export const giftCardService = {
   },
 
   // Admin: Update gift card status
-  updateGiftCardStatus: async (id, statusData, token) => {
+  updateGiftCardStatus: async (id, statusData) => {
     try {
       return await apiRequest(`/api/gift-cards/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(statusData),
       });
@@ -485,13 +468,12 @@ export const giftCardService = {
   },
 
   // Admin: Add balance to gift card
-  addGiftCardBalance: async (id, balanceData, token) => {
+  addGiftCardBalance: async (id, balanceData) => {
     try {
       return await apiRequest(`/api/gift-cards/${id}/add-balance`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(balanceData),
       });

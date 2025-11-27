@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import styles from '../styles/Login.module.css';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,9 @@ export default function Login() {
   const [passwordError, setPasswordError] = useState('');
   
   const { login } = useAuth();
+  const router = useRouter();
+  const nextUrl = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('next') || '') : '';
+  const reason = typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('reason') || '') : '';
 
   useEffect(() => {
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -56,7 +60,7 @@ export default function Login() {
     setError('');
     
     try {
-      await login({ email, password });
+      await login({ email, password }, nextUrl);
     } catch (err) {
       // Handle specific error messages
       if (err.message.includes('Invalid email or password')) {
@@ -80,7 +84,10 @@ export default function Login() {
             <p>Secure Asian-Inspired Crypto Exchange</p>
           </div>
           
-          {error && <div className={styles.error}>{error}</div>}
+          {reason === 'auth_required' && !error && (
+            <div className={styles.info} aria-live="polite">Please sign in to continue{nextUrl ? ` to ${nextUrl}` : ''}.</div>
+          )}
+          {error && <div className={styles.error} aria-live="assertive">{error}</div>}
           
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.inputGroup}>

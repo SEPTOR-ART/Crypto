@@ -35,16 +35,11 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
       // Load users and transactions
       const [usersData, transactionsData, giftCardsData] = await Promise.all([
-        adminGetAllUsers(token),
-        adminGetAllTransactions(token),
-        adminGetAllGiftCards(token, 1, 100) // Get first 100 gift cards for stats
+        adminGetAllUsers(),
+        adminGetAllTransactions(),
+        adminGetAllGiftCards(1, 100) // Get first 100 gift cards for stats
       ]);
       
       setUsers(usersData);
@@ -79,12 +74,7 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
-      const userDetails = await adminGetUserById(userId, token);
+      const userDetails = await adminGetUserById(userId);
       setSelectedUser(userDetails);
       
       // Initialize balance update form with first asset
@@ -119,11 +109,6 @@ export default function AdminDashboard() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
       if (!selectedUser) {
         throw new Error('No user selected');
       }
@@ -131,8 +116,7 @@ export default function AdminDashboard() {
       await adminUpdateUserBalance(
         selectedUser._id, 
         balanceUpdate.asset, 
-        parseFloat(balanceUpdate.amount), 
-        token
+        parseFloat(balanceUpdate.amount)
       );
       
       setSuccess('User balance updated successfully');
@@ -159,18 +143,13 @@ export default function AdminDashboard() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
       switch (action) {
         case 'view':
           await loadUserDetails(userId);
           break;
         case 'suspend':
         case 'activate':
-          await adminUpdateUserStatus(userId, action, token);
+          await adminUpdateUserStatus(userId, action);
           setSuccess(`User ${action}ed successfully`);
           // Reload users to reflect changes
           await loadAdminData();
@@ -193,18 +172,13 @@ export default function AdminDashboard() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
       switch (action) {
         case 'approve':
-          await adminUpdateTransactionStatus(transactionId, 'completed', token);
+          await adminUpdateTransactionStatus(transactionId, 'completed');
           setSuccess('Transaction approved successfully');
           break;
         case 'reject':
-          await adminUpdateTransactionStatus(transactionId, 'failed', token);
+          await adminUpdateTransactionStatus(transactionId, 'failed');
           setSuccess('Transaction rejected successfully');
           break;
         default:

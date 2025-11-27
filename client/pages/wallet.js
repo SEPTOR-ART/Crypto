@@ -80,12 +80,7 @@ export default function Wallet() {
           if (mountedRef.current) setSlowNetwork(true);
         }, 5000);
         
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication required');
-        }
-        
-        const userTransactions = await transactionService.getUserTransactions(token);
+        const userTransactions = await transactionService.getUserTransactions();
         if (mountedRef.current) {
           setTransactions(userTransactions);
           setSlowNetwork(false);
@@ -106,13 +101,9 @@ export default function Wallet() {
       if (typeof document !== 'undefined' && document.hidden) return;
       if (user) {
         try {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const userTransactions = await transactionService.getUserTransactions(token);
-            if (mountedRef.current) setTransactions(userTransactions);
-            // Refresh user data to get updated balance
-            await refreshUser();
-          }
+          const userTransactions = await transactionService.getUserTransactions();
+          if (mountedRef.current) setTransactions(userTransactions);
+          await refreshUser();
         } catch (err) {
           console.error('Failed to refresh transactions:', err);
         }
@@ -132,7 +123,13 @@ export default function Wallet() {
   if (loading && transactions.length === 0) {
     return (
       <ProtectedRoute requireAuth={true}>
-        <div className={styles.loading}>Loading wallet data...</div>
+        <div className={styles.container}>
+          <div className={styles.walletHeader}>
+            <h1>Wallet</h1>
+            <p>Manage your cryptocurrency assets securely</p>
+          </div>
+          <div className={styles.loading}>Loading wallet data...</div>
+        </div>
       </ProtectedRoute>
     );
   }
@@ -182,11 +179,11 @@ export default function Wallet() {
       // Check if user has sufficient balance
       const userBalance = user.balance?.[selectedCrypto] || 0;
       if (numericAmount > userBalance) {
-        throw new Error(`Insufficient ${selectedCrypto} balance`);
+        throw new Error(`Insufficient ${selectedCrypto} balance. You have ${userBalance.toFixed(6)} ${selectedCrypto}`);
       }
 
       if (!isValidAddress(selectedCrypto, sendAddress)) {
-        throw new Error('Invalid recipient address format');
+        throw new Error(`Invalid ${selectedCrypto} address format`);
       }
       
       // Create transaction data for sending
@@ -418,7 +415,7 @@ export default function Wallet() {
               {transactionHistory.map((transaction) => (
                 <div key={transaction.id} className={styles.transactionItem}>
                   <div className={styles.transactionInfo}>
-                    <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
+                    <span className={`${styles.transactionType} ${transaction.type === 'send' ? styles.sent : styles.received}`}>
                       {transaction.type}
                     </span>
                     <span className={styles.transactionCrypto}>{transaction.crypto}</span>
@@ -435,7 +432,7 @@ export default function Wallet() {
                     <span>To: {(transaction.to || 'N/A').slice(0, 10)}...</span>
                   </div>
                   <div className={styles.transactionStatus}>
-                    <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
+                    <span className={`${styles.statusBadge} ${transaction.status === 'completed' ? styles.completed : transaction.status === 'pending' ? styles.pending : styles.failed}`}>
                       {transaction.status}
                     </span>
                   </div>

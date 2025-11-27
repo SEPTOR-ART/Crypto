@@ -24,11 +24,7 @@ export default function GiftCardManagement() {
     try {
       setLoading(true);
       setError('');
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      const response = await giftCardService.getAllGiftCards(token, page, 10);
+      const response = await giftCardService.getAllGiftCards(page, 10);
       setGiftCards(response.giftCards);
       setTotalPages(response.pagination.pages);
     } catch (err) {
@@ -72,10 +68,6 @@ export default function GiftCardManagement() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
       
       const cardData = {
         balance: parseFloat(newCard.balance),
@@ -83,7 +75,7 @@ export default function GiftCardManagement() {
         expiresAt: newCard.expiresAt || undefined
       };
       
-      const response = await giftCardService.createGiftCard(cardData, token);
+      const response = await giftCardService.createGiftCard(cardData);
       
       setSuccess(response.message);
       setShowCreateForm(false);
@@ -115,12 +107,7 @@ export default function GiftCardManagement() {
     try {
       setError('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
-      await giftCardService.updateGiftCardStatus(cardId, { status }, token);
+      await giftCardService.updateGiftCardStatus(cardId, { status });
       
       setSuccess('Gift card status updated successfully');
       
@@ -142,16 +129,12 @@ export default function GiftCardManagement() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
       
       const numeric = parseFloat(amount);
       if (isNaN(numeric) || numeric <= 0) {
         throw new Error('Please enter a valid positive amount');
       }
-      await giftCardService.addGiftCardBalance(cardId, { amount: numeric }, token);
+      await giftCardService.addGiftCardBalance(cardId, { amount: numeric });
       
       setSuccess('Balance added successfully');
       

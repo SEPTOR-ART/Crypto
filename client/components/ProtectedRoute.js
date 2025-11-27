@@ -12,7 +12,8 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
     if (!loading) {
       // If authentication is required but user is not logged in
       if (requireAuth && !user) {
-        router.push('/login');
+        const next = encodeURIComponent(router.asPath || '/');
+        router.push(`/login?next=${next}&reason=auth_required`);
         return;
       }
       
