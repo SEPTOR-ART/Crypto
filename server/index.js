@@ -69,17 +69,26 @@ const startServer = () => {
 
   // Configure CORS for production and development
   if (process.env.NODE_ENV === 'production') {
-    // In production, allow specific origins or all origins if not specified
-    const allowedOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',') 
-      : '*'; // Allow all origins if not specified
-    
-    app.use(cors({
-      origin: allowedOrigins,
+    // In production, credentials require a specific origin (not '*')
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+      : ['https://cryptozing.netlify.app']);
+
+    const corsConfig = {
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true); // allow same-origin and non-browser clients
+        const isAllowed = allowedOrigins.includes(origin);
+        callback(null, isAllowed);
+      },
       credentials: true,
-      optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-    }));
+      methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
+      allowedHeaders: ['Content-Type','Authorization','X-CSRF-Token'],
+      optionsSuccessStatus: 200
+    };
+    app.use(cors(corsConfig));
+    app.options('*', cors(corsConfig));
   } else {
+    // Reflect request origin in development, allow credentials
     app.use(cors({ origin: true, credentials: true }));
   }
 

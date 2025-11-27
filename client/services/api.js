@@ -86,13 +86,22 @@ export const apiRequest = async (endpoint, options = {}) => {
       }
     }
 
+    // Include credentials only when needed (protected endpoints or mutations)
+    const protectedPrefixes = ['/api/users', '/api/transactions', '/api/admin', '/api/gift-cards'];
+    const needsCredentials = mutating || protectedPrefixes.some(p => endpoint.startsWith(p));
+
+    // Build headers: avoid setting Content-Type on GET/HEAD to prevent CORS preflight
+    const baseHeaders = {
+      ...csrfHeader,
+      ...options.headers,
+    };
+    if (methodUpper !== 'GET' && methodUpper !== 'HEAD' && !baseHeaders['Content-Type']) {
+      baseHeaders['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...csrfHeader,
-        ...options.headers,
-      },
-      credentials: 'include',
+      headers: baseHeaders,
+      credentials: needsCredentials ? 'include' : 'omit',
       ...options,
       signal: AbortSignal.timeout(30000)
     });
