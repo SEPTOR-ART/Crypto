@@ -5,6 +5,15 @@ const RAW_WS = process.env.NEXT_PUBLIC_WS_BASE_URL || '';
 const isPlaceholder = /your-render-app-name/.test(RAW_API) || RAW_API === '';
 const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 
+// In-flight and rate limit caches to reduce duplicate requests
+const inflightRequests = new Map();
+const lastResponses = new Map();
+const rateLimits = {
+  '/api/users/profile': 10000,
+  '/api/transactions': 10000,
+};
+const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
 // Helper function to make API requests
 export const apiRequest = async (endpoint, options = {}) => {
   try {
@@ -35,6 +44,29 @@ export const apiRequest = async (endpoint, options = {}) => {
       }
     }
     
+    const method = (options.method || 'GET').toUpperCase();
+    const key = `${method} ${url}`;
+
+    // Basic Authorization guard: avoid server hit when token is missing
+    const authHeader = options.headers?.Authorization || options.headers?.authorization;
+    if (authHeader && /Bearer\s*($|undefined|null)/i.test(authHeader)) {
+      throw new Error('Not authorized, no token');
+    }
+
+    // Rate limit specific endpoints and return cached response when available
+    const rateMs = rateLimits[endpoint] || 0;
+    if (rateMs > 0) {
+      const last = lastResponses.get(key);
+      if (last && (nowMs() - last.timestamp) < rateMs) {
+        return last.data;
+      }
+    }
+
+    // De-duplicate concurrent identical requests
+    if (inflightRequests.has(key)) {
+      return await inflightRequests.get(key);
+    }
+
     console.log(`Making API request to: ${url}`);
     
     const response = await fetch(url, {
@@ -65,6 +97,11 @@ export const apiRequest = async (endpoint, options = {}) => {
         throw new Error('Too many requests, please try again later.');
       }
       throw new Error(msg);
+    }
+
+    // Cache successful responses for rate-limited endpoints
+    if (rateMs > 0 && data) {
+      lastResponses.set(key, { data, timestamp: nowMs() });
     }
 
     return data;
@@ -118,6 +155,9 @@ export const authService = {
   // Get user profile
   getProfile: async (token) => {
     try {
+      if (!token) {
+        throw new Error('Not authorized, no token');
+      }
       return await apiRequest('/api/users/profile', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -228,10 +268,15 @@ export const cryptoService = {
     
     const ws = new WebSocket(target);
     
-    // Add reconnection logic
+    // Provide a simple exponential backoff reconnect helper
+    let attempts = 0;
     ws.reconnect = () => {
-      console.log('Attempting to reconnect WebSocket...');
-      return new WebSocket(target);
+      attempts = Math.min(attempts + 1, 10);
+      const delay = Math.min(1000 * Math.pow(2, attempts), 10000) + Math.random() * 1000;
+      console.log(`Attempting to reconnect WebSocket in ${Math.round(delay)}ms...`);
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(new WebSocket(target)), delay);
+      });
     };
     
     return ws;
@@ -243,6 +288,9 @@ export const transactionService = {
   // Create a new transaction
   createTransaction: async (transactionData, token) => {
     try {
+      if (!token) {
+        throw new Error('Not authorized, no token');
+      }
       const response = await apiRequest('/api/transactions', {
         method: 'POST',
         headers: {
@@ -264,6 +312,9 @@ export const transactionService = {
   // Get user transactions
   getUserTransactions: async (token) => {
     try {
+      if (!token) {
+        throw new Error('Not authorized, no token');
+      }
       return await apiRequest('/api/transactions', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -339,6 +390,9 @@ export const giftCardService = {
   // Get user's gift cards
   getUserGiftCards: async (token) => {
     try {
+      if (!token) {
+        throw new Error('Not authorized, no token');
+      }
       return await apiRequest('/api/gift-cards/my-cards', {
         headers: {
           Authorization: `Bearer ${token}`,
