@@ -71,11 +71,12 @@ export default function Wallet() {
     const fetchTransactions = async () => {
       if (!user) return;
       
+      let slowTimer;
       try {
         setLoading(true);
         setError('');
         setSlowNetwork(false);
-        const slowTimer = setTimeout(() => {
+        slowTimer = setTimeout(() => {
           if (mountedRef.current) setSlowNetwork(true);
         }, 5000);
         
@@ -93,7 +94,7 @@ export default function Wallet() {
         console.error('Failed to fetch transactions:', err);
         if (mountedRef.current) setError(err.message || 'Failed to load transactions');
       } finally {
-        clearTimeout && clearTimeout(slowTimer);
+        if (slowTimer) clearTimeout(slowTimer);
         if (mountedRef.current) setLoading(false);
       }
     };
