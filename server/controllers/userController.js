@@ -239,13 +239,6 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-module.exports = {
-  registerUser,
-  authUser,
-  getUserProfile,
-  updateUserProfile,
-  logoutUser
-};
 // Logout user
 const logoutUser = async (req, res) => {
   try {
@@ -257,4 +250,12 @@ const logoutUser = async (req, res) => {
     console.error('Logout error:', error);
     res.status(500).json({ message: error.message });
   }
+};
+
+module.exports = {
+  registerUser,
+  authUser,
+  getUserProfile,
+  updateUserProfile,
+  logoutUser
 };
