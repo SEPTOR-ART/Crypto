@@ -86,7 +86,9 @@ const startServer = () => {
       optionsSuccessStatus: 200
     };
     app.use(cors(corsConfig));
-    app.options('*', cors(corsConfig));
+    // Express v5 uses path-to-regexp v6 which does not support '*' wildcard
+    // Use a RegExp to match all paths for preflight handling
+    app.options(/.*/, cors(corsConfig));
   } else {
     // Reflect request origin in development, allow credentials
     app.use(cors({ origin: true, credentials: true }));
