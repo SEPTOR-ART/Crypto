@@ -14,6 +14,7 @@ export default function Wallet() {
   const [sendAmount, setSendAmount] = useState('');
   const [sendAddress, setSendAddress] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
+  const [activeTab, setActiveTab] = useState('transactions');
   const { user, refreshUser } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const intervalRef = useRef(null);
@@ -46,6 +47,7 @@ export default function Wallet() {
     
     // Set up interval for real-time updates
     intervalRef.current = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       if (user) {
         try {
           const token = localStorage.getItem('token');
@@ -133,6 +135,15 @@ export default function Wallet() {
     total: transaction.total
   }));
 
+  const isValidAddress = (asset, address) => {
+    if (!address || typeof address !== 'string') return false;
+    if (asset === 'ETH') return address.startsWith('0x') && address.length === 42;
+    if (asset === 'BTC') return address.length >= 26 && address.length <= 42;
+    if (asset === 'LTC') return address.length >= 26 && address.length <= 42;
+    if (asset === 'XRP') return address.length >= 25 && address.length <= 35;
+    return address.length >= 10;
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     
@@ -159,6 +170,10 @@ export default function Wallet() {
       const userBalance = user.balance?.[selectedCrypto] || 0;
       if (numericAmount > userBalance) {
         throw new Error(`Insufficient ${selectedCrypto} balance`);
+      }
+
+      if (!isValidAddress(selectedCrypto, sendAddress)) {
+        throw new Error('Invalid recipient address format');
       }
       
       // Create transaction data for sending
@@ -227,10 +242,8 @@ export default function Wallet() {
 
   // Calculate total balance
   const totalBalance = walletBalances.reduce((total, wallet) => {
-    // Ensure we're working with numbers
-    const balance = parseFloat(wallet.balance) || 0;
-    const price = wallet.value / (balance || 1); // Avoid division by zero
-    return total + (balance * price);
+    const val = Number(wallet.value) || 0;
+    return total + val;
   }, 0);
 
   return (
@@ -241,8 +254,8 @@ export default function Wallet() {
           <p>Manage your cryptocurrency assets securely</p>
         </div>
 
-        {error && <div className={styles.errorMessage}>{error}</div>}
-        {success && <div className={styles.successMessage}>Transaction sent successfully!</div>}
+        {error && <div className={styles.errorMessage} role="status" aria-live="polite">{error}</div>}
+        {success && <div className={styles.successMessage} role="status" aria-live="polite">Transaction sent successfully!</div>}
 
         {/* Wallet Overview */}
         <div className={styles.walletOverview}>
@@ -280,6 +293,9 @@ export default function Wallet() {
               <span>Value</span>
               <span className={styles.balanceValue}>${(selectedWallet?.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
+            {pricesLoading && (
+              <div className={styles.balanceInfo}>Loading live prices...</div>
+            )}
             <div className={styles.infoRow}>
               <span>Address</span>
               <div className={styles.addressContainer}>
@@ -297,12 +313,13 @@ export default function Wallet() {
 
         {/* Wallet Tabs */}
         <div className={styles.walletTabs}>
-          <button className={`${styles.tab} ${styles.active}`}>Transactions</button>
-          <button className={styles.tab}>Deposit</button>
-          <button className={styles.tab}>Send</button>
+          <button className={`${styles.tab} ${activeTab === 'transactions' ? styles.active : ''}`} onClick={() => setActiveTab('transactions')}>Transactions</button>
+          <button className={`${styles.tab} ${activeTab === 'deposit' ? styles.active : ''}`} onClick={() => setActiveTab('deposit')}>Deposit</button>
+          <button className={`${styles.tab} ${activeTab === 'send' ? styles.active : ''}`} onClick={() => setActiveTab('send')}>Send</button>
         </div>
 
         {/* Send Form */}
+        {activeTab === 'send' && (
         <div className={styles.sendSection}>
           <h2>Send Cryptocurrency</h2>
           
@@ -320,8 +337,14 @@ export default function Wallet() {
                 className={styles.input}
               />
               <div className={styles.balanceInfo}>
+                ≈ ${((parseFloat(sendAmount) || 0) * (cryptoPrices[selectedCrypto] || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className={styles.balanceInfo}>
                 Available: {(user.balance?.[selectedCrypto] || 0).toFixed(6)} {selectedCrypto}
               </div>
+              <button type="button" className={styles.copyButton} onClick={() => setSendAmount(String(user.balance?.[selectedCrypto] || 0))}>
+                Max
+              </button>
             </div>
             
             <div className={styles.formGroup}>
@@ -336,13 +359,36 @@ export default function Wallet() {
               />
             </div>
             
-            <button type="submit" className={styles.sendButton}>
+            <button type="submit" className={styles.sendButton} disabled={pricesLoading}>
               Send {selectedCrypto}
             </button>
           </form>
         </div>
+        )}
+
+        {/* Deposit */}
+        {activeTab === 'deposit' && (
+          <div className={styles.transactionHistory}>
+            <div className={styles.sectionHeader}>
+              <h2>Deposit {selectedWallet?.symbol}</h2>
+              <div className={styles.balanceInfo}>Use the address below to deposit {selectedWallet?.symbol}.</div>
+            </div>
+            <div className={styles.walletDetails}>
+              <div className={styles.walletInfo}>
+                <div className={styles.infoRow}>
+                  <span>Address</span>
+                  <div className={styles.addressContainer}>
+                    <span className={styles.address}>{selectedWallet?.address}</span>
+                    <button className={styles.copyButton} onClick={() => copyToClipboard(selectedWallet?.address || '')}>Copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Transaction History */}
+        {activeTab === 'transactions' && (
         <div className={styles.transactionHistory}>
           <div className={styles.sectionHeader}>
             <h2>Transaction History</h2>
@@ -370,7 +416,7 @@ export default function Wallet() {
                     </span>
                   </div>
                   <div className={styles.transactionAddress}>
-                    <span>To: {transaction.to.substring(0, 10)}...</span>
+                    <span>To: {(transaction.to || 'N/A').slice(0, 10)}...</span>
                   </div>
                   <div className={styles.transactionStatus}>
                     <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
@@ -387,6 +433,7 @@ export default function Wallet() {
             </div>
           )}
         </div>
+        )}
       </div>
     </ProtectedRoute>
   );

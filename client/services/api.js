@@ -184,16 +184,15 @@ export const cryptoService = {
   createPriceWebSocket: () => {
     let target;
     if (typeof window !== 'undefined') {
-      // In browser environment
+      const isNetlify = /netlify\.app$/.test(window.location.hostname);
       if (isPlaceholderWS || RAW_WS === '') {
-        // If we're in development or no WS URL is set, construct from current origin
+        if (isNetlify) {
+          return null;
+        }
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         target = `${protocol}//${window.location.host}/ws`;
       } else {
-        // Production environment with explicit WS URL
-        // Ensure the WebSocket URL is correctly formatted
         if (RAW_WS.startsWith('wss://') || RAW_WS.startsWith('ws://')) {
-          // If it already has the protocol, use it as is but ensure /ws path
           if (RAW_WS.endsWith('/ws')) {
             target = RAW_WS;
           } else if (RAW_WS.endsWith('/')) {
@@ -202,7 +201,6 @@ export const cryptoService = {
             target = `${RAW_WS}/ws`;
           }
         } else {
-          // If no protocol is specified, default to wss for https and ws for http
           const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
           if (RAW_WS.startsWith('/')) {
             target = `${protocol}${RAW_WS.replace('//', '').replace('/ws', '')}/ws`;
@@ -212,15 +210,12 @@ export const cryptoService = {
         }
       }
     } else {
-      // Server-side environment (for SSR)
       if (isPlaceholderWS || RAW_WS === '') {
-        // Default to localhost in development
         target = 'ws://localhost:5000/ws';
       } else {
-        target = RAW_WS;
+        target = RAW_WS.endsWith('/ws') ? RAW_WS : `${RAW_WS}/ws`;
       }
     }
-    
     console.log(`Creating WebSocket connection to: ${target}`);
     
     // Validate WebSocket URL
