@@ -11,6 +11,9 @@ const lastResponses = new Map();
 const rateLimits = {
   '/api/users/profile': 10000,
   '/api/transactions': 10000,
+  '/api/admin/users': 10000,
+  '/api/admin/transactions': 10000,
+  '/api/gift-cards': 10000,
 };
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 

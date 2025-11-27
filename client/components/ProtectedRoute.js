@@ -6,21 +6,7 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Check if user is admin with enhanced validation
-  const isAdmin = (user) => {
-    // Check if user object exists
-    if (!user) return false;
-    
-    // Check for admin email addresses
-    const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
-    if (adminEmails.includes(user.email)) return true;
-    
-    // Check for isAdmin flag
-    if (user.isAdmin === true) return true;
-    
-    // User is not an admin
-    return false;
-  };
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     if (!loading) {
@@ -43,7 +29,7 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
         return;
       }
     }
-  }, [user, loading, router, requireAuth, requireAdmin]);
+  }, [user, loading, router, requireAuth, requireAdmin, isAdmin]);
 
   // Show loading state
   if (loading) {

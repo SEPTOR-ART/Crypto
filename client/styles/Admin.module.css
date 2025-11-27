@@ -698,6 +698,30 @@ input:checked + .slider:before {
   color: #f0f0f0; /* Light silver */
 }
 
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #2d2d2d;
+  border: 1px solid #4d4d4d;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
 /* Content Header */
 .contentHeader {
   display: flex;

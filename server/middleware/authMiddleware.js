@@ -57,3 +57,21 @@ const protect = async (req, res, next) => {
 };
 
 module.exports = { protect };
+
+// Admin-only middleware
+const requireAdmin = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized, no user' });
+    }
+    const isAdminUser = req.user.isAdmin === true || req.user.email === 'admin@cryptozen.com' || req.user.email === 'admin@cryptoasia.com';
+    if (!isAdminUser) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    next();
+  } catch (e) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports.requireAdmin = requireAdmin;

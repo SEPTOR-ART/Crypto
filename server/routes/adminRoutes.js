@@ -8,10 +8,11 @@ const {
   updateTransactionStatus,
   updateUserStatus
 } = require('../controllers/adminController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, requireAdmin } = require('../middleware/authMiddleware');
 
-// All admin routes require authentication
+// All admin routes require authentication and admin role
 router.use(protect);
+router.use(requireAdmin);
 
 // User management routes
 router.route('/users')
