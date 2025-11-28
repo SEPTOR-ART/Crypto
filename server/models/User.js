@@ -5,28 +5,53 @@ const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    maxlength: 50
   },
   lastName: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    maxlength: 50
   },
   email: {
     type: String,
     required: true,
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
+    maxlength: 100,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Invalid email format'
+    }
   },
   password: {
     type: String,
     required: true,
-    minlength: 6
+    minlength: 8,
+    maxlength: 128,
+    validate: {
+      validator: function(v) {
+        // Ensure password meets complexity requirements
+        return /[A-Z]/.test(v) && /[a-z]/.test(v) && /\d/.test(v);
+      },
+      message: 'Password must contain uppercase, lowercase, and number'
+    }
   },
   phone: {
     type: String,
-    trim: true
+    trim: true,
+    maxlength: 20,
+    validate: {
+      validator: function(v) {
+        // Allow empty or valid phone number format
+        return !v || /^[+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/.test(v);
+      },
+      message: 'Invalid phone number format'
+    }
   },
   kycStatus: {
     type: String,
@@ -78,6 +103,18 @@ const userSchema = new mongoose.Schema({
   apiTokenExpires: {
     type: Date,
     default: null
+  },
+  lastLoginAt: {
+    type: Date,
+    default: null
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date,
+    default: null
   }
 });
 
@@ -97,6 +134,44 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Check if account is locked
+userSchema.methods.isLocked = function() {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+// Increment login attempts
+userSchema.methods.incLoginAttempts = async function() {
+  // If we have a previous lock that has expired, reset attempts
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    return this.updateOne({
+      $set: { loginAttempts: 1 },
+      $unset: { lockUntil: 1 }
+    });
+  }
+  
+  const updates = { $inc: { loginAttempts: 1 } };
+  const maxAttempts = 5;
+  const lockTime = 2 * 60 * 60 * 1000; // 2 hours
+  
+  // Lock account if max attempts reached
+  if (this.loginAttempts + 1 >= maxAttempts && !this.isLocked()) {
+    updates.$set = { lockUntil: Date.now() + lockTime };
+  }
+  
+  return this.updateOne(updates);
+};
+
+// Reset login attempts on successful login
+userSchema.methods.resetLoginAttempts = async function() {
+  return this.updateOne({
+    $set: { 
+      loginAttempts: 0,
+      lastLoginAt: Date.now()
+    },
+    $unset: { lockUntil: 1 }
+  });
 };
 
 // Update updatedAt field before saving

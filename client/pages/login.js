@@ -56,17 +56,39 @@ export default function Login() {
       return;
     }
     
+    // Sanitize inputs
+    const sanitizedEmail = email.trim().toLowerCase();
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(sanitizedEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    // Validate password length
+    if (password.length < 8 || password.length > 128) {
+      setError('Invalid email or password');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     
     try {
-      await login({ email, password }, nextUrl);
+      await login({ email: sanitizedEmail, password }, nextUrl);
     } catch (err) {
       // Handle specific error messages
       if (err.message.includes('Invalid email or password')) {
         setError('Invalid email or password. Please try again.');
+      } else if (err.message.includes('Account suspended')) {
+        setError('Your account has been suspended. Please contact support.');
+      } else if (err.message.includes('Account temporarily locked') || err.message.includes('423')) {
+        setError('Account temporarily locked due to multiple failed login attempts. Please try again later or contact support.');
       } else if (err.message.includes('Network Error')) {
         setError('Network error. Please check your connection and try again.');
+      } else if (err.message.includes('Too many requests') || err.message.includes('Too many authentication attempts')) {
+        setError('Too many login attempts. Please try again later.');
       } else {
         setError(err.message || 'Failed to login. Please try again.');
       }

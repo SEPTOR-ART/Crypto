@@ -65,8 +65,32 @@ export default function Signup() {
       return;
     }
     
+    // Comprehensive client-side validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+    
+    // Sanitize inputs (trim whitespace)
+    const sanitizedFirstName = firstName.trim();
+    const sanitizedLastName = lastName.trim();
+    const sanitizedEmail = email.trim().toLowerCase();
+    
+    // Validate name fields
+    if (sanitizedFirstName.length < 2 || sanitizedFirstName.length > 50) {
+      setError('First name must be between 2 and 50 characters');
+      return;
+    }
+    
+    if (sanitizedLastName.length < 2 || sanitizedLastName.length > 50) {
+      setError('Last name must be between 2 and 50 characters');
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(sanitizedEmail)) {
+      setError('Please enter a valid email address');
       return;
     }
     
@@ -75,8 +99,31 @@ export default function Signup() {
       return;
     }
     
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    // Comprehensive password validation
+    if (password.length < 8 || password.length > 128) {
+      setError('Password must be between 8 and 128 characters');
+      return;
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter');
+      return;
+    }
+    
+    if (!/\d/.test(password)) {
+      setError('Password must contain at least one number');
+      return;
+    }
+    
+    // Check for common weak passwords
+    const weakPasswords = ['password123', '12345678', 'qwerty123', 'abc123456'];
+    if (weakPasswords.includes(password.toLowerCase())) {
+      setError('Password is too common. Please choose a stronger password');
       return;
     }
     
@@ -85,13 +132,22 @@ export default function Signup() {
     
     try {
       await register({
-        firstName,
-        lastName,
-        email,
+        firstName: sanitizedFirstName,
+        lastName: sanitizedLastName,
+        email: sanitizedEmail,
         password
       });
     } catch (err) {
-      setError(err.message || 'Failed to create account');
+      // Handle specific error messages
+      if (err.message.includes('already exists') || err.message.includes('Unable to create account')) {
+        setError('An account with this email already exists or cannot be created');
+      } else if (err.message.includes('Network Error')) {
+        setError('Network error. Please check your connection and try again.');
+      } else if (err.message.includes('Too many requests')) {
+        setError('Too many registration attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Failed to create account. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
