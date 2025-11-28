@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
+import Link from 'next/link';
+import alertStyles from './Alert.module.css';
 
 const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) => {
   const { user, loading } = useAuth();
@@ -10,16 +12,8 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
 
   useEffect(() => {
     if (!loading) {
-      // If authentication is required but user is not logged in
-      if (requireAuth && !user) {
-        const next = encodeURIComponent(router.asPath || '/');
-        router.push(`/login?next=${next}&reason=auth_required`);
-        return;
-      }
-      
       // If admin access is required but user is not admin
       if (requireAdmin && user && !isAdmin(user)) {
-        // Redirect to dashboard with an error message
         router.push('/dashboard?error=unauthorized');
         return;
       }
@@ -48,12 +42,48 @@ const ProtectedRoute = ({ children, requireAuth = true, requireAdmin = false }) 
     );
   }
 
+  // If auth is required and user is signed out, show a friendly notice with re-login prompt
+  if (requireAuth && !user && !loading) {
+    const next = encodeURIComponent(router.asPath || '/');
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#0f1220',
+        color: '#eaeaea',
+        padding: '1rem'
+      }}>
+        <div style={{ maxWidth: 680, width: '100%' }}>
+          <div className={`${alertStyles.alert} ${alertStyles.info}`} role="status" aria-live="polite">
+            <div className={alertStyles.alertIcon}>🔒</div>
+            <div className={alertStyles.alertContent}>
+              <p className={alertStyles.alertTitle}>You are signed out</p>
+              <p className={alertStyles.alertMessage}>Your session is not active. Please sign in to continue to this page.</p>
+            </div>
+            <Link href={`/login?next=${next}&reason=auth_required`}>
+              <a style={{
+                background: '#2196f3',
+                color: '#fff',
+                padding: '0.5rem 0.9rem',
+                borderRadius: 6,
+                textDecoration: 'none',
+                fontWeight: 600
+              }}>Sign In</a>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // If access is granted, render children
   if (!requireAuth || (user && !requireAdmin) || (user && requireAdmin && isAdmin(user))) {
     return children;
   }
 
-  // Return null while redirecting
+  // Default: show nothing while loading
   return null;
 };
 
