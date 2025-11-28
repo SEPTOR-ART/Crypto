@@ -196,6 +196,56 @@ const startServer = () => {
     });
   });
 
+  // One-time setup endpoint to promote user to admin
+  // This endpoint is protected by a secret key and can only be called once
+  app.post('/api/setup/promote-admin', async (req, res) => {
+    try {
+      const User = require('./models/User');
+      
+      // Get email from request body
+      const { email, setupKey } = req.body;
+      
+      // Simple protection - require a setup key (use any random string)
+      const SETUP_KEY = process.env.SETUP_KEY || 'cryptozen-setup-2025';
+      if (setupKey !== SETUP_KEY) {
+        return res.status(403).json({ message: 'Invalid setup key' });
+      }
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      // Find user
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Check if already admin
+      if (user.isAdmin) {
+        return res.status(200).json({ 
+          message: 'User is already an admin',
+          email: user.email,
+          isAdmin: true
+        });
+      }
+      
+      // Promote to admin
+      user.isAdmin = true;
+      await user.save();
+      
+      res.status(200).json({ 
+        message: 'User promoted to admin successfully',
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        isAdmin: user.isAdmin
+      });
+    } catch (error) {
+      console.error('Error promoting user to admin:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   app.get('/api/health', (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.status(200).json({ 
