@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import ThreeCoin from '../components/ThreeCoin';
 import Head from 'next/head';
 
@@ -167,9 +168,9 @@ export default function TestCoin() {
         </div>
         
         <div style={{ textAlign: 'center', marginTop: '2rem', padding: '2rem' }}>
-          <a href="/" style={{ color: '#00d4ff', textDecoration: 'underline', fontSize: '1.1rem' }}>
+          <Link href="/" style={{ color: '#00d4ff', textDecoration: 'underline', fontSize: '1.1rem' }}>
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>
