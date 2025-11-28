@@ -495,3 +495,78 @@ export const giftCardService = {
     }
   },
 };
+
+// MFA services
+export const mfaService = {
+  // Setup MFA and get QR code
+  setupMFA: async () => {
+    try {
+      return await apiRequest('/api/mfa/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Verify MFA token and enable MFA
+  verifyMFA: async (token) => {
+    try {
+      return await apiRequest('/api/mfa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Disable MFA for current user
+  disableMFA: async () => {
+    try {
+      return await apiRequest('/api/mfa/disable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Verify a backup code
+  verifyBackupCode: async (code) => {
+    try {
+      return await apiRequest('/api/mfa/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+};

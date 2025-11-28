@@ -69,15 +69,17 @@ const startServer = () => {
 
   // Configure CORS for production and development
   if (process.env.NODE_ENV === 'production') {
-    // In production, credentials require a specific origin (not '*')
     const allowedOrigins = (process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
       : ['https://cryptozing.netlify.app']);
 
     const corsConfig = {
       origin: function (origin, callback) {
-        if (!origin) return callback(null, true); // allow same-origin and non-browser clients
-        const isAllowed = allowedOrigins.includes(origin);
+        if (!origin) return callback(null, true);
+        const isExplicit = allowedOrigins.includes(origin);
+        const isNetlifySubdomain = /\.netlify\.app$/.test(origin);
+        const isRenderSelf = /\.onrender\.com$/.test(origin);
+        const isAllowed = isExplicit || isNetlifySubdomain || isRenderSelf;
         callback(null, isAllowed);
       },
       credentials: true,
@@ -86,8 +88,6 @@ const startServer = () => {
       optionsSuccessStatus: 200
     };
     app.use(cors(corsConfig));
-    // Express v5 uses path-to-regexp v6 which does not support '*' wildcard
-    // Use a RegExp to match all paths for preflight handling
     app.options(/.*/, cors(corsConfig));
   } else {
     // Reflect request origin in development, allow credentials
@@ -291,6 +291,8 @@ const startServer = () => {
   // Handle WebSocket connections
   wss.on('connection', (ws, request) => {
     console.log('New WebSocket connection');
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
     
     // Send initial price data
     ws.send(JSON.stringify({
@@ -325,6 +327,18 @@ const startServer = () => {
       console.error('WebSocket error:', error);
       clearInterval(interval);
     });
+  });
+
+  const heartbeat = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.isAlive === false) return ws.terminate();
+      ws.isAlive = false;
+      try { ws.ping(); } catch (e) {}
+    });
+  }, 30000);
+
+  wss.on('close', () => {
+    clearInterval(heartbeat);
   });
 
   // Start server

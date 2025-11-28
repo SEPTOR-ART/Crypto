@@ -63,7 +63,7 @@ const registerUser = async (req, res) => {
       res.cookie('session', token, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'Strict',
+        sameSite: 'None',
         maxAge: 8 * 60 * 60 * 1000, // 8 hours
         path: '/',
       });
@@ -71,7 +71,7 @@ const registerUser = async (req, res) => {
       res.cookie('csrf_token', csrfToken, {
         httpOnly: false,
         secure: isProd,
-        sameSite: 'Strict',
+        sameSite: 'None',
         maxAge: 8 * 60 * 60 * 1000,
         path: '/',
       });
@@ -115,14 +115,14 @@ const authUser = async (req, res) => {
         res.cookie('session', token, {
           httpOnly: true,
           secure: isProd,
-          sameSite: 'Strict',
+          sameSite: 'None',
           maxAge: 8 * 60 * 60 * 1000,
           path: '/',
         });
         res.cookie('csrf_token', csrfToken, {
           httpOnly: false,
           secure: isProd,
-          sameSite: 'Strict',
+          sameSite: 'None',
           maxAge: 8 * 60 * 60 * 1000,
           path: '/',
         });
