@@ -3,6 +3,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 
+// Admin IP whitelist (in a real application, this would be stored in a database or config file)
+const ADMIN_IP_WHITELIST = process.env.ADMIN_IP_WHITELIST ? process.env.ADMIN_IP_WHITELIST.split(',') : ['127.0.0.1', '::1'];
+
+// Check if IP is whitelisted for admin access
+const isIpWhitelisted = (ip) => {
+  return ADMIN_IP_WHITELIST.includes(ip);
+};
+
 // Generate JWT token
 const generateToken = (id) => {
   console.log('Generating token for user ID:', id);
@@ -79,6 +87,10 @@ const authUser = async (req, res) => {
   try {
     console.log('Authentication request received:', req.body);
     const { email, password } = req.body;
+    
+    // Get client IP address
+    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log('Client IP:', clientIp);
 
     // Find user in database
     console.log('Finding user in database:', email);
@@ -91,6 +103,17 @@ const authUser = async (req, res) => {
       console.log('Password valid:', isPasswordValid);
       
       if (isPasswordValid) {
+        // Additional security checks for admin users
+        const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
+        if (adminEmails.includes(user.email) || user.isAdmin) {
+          // Check if IP is whitelisted for admin access
+          if (!isIpWhitelisted(clientIp)) {
+            console.log('Admin login attempt from non-whitelisted IP:', clientIp);
+            return res.status(403).json({ message: 'Access denied. IP not whitelisted for admin access.' });
+          }
+          console.log('Admin login from whitelisted IP:', clientIp);
+        }
+        
         const token = generateToken(user._id);
         console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
         return res.json({
@@ -100,6 +123,7 @@ const authUser = async (req, res) => {
           email: user.email,
           kycStatus: user.kycStatus,
           twoFactorEnabled: user.twoFactorEnabled,
+          isAdmin: user.isAdmin || adminEmails.includes(user.email),
           token: token
         });
       } else {
@@ -142,6 +166,7 @@ const getUserProfile = async (req, res) => {
         twoFactorEnabled: user.twoFactorEnabled,
         balance: user.balance, // Include user's balance
         walletAddress: user.walletAddress, // Include walletAddress
+        isAdmin: user.isAdmin || ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'].includes(user.email),
         createdAt: user.createdAt
       });
     } else {
@@ -194,6 +219,7 @@ const updateUserProfile = async (req, res) => {
         twoFactorEnabled: updatedUser.twoFactorEnabled,
         balance: updatedUser.balance, // Include user's balance
         walletAddress: updatedUser.walletAddress, // Include walletAddress
+        isAdmin: updatedUser.isAdmin || ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'].includes(updatedUser.email),
         token: generateToken(updatedUser._id)
       });
     } else {

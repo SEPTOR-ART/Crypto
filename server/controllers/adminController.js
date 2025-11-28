@@ -2,9 +2,20 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
 
-// Check if user is admin
+// Check if user is admin (shared function)
 const isAdmin = (user) => {
-  return user.email === 'admin@cryptozen.com' || user.email === 'admin@cryptoasia.com' || user.isAdmin;
+  // Check if user object exists
+  if (!user) return false;
+  
+  // Check for admin email addresses
+  const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
+  if (adminEmails.includes(user.email)) return true;
+  
+  // Check for isAdmin flag
+  if (user.isAdmin === true) return true;
+  
+  // User is not an admin
+  return false;
 };
 
 // Get all users (admin only)
@@ -85,10 +96,9 @@ const updateUserBalance = async (req, res) => {
         user.balance = new Map();
       }
       
-      // Update balance for the specified asset
+      // Set the balance for the specified asset
       user.balance.set(asset, parseFloat(amount));
       
-      // Save updated user
       const updatedUser = await user.save();
       
       res.json({
@@ -98,7 +108,7 @@ const updateUserBalance = async (req, res) => {
           firstName: updatedUser.firstName,
           lastName: updatedUser.lastName,
           email: updatedUser.email,
-          balance: updatedUser.balance
+          balance: Object.fromEntries(updatedUser.balance)
         }
       });
     } else {
@@ -146,9 +156,9 @@ const updateTransactionStatus = async (req, res) => {
     }
     
     // Validate status
-    const validStatuses = ['pending', 'completed', 'failed'];
+    const validStatuses = ['pending', 'completed', 'failed', 'cancelled'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status. Must be pending, completed, or failed.' });
+      return res.status(400).json({ message: 'Invalid status' });
     }
 
     const transaction = await Transaction.findById(id);
@@ -157,11 +167,11 @@ const updateTransactionStatus = async (req, res) => {
       transaction.status = status;
       transaction.updatedAt = Date.now();
       
-      await transaction.save();
+      const updatedTransaction = await transaction.save();
       
       res.json({
         message: 'Transaction status updated successfully',
-        transaction
+        transaction: updatedTransaction
       });
     } else {
       res.status(404).json({ message: 'Transaction not found' });
@@ -181,7 +191,7 @@ const updateUserStatus = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { action } = req.body; // 'suspend' or 'activate'
+    const { action } = req.body;
     
     // Validate that the user ID is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -189,28 +199,32 @@ const updateUserStatus = async (req, res) => {
     }
     
     // Validate action
-    if (!['suspend', 'activate'].includes(action)) {
-      return res.status(400).json({ message: 'Invalid action. Must be suspend or activate.' });
+    const validActions = ['suspend', 'activate'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ message: 'Invalid action' });
     }
 
     const user = await User.findById(id);
     
     if (user) {
-      // For this example, we'll just update a custom field
-      // In a real implementation, you might want to implement a proper suspension mechanism
+      // Cannot suspend/activate admin users
+      if (isAdmin(user)) {
+        return res.status(403).json({ message: 'Cannot modify admin user status' });
+      }
+      
       user.isSuspended = action === 'suspend';
       user.updatedAt = Date.now();
       
-      await user.save();
+      const updatedUser = await user.save();
       
       res.json({
         message: `User ${action}ed successfully`,
         user: {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          isSuspended: user.isSuspended
+          _id: updatedUser._id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+          isSuspended: updatedUser.isSuspended
         }
       });
     } else {
@@ -228,5 +242,6 @@ module.exports = {
   updateUserBalance,
   getAllTransactions,
   updateTransactionStatus,
-  updateUserStatus
+  updateUserStatus,
+  isAdmin // Export the isAdmin function for consistency
 };

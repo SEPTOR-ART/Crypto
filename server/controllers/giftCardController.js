@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const crypto = require('crypto');
 
-// Check if user is admin
+// Check if user is admin (shared function)
 const isAdmin = (user) => {
   // Check if user object exists
   if (!user) return false;

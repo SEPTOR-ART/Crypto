@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
+// Admin session timeout (15 minutes for admin users, 30 days for regular users)
+const ADMIN_SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+
 const protect = async (req, res, next) => {
   let token;
 
@@ -33,6 +36,24 @@ const protect = async (req, res, next) => {
       if (!req.user) {
         console.log('User not found in database');
         return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
+      // Additional security checks for admin users
+      const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
+      const isAdminUser = adminEmails.includes(req.user.email) || req.user.isAdmin;
+      
+      if (isAdminUser) {
+        // Check if token was issued recently enough for admin users
+        const tokenIssuedAt = decoded.iat * 1000; // Convert to milliseconds
+        const currentTime = Date.now();
+        const tokenAge = currentTime - tokenIssuedAt;
+        
+        if (tokenAge > ADMIN_SESSION_TIMEOUT) {
+          console.log('Admin session expired. Token age:', tokenAge, 'ms');
+          return res.status(401).json({ message: 'Admin session expired. Please log in again.' });
+        }
+        
+        console.log('Admin session is valid. Token age:', tokenAge, 'ms');
       }
 
       next();
