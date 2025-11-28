@@ -96,6 +96,12 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...csrfHeader,
       ...options.headers,
     };
+    if (needsCredentials && typeof window !== 'undefined') {
+      const stored = (typeof localStorage !== 'undefined') ? localStorage.getItem('token') : null;
+      if (stored && !baseHeaders.Authorization && !baseHeaders.authorization) {
+        baseHeaders.Authorization = `Bearer ${stored}`;
+      }
+    }
     if (methodUpper !== 'GET' && methodUpper !== 'HEAD' && !baseHeaders['Content-Type']) {
       baseHeaders['Content-Type'] = 'application/json';
     }

@@ -80,7 +80,8 @@ const registerUser = async (req, res) => {
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email
+        email: user.email,
+        token
       });
     } else {
       console.log('Registration failed: Invalid user data');
@@ -133,7 +134,8 @@ const authUser = async (req, res) => {
           lastName: user.lastName,
           email: user.email,
           kycStatus: user.kycStatus,
-          twoFactorEnabled: user.twoFactorEnabled
+          twoFactorEnabled: user.twoFactorEnabled,
+          token
         });
       } else {
         console.log('Invalid password for user:', email);

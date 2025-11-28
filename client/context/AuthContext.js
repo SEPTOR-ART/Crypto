@@ -71,6 +71,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData, nextUrl) => {
     try {
       const res = await authService.register(userData);
+      if (typeof window !== 'undefined' && res && res.token) {
+        try { localStorage.setItem('token', res.token); } catch (e) {}
+      }
       await checkUserLogin();
       startTokenRefresh();
       router.push(nextUrl || '/dashboard');
@@ -84,6 +87,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials, nextUrl) => {
     try {
       const res = await authService.login(credentials);
+      if (typeof window !== 'undefined' && res && res.token) {
+        try { localStorage.setItem('token', res.token); } catch (e) {}
+      }
       await checkUserLogin();
       startTokenRefresh();
       router.push(nextUrl || '/dashboard');
@@ -99,6 +105,7 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
     } catch (e) {}
     setUser(null);
+    try { if (typeof window !== 'undefined') localStorage.removeItem('token'); } catch (e) {}
     stopTokenRefresh();
     router.push('/');
   }, [router, stopTokenRefresh]);
