@@ -244,184 +244,247 @@ export default function Trade() {
   return (
     <ProtectedRoute requireAuth={true}>
       <div className={styles.container}>
-        <div className={styles.tradingView}>
-          {/* Trading Pair Selector */}
-          <div className={styles.pairSelector}>
-            <select 
-              value={selectedCrypto} 
-              onChange={(e) => setSelectedCrypto(e.target.value)}
-              className={styles.cryptoSelect}
-            >
-              {cryptocurrencies.map(crypto => (
-                <option key={crypto.symbol} value={crypto.symbol}>
-                  {crypto.symbol}/USD
-                </option>
-              ))}
-            </select>
-            
-            <div className={styles.priceDisplay}>
-              <span className={styles.currentPrice}>${parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              <span className={styles.priceChange}>+2.5%</span>
-            </div>
-          </div>
-
-          {/* Chart Area */}
-          <div className={styles.chartArea}>
-            <Chart 
-              prices={cryptoPrices} 
-              selectedCrypto={selectedCrypto} 
-              loading={pricesLoading} 
-              error={null} 
-            />
-          </div>
-
-          {/* Order Book */}
-          <div className={styles.orderBook}>
-            <h3>Order Book</h3>
-            <div className={styles.orderBookContent}>
-              <div className={styles.asks}>
-                <h4>Asks</h4>
-                {orderBook.asks.slice(0, 5).map((ask, index) => (
-                  <div key={index} className={styles.orderRow}>
-                    <span className={styles.askPrice}>{ask.price}</span>
-                    <span>{ask.amount}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className={styles.bids}>
-                <h4>Bids</h4>
-                {orderBook.bids.slice(0, 5).map((bid, index) => (
-                  <div key={index} className={styles.orderRow}>
-                    <span className={styles.bidPrice}>{bid.price}</span>
-                    <span>{bid.amount}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Hero Section */}
+        <div className={styles.hero}>
+          <div className={styles.heroContent}>
+            <span className={styles.label}>TRADE LAB</span>
+            <h1 className={styles.title}>Buy & Sell Crypto</h1>
+            <p className={styles.subtitle}>Trade cryptocurrencies with real-time prices and advanced tools</p>
           </div>
         </div>
 
-        {/* Trading Panel */}
-        <div className={styles.tradingPanel}>
-          <div className={styles.panelHeader}>
-            <button 
-              className={`${styles.panelTab} ${tradeType === 'buy' ? styles.activeTab : ''}`}
-              onClick={() => setTradeType('buy')}
-            >
-              Buy
-            </button>
-            <button 
-              className={`${styles.panelTab} ${tradeType === 'sell' ? styles.activeTab : ''}`}
-              onClick={() => setTradeType('sell')}
-            >
-              Sell
-            </button>
+        {/* Market Stats */}
+        <div className={styles.marketStats}>
+          {cryptocurrencies.map(crypto => {
+            const cryptoPrice = cryptoPrices[crypto.symbol] || 0;
+            return (
+              <div key={crypto.symbol} className={styles.statCard}>
+                <div className={styles.statHeader}>
+                  <span className={styles.cryptoName}>{crypto.name}</span>
+                  <span className={styles.cryptoSymbol}>{crypto.symbol}</span>
+                </div>
+                <div className={styles.statPrice}>
+                  ${parseFloat(cryptoPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className={styles.statChange}>+2.5%</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Main Trading Interface */}
+        <div className={styles.tradingInterface}>
+          {/* Left: Chart & Order Book */}
+          <div className={styles.leftPanel}>
+            {/* Trading Pair Selector */}
+            <div className={styles.pairSelector}>
+              <select 
+                value={selectedCrypto} 
+                onChange={(e) => setSelectedCrypto(e.target.value)}
+                className={styles.cryptoSelect}
+              >
+                {cryptocurrencies.map(crypto => (
+                  <option key={crypto.symbol} value={crypto.symbol}>
+                    {crypto.symbol}/USD
+                  </option>
+                ))}
+              </select>
+              
+              <div className={styles.priceDisplay}>
+                <span className={styles.currentPrice}>${parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className={styles.priceChange}>+2.5%</span>
+              </div>
+            </div>
+
+            {/* Chart Area */}
+            <div className={styles.chartArea}>
+              <Chart 
+                prices={cryptoPrices} 
+                selectedCrypto={selectedCrypto} 
+                loading={pricesLoading} 
+                error={null} 
+              />
+            </div>
+
+            {/* Order Book */}
+            <div className={styles.orderBook}>
+              <h3>Order Book</h3>
+              <div className={styles.orderBookContent}>
+                <div className={styles.asks}>
+                  <h4>Asks (Sell Orders)</h4>
+                  {orderBook.asks.slice(0, 5).map((ask, index) => (
+                    <div key={index} className={styles.orderRow}>
+                      <span className={styles.askPrice}>${ask.price}</span>
+                      <span className={styles.orderAmount}>{ask.amount}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className={styles.bids}>
+                  <h4>Bids (Buy Orders)</h4>
+                  {orderBook.bids.slice(0, 5).map((bid, index) => (
+                    <div key={index} className={styles.orderRow}>
+                      <span className={styles.bidPrice}>${bid.price}</span>
+                      <span className={styles.orderAmount}>{bid.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className={styles.panelContent}>
-            {error && <div className={styles.errorMessage}>{error}</div>}
-            {success && <div className={styles.successMessage}>Trade executed successfully!</div>}
-            
-            <form onSubmit={handleTrade} className={styles.tradeForm}>
-              <div className={styles.formGroup}>
-                <label htmlFor="amount">Amount</label>
-                <div className={styles.inputWithAddon}>
-                  <input
-                    type="number"
-                    id="amount"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    step="0.000001"
-                    className={styles.formControl}
-                    required
-                  />
-                  <span className={styles.addon}>{selectedCrypto}</span>
-                </div>
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Total</label>
-                <div className={styles.totalDisplay}>
-                  <span className={styles.totalAmount}>${total}</span>
-                  <span className={styles.totalCurrency}>USD</span>
-                </div>
-              </div>
-              
-              <div className={styles.formGroup}>
-                <label>Payment Method</label>
-                <select 
-                  value={paymentMethod} 
-                  onChange={(e) => {
-                    setPaymentMethod(e.target.value);
-                    if (e.target.value === 'gift') {
-                      setShowGiftCardForm(true);
-                    } else {
-                      setShowGiftCardForm(false);
-                    }
-                  }}
-                  className={styles.formControl}
+          {/* Right: Trading Panel */}
+          <div className={styles.rightPanel}>
+            <div className={styles.tradingPanel}>
+              <div className={styles.panelHeader}>
+                <button 
+                  className={`${styles.panelTab} ${tradeType === 'buy' ? styles.activeTab : ''}`}
+                  onClick={() => setTradeType('buy')}
                 >
-                  <option value="credit">Credit Card</option>
-                  <option value="bank">Bank Transfer</option>
-                  <option value="wallet">Wallet Balance</option>
-                  <option value="gift">Gift Card</option>
-                </select>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  Buy
+                </button>
+                <button 
+                  className={`${styles.panelTab} ${tradeType === 'sell' ? styles.activeTab : ''}`}
+                  onClick={() => setTradeType('sell')}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  Sell
+                </button>
               </div>
-              
-              {/* Gift Card Form */}
-              {showGiftCardForm && (
-                <div className={styles.giftCardForm}>
-                  <h4>Gift Card Details</h4>
-                  {giftCardError && <div className={styles.errorMessage}>{giftCardError}</div>}
-                  {giftCardInfo && (
-                    <div className={styles.giftCardInfo}>
-                      <p>Available Balance: ${giftCardInfo.balance}</p>
-                      {giftCardInfo.expiresAt && (
-                        <p>Expires: {new Date(giftCardInfo.expiresAt).toLocaleDateString()}</p>
+
+              <div className={styles.panelContent}>
+                {error && <div className={styles.errorMessage}>{error}</div>}
+                {success && <div className={styles.successMessage}>✓ Trade executed successfully!</div>}
+                
+                <form onSubmit={handleTrade} className={styles.tradeForm}>
+                  <div className={styles.formGroup}>
+                    <label htmlFor="amount">Amount</label>
+                    <div className={styles.inputWithAddon}>
+                      <input
+                        type="number"
+                        id="amount"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        step="0.000001"
+                        className={styles.formControl}
+                        required
+                      />
+                      <span className={styles.addon}>{selectedCrypto}</span>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <label>Total</label>
+                    <div className={styles.totalDisplay}>
+                      <span className={styles.totalAmount}>${total}</span>
+                      <span className={styles.totalCurrency}>USD</span>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.formGroup}>
+                    <label>Payment Method</label>
+                    <select 
+                      value={paymentMethod} 
+                      onChange={(e) => {
+                        setPaymentMethod(e.target.value);
+                        if (e.target.value === 'gift') {
+                          setShowGiftCardForm(true);
+                        } else {
+                          setShowGiftCardForm(false);
+                        }
+                      }}
+                      className={styles.formControl}
+                    >
+                      <option value="credit">💳 Credit Card</option>
+                      <option value="bank">🏦 Bank Transfer</option>
+                      <option value="wallet">👛 Wallet Balance</option>
+                      <option value="gift">🎁 Gift Card</option>
+                    </select>
+                  </div>
+                  
+                  {/* Gift Card Form */}
+                  {showGiftCardForm && (
+                    <div className={styles.giftCardForm}>
+                      <h4>Gift Card Details</h4>
+                      {giftCardError && <div className={styles.errorMessage}>{giftCardError}</div>}
+                      {giftCardInfo && (
+                        <div className={styles.giftCardInfo}>
+                          <p>Available Balance: ${giftCardInfo.balance}</p>
+                          {giftCardInfo.expiresAt && (
+                            <p>Expires: {new Date(giftCardInfo.expiresAt).toLocaleDateString()}</p>
+                          )}
+                        </div>
                       )}
+                      <div className={styles.formGroup}>
+                        <label htmlFor="giftCardNumber">Card Number</label>
+                        <input
+                          type="text"
+                          id="giftCardNumber"
+                          value={giftCardNumber}
+                          onChange={(e) => setGiftCardNumber(e.target.value)}
+                          placeholder="Enter gift card number"
+                          className={styles.formControl}
+                          required={paymentMethod === 'gift'}
+                        />
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label htmlFor="giftCardPin">PIN</label>
+                        <input
+                          type="password"
+                          id="giftCardPin"
+                          value={giftCardPin}
+                          onChange={(e) => setGiftCardPin(e.target.value)}
+                          placeholder="Enter PIN"
+                          className={styles.formControl}
+                          required={paymentMethod === 'gift'}
+                        />
+                      </div>
                     </div>
                   )}
-                  <div className={styles.formGroup}>
-                    <label htmlFor="giftCardNumber">Card Number</label>
-                    <input
-                      type="text"
-                      id="giftCardNumber"
-                      value={giftCardNumber}
-                      onChange={(e) => setGiftCardNumber(e.target.value)}
-                      placeholder="Enter gift card number"
-                      className={styles.formControl}
-                      required={paymentMethod === 'gift'}
-                    />
+                  
+                  <div className={styles.balanceInfo}>
+                    <span>Available Balance:</span>
+                    <span>{userBalance.toFixed(6)} {selectedCrypto}</span>
                   </div>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="giftCardPin">PIN</label>
-                    <input
-                      type="password"
-                      id="giftCardPin"
-                      value={giftCardPin}
-                      onChange={(e) => setGiftCardPin(e.target.value)}
-                      placeholder="Enter PIN"
-                      className={styles.formControl}
-                      required={paymentMethod === 'gift'}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div className={styles.balanceInfo}>
-                <span>Available Balance:</span>
-                <span>{userBalance.toFixed(6)} {selectedCrypto}</span>
+                  
+                  <button 
+                    type="submit" 
+                    className={`${styles.tradeButton} ${tradeType === 'buy' ? styles.buyButton : styles.sellButton}`}
+                  >
+                    {tradeType === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
+                  </button>
+                </form>
               </div>
-              
-              <button 
-                type="submit" 
-                className={`${styles.tradeButton} ${tradeType === 'buy' ? styles.buyButton : styles.sellButton}`}
-              >
-                {tradeType === 'buy' ? 'Buy' : 'Sell'} {selectedCrypto}
-              </button>
-            </form>
+            </div>
+
+            {/* Quick Stats */}
+            <div className={styles.quickStats}>
+              <h3>24h Statistics</h3>
+              <div className={styles.statsGrid}>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>24h High</span>
+                  <span className={styles.statValue}>${(parseFloat(price) * 1.05).toFixed(2)}</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>24h Low</span>
+                  <span className={styles.statValue}>${(parseFloat(price) * 0.95).toFixed(2)}</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>24h Volume</span>
+                  <span className={styles.statValue}>1.2M {selectedCrypto}</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Market Cap</span>
+                  <span className={styles.statValue}>$1.2T</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
