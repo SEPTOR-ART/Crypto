@@ -24,7 +24,8 @@ export const apiRequest = async (endpoint, options = {}) => {
     let url;
     if (typeof window !== 'undefined') {
       // In browser environment
-      if (isPlaceholder || RAW_API === '') {
+      const isNetlifyHost = /netlify\.app$/.test(window.location.hostname);
+      if (isPlaceholder || RAW_API === '' || isNetlifyHost) {
         // If we're in development or no API URL is set, construct from current origin
         if (endpoint.startsWith('/')) {
           // For relative API endpoints, construct full URL
