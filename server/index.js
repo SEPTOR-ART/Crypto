@@ -34,6 +34,15 @@ if (!process.env.MONGODB_URI) {
 // Connect to database
 connectDB().then(() => {
   console.log('Database connection established');
+  
+  // Setup admin user from environment variables
+  const setupAdminUser = require('./config/setupAdmin');
+  setupAdminUser().then(() => {
+    console.log('Admin setup check completed');
+  }).catch(err => {
+    console.error('Admin setup failed:', err);
+  });
+  
   // Start server only after successful database connection
   startServer();
 }).catch(err => {
