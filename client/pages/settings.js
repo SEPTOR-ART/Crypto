@@ -106,20 +106,13 @@ export default function Settings() {
   return (
     <ProtectedRoute requireAuth={true}>
       <div className={styles.container}>
-        <div className={styles.settingsHeader}>
-          <h1>Account Settings</h1>
-          <p>Manage your account preferences and security settings</p>
-        </div>
-
-        <div className={styles.settingsTabs}>
-          <Link href="/profile">
-            <button className={styles.tabButton}>
-              Profile
-            </button>
-          </Link>
-          <button className={`${styles.tabButton} ${styles.activeTab}`}>
-            Account Settings
-          </button>
+        {/* Hero Section */}
+        <div className={styles.hero}>
+          <div className={styles.heroContent}>
+            <span className={styles.label}>SETTINGS</span>
+            <h1 className={styles.title}>Account Settings</h1>
+            <p className={styles.subtitle}>Manage your account preferences and security settings</p>
+          </div>
         </div>
 
         <div className={styles.settingsContent}>

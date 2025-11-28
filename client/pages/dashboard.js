@@ -136,39 +136,23 @@ export default function Dashboard() {
   return (
     <ProtectedRoute requireAuth={true}>
       <div className={styles.container}>
-        {/* Header */}
-        <header className={styles.header}>
-          <div className={styles.logo}>
-            <h1>CryptoZen</h1>
+        {/* Hero Section */}
+        <div className={styles.hero}>
+          <div className={styles.heroContent}>
+            <span className={styles.label}>DASHBOARD</span>
+            <h1 className={styles.title}>Welcome back, {user.firstName || 'User'}!</h1>
+            <p className={styles.subtitle}>Track your portfolio performance and recent activity</p>
           </div>
-          <nav className={styles.nav}>
-            <Link href="/dashboard" className={styles.navLink}>Dashboard</Link>
-            <Link href="/trade" className={styles.navLink}>Trade</Link>
-            <Link href="/wallet" className={styles.navLink}>Wallet</Link>
-            <Link href="/profile" className={styles.navLink}>Profile</Link>
-            <Link href="/settings" className={styles.navLink}>Settings</Link>
-            {/* Only show admin link for actual admin users */}
-            {user && isAdmin && isAdmin(user) && (
-              <Link href="/admin" className={styles.navLink}>Admin</Link>
-            )}
-          </nav>
-          <div className={styles.userMenu}>
-            <button className={styles.userButton}>
-              {user.firstName ? `${user.firstName.charAt(0)}${user.lastName ? user.lastName.charAt(0) : ''}` : 'User'}
-            </button>
-          </div>
-        </header>
+        </div>
 
         {/* Main Content */}
         <main className={styles.main}>
           {/* Portfolio Overview */}
           <section className={styles.portfolioOverview}>
             <div className={styles.portfolioHeader}>
-              <h2>Portfolio Overview</h2>
-              <div className={styles.portfolioValue}>
-                <span className={styles.valueLabel}>Total Value</span>
-                <span className={styles.valueAmount}>${portfolioValue}</span>
-              </div>
+              <span className={styles.portfolioLabel}>TOTAL PORTFOLIO VALUE</span>
+              <div className={styles.portfolioValue}>${portfolioValue}</div>
+              <div className={styles.portfolioChange}>+2.5% (24h)</div>
             </div>
             
             <div className={styles.portfolioStats}>
