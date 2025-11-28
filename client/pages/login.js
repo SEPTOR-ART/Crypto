@@ -232,8 +232,8 @@ export default function Login() {
           <div className={styles.signupLink}>
             Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
           </div>
+          </div>
         </div>
-      </div>
       </div>
     </ProtectedRoute>
   );
