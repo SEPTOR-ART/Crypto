@@ -179,50 +179,80 @@ export default function Home() {
       {/* Features Section */}
       <section className={styles.features}>
         <div className={styles.container}>
-          <h2 className={styles.sectionTitle}>Why Choose CryptoZen?</h2>
+          <div className={styles.featuresHeader}>
+            <span className={styles.featuresLabel}>FEATURES</span>
+            <h2 className={styles.sectionTitle}>What Makes Us Different</h2>
+            <p className={styles.featuresSubtitle}>Experience the next generation of cryptocurrency trading with cutting-edge features designed for your success</p>
+          </div>
           <div className={styles.featureGrid}>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
+              <div className={styles.featureNumber}>01</div>
               <div className={styles.featureIcon} aria-hidden>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="4" y="10" width="16" height="10" rx="2" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="#1a2a6c" strokeWidth="1.8" strokeLinecap="round" />
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3>Bank-Grade Security</h3>
-              <p>Multi-layer security protocols and cold storage for maximum protection</p>
+              <h3>Advanced Trading Engine</h3>
+              <p>Lightning-fast order execution with institutional-grade matching engine. Execute trades in milliseconds with 99.99% uptime guarantee.</p>
             </div>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
+              <div className={styles.featureNumber}>02</div>
               <div className={styles.featureIcon} aria-hidden>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <path d="M3 9h18" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <path d="M7 13h4" stroke="#1a2a6c" strokeWidth="1.8" />
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
-              <h3>Multiple Payment Options</h3>
-              <p>Buy crypto with credit cards, bank transfers, gift cards, and digital wallets</p>
+              <h3>Military-Grade Security</h3>
+              <p>Multi-signature wallets, cold storage, and 2FA authentication. Your assets are protected by bank-level encryption and security protocols.</p>
             </div>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
+              <div className={styles.featureNumber}>03</div>
               <div className={styles.featureIcon} aria-hidden>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="7" y="3" width="10" height="18" rx="2" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <circle cx="12" cy="17" r="1" fill="#1a2a6c" />
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
-              <h3>Mobile Friendly</h3>
-              <p>Trade on the go with our responsive platform and mobile app</p>
+              <h3>Real-Time Analytics</h3>
+              <p>Advanced charting tools, technical indicators, and market insights. Make informed decisions with professional-grade analysis tools.</p>
             </div>
             <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
+              <div className={styles.featureNumber}>04</div>
               <div className={styles.featureIcon} aria-hidden>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="9" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <path d="M3 12h18" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <path d="M12 3c3 3 3 15 0 18" stroke="#1a2a6c" strokeWidth="1.8" />
-                  <path d="M12 3c-3 3-3 15 0 18" stroke="#1a2a6c" strokeWidth="1.8" />
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M2 10h20" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M6 14h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </div>
-              <h3>Global Access</h3>
-              <p>Available in 50+ countries with local currency support</p>
+              <h3>Multiple Payment Methods</h3>
+              <p>Credit cards, bank transfers, gift cards, and crypto deposits. Seamlessly fund your account with your preferred payment method.</p>
+            </div>
+            <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
+              <div className={styles.featureNumber}>05</div>
+              <div className={styles.featureIcon} aria-hidden>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h3>Mobile Trading App</h3>
+              <p>Trade anywhere, anytime with our native iOS and Android apps. Full trading features in the palm of your hand with biometric security.</p>
+            </div>
+            <div className={`${styles.featureCard} ${styles.featureCard3D}`}>
+              <div className={styles.featureNumber}>06</div>
+              <div className={styles.featureIcon} aria-hidden>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M2 12h20" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+              </div>
+              <h3>Global Accessibility</h3>
+              <p>Available in 150+ countries with 50+ fiat currencies. Trade with local payment methods and 24/7 multilingual customer support.</p>
             </div>
           </div>
         </div>
