@@ -6,6 +6,13 @@ const HealthCheck = () => {
   const [details, setDetails] = useState(null);
 
   useEffect(() => {
+    // Skip health check on static hosting (Netlify)
+    if (typeof window !== 'undefined' && /netlify\.app$/.test(window.location.hostname)) {
+      setStatus('static');
+      setDetails({ message: 'Health check not available on static hosting' });
+      return;
+    }
+    
     const checkHealth = async () => {
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
@@ -31,25 +38,27 @@ const HealthCheck = () => {
           setDetails({ error: `HTTP ${response.status}` });
         }
       } catch (error) {
-        setStatus('unhealthy');
-        setDetails({ error: error.message });
+        // Silently fail health checks in production static hosting
+        if (typeof window !== 'undefined' && /netlify\.app$/.test(window.location.hostname)) {
+          setStatus('static');
+          setDetails({ message: 'Static hosting - health check disabled' });
+        } else {
+          setStatus('unhealthy');
+          setDetails({ error: error.message });
+        }
       }
     };
 
     checkHealth();
     
-    // Check every 30 seconds
-    const interval = setInterval(checkHealth, 30000);
+    // Check every 60 seconds (reduced frequency)
+    const interval = setInterval(checkHealth, 60000);
     
     return () => clearInterval(interval);
   }, []);
 
-  if (status === 'checking') {
-    return (
-      <div className={styles.healthCheck}>
-        <span className={styles.checking}>Checking API health...</span>
-      </div>
-    );
+  if (status === 'checking' || status === 'static') {
+    return null; // Don't show health check on static hosting
   }
 
   return (

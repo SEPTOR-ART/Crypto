@@ -14,8 +14,10 @@ export const useCryptoPrices = () => {
   const wsRef = useRef(null);
   const retryTimeoutRef = useRef(null);
   const retryCountRef = useRef(0);
-  const maxRetries = 5;
+  const maxRetries = 3; // Reduce max retries
   const pollIntervalRef = useRef(null);
+  const reconnectAttemptRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     // Get initial prices
@@ -34,14 +36,18 @@ export const useCryptoPrices = () => {
 
     // Create WebSocket connection with retry logic
     const createWebSocketConnection = () => {
+      // Prevent multiple concurrent connection attempts
+      if (reconnectAttemptRef.current || !mountedRef.current) {
+        return;
+      }
+      
+      reconnectAttemptRef.current = true;
+      
       // Clear any existing retry timeout
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
-      
-      // Reset retry count when creating a new connection attempt
-      retryCountRef.current = 0;
 
       try {
         const ws = cryptoService.createPriceWebSocket();
@@ -65,6 +71,8 @@ export const useCryptoPrices = () => {
         ws.onopen = () => {
           console.log('WebSocket connection opened successfully');
           setError(null);
+          retryCountRef.current = 0; // Reset retry count on successful connection
+          reconnectAttemptRef.current = false;
         };
 
         ws.onmessage = (event) => {
@@ -92,27 +100,36 @@ export const useCryptoPrices = () => {
 
         ws.onclose = (event) => {
           console.log('WebSocket connection closed', event);
+          reconnectAttemptRef.current = false;
+          
+          // Don't retry if component is unmounted
+          if (!mountedRef.current) {
+            return;
+          }
           
           // Check if this is an abnormal closure (code 1006)
           if (event.code === 1006) {
-            console.warn('WebSocket connection was closed abnormally. This may indicate a network issue or server problem.');
-            setError('Unable to establish real-time connection. Using periodic updates instead.');
+            console.warn('WebSocket closed abnormally. Fallback to polling.');
           }
           
           // Only retry if not closed intentionally and retry count is less than max
-          if (!event.wasClean && retryCountRef.current < maxRetries) {
+          if (!event.wasClean && event.code !== 1000 && retryCountRef.current < maxRetries) {
             retryCountRef.current += 1;
             console.log(`Retrying WebSocket connection... Attempt ${retryCountRef.current}/${maxRetries}`);
             
-            // Exponential backoff with jitter
-            const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 10000) + Math.random() * 1000;
+            // Exponential backoff with jitter (longer delays)
+            const retryDelay = Math.min(2000 * Math.pow(2, retryCountRef.current), 30000) + Math.random() * 2000;
             
             retryTimeoutRef.current = setTimeout(() => {
-              createWebSocketConnection();
+              if (mountedRef.current) {
+                reconnectAttemptRef.current = false;
+                createWebSocketConnection();
+              }
             }, retryDelay);
           } else if (retryCountRef.current >= maxRetries) {
-            setError('Unable to establish real-time connection after multiple attempts. Using periodic updates.');
-            if (!pollIntervalRef.current) {
+            console.log('Max WebSocket retries reached. Using polling fallback.');
+            reconnectAttemptRef.current = false;
+            if (!pollIntervalRef.current && mountedRef.current) {
               pollIntervalRef.current = setInterval(async () => {
                 try {
                   const refreshed = await cryptoService.getPrices();
@@ -140,8 +157,11 @@ export const useCryptoPrices = () => {
                     }, 60000); // Increase to 1 minute when rate limited
                   }
                 }
-              }, 30000); // Increase polling interval to 30 seconds to reduce server load
+              }, 60000); // Poll every 60 seconds when WebSocket fails
             }
+          } else {
+            // Clean close, don't retry
+            reconnectAttemptRef.current = false;
           }
         };
       } catch (err) {
@@ -168,14 +188,20 @@ export const useCryptoPrices = () => {
 
     // Clean up WebSocket connection and timeouts
     return () => {
+      mountedRef.current = false;
+      reconnectAttemptRef.current = false;
+      
       if (wsRef.current) {
         wsRef.current.close(1000, 'Component unmounting'); // Graceful close
+        wsRef.current = null;
       }
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
       }
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
       }
     };
   }, []);

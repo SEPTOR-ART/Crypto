@@ -67,6 +67,8 @@ export default function ThreeCoin() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [lowPerf, setLowPerf] = useState(false);
+  const [contextLost, setContextLost] = useState(false);
+  
   useEffect(() => {
     setOk(canUseWebGL());
     if (typeof window !== 'undefined') {
@@ -80,11 +82,34 @@ export default function ThreeCoin() {
     }
   }, []);
 
-  if (!ok) return <Fallback />;
+  if (!ok || contextLost) return <Fallback />;
 
   return (
     <div style={{ width: 'min(300px, 60vw)', height: 'min(300px, 60vw)', margin: '0 auto', cursor: 'grab' }} aria-label="Interactive 3D coin">
-      <Canvas camera={{ position: [0, 1.2, 3], fov: 40 }} dpr={[1, lowPerf ? 1.25 : (isMobile ? 1.5 : 2)]} gl={{ antialias: !lowPerf }}>
+      <Canvas 
+        camera={{ position: [0, 1.2, 3], fov: 40 }} 
+        dpr={[1, lowPerf ? 1.25 : (isMobile ? 1.5 : 2)]} 
+        gl={{ 
+          antialias: !lowPerf,
+          alpha: true,
+          powerPreference: 'high-performance',
+          failIfMajorPerformanceCaveat: false,
+          preserveDrawingBuffer: false
+        }}
+        onCreated={({ gl }) => {
+          // Handle context loss
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            console.warn('WebGL context lost, showing fallback');
+            setContextLost(true);
+          }, false);
+          
+          gl.domElement.addEventListener('webglcontextrestored', () => {
+            console.log('WebGL context restored');
+            setContextLost(false);
+          }, false);
+        }}
+      >
         <ambientLight intensity={0.8} />
         <directionalLight position={[3, 3, 3]} intensity={lowPerf ? 0.75 : 0.9} />
         <pointLight position={[-2, -2, -2]} intensity={lowPerf ? 0.45 : 0.6} />
