@@ -223,12 +223,12 @@ export default function Support() {
         <section className={styles.contactForm}>
           <div className={styles.formHeader}>
             <h2 className={styles.sectionTitle}>Submit a Support Request</h2>
-            <p className={styles.sectionSubtitle}>Can't find what you're looking for? Send us a message</p>
+            <p className={styles.sectionSubtitle}>Can&apos;t find what you&apos;re looking for? Send us a message</p>
           </div>
           
           {submitted && (
             <div className={styles.successMessage}>
-              ✓ Your support request has been submitted successfully! We'll get back to you within 24 hours.
+              ✓ Your support request has been submitted successfully! We&apos;ll get back to you within 24 hours.
             </div>
           )}
           
