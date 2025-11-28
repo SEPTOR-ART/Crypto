@@ -56,26 +56,31 @@ const registerUser = async (req, res) => {
     console.log('User created:', user ? user.email : 'Failed');
 
     if (user) {
-      const token = generateToken(user._id);
-      const csrfToken = crypto.randomBytes(24).toString('hex');
-      const isProd = process.env.NODE_ENV === 'production';
-      // Set HttpOnly session cookie
-      res.cookie('session', token, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: 'None',
-        maxAge: 8 * 60 * 60 * 1000, // 8 hours
-        path: '/',
-      });
-      // Double-submit CSRF cookie (readable by JS)
-      res.cookie('csrf_token', csrfToken, {
-        httpOnly: false,
-        secure: isProd,
-        sameSite: 'None',
-        maxAge: 8 * 60 * 60 * 1000,
-        path: '/',
-      });
-      console.log('Set session and CSRF cookies for user:', user.email);
+      let token;
+      if (process.env.JWT_SECRET) {
+        token = generateToken(user._id);
+        const csrfToken = crypto.randomBytes(24).toString('hex');
+        const isProd = process.env.NODE_ENV === 'production';
+        res.cookie('session', token, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: 'None',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+        res.cookie('csrf_token', csrfToken, {
+          httpOnly: false,
+          secure: isProd,
+          sameSite: 'None',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+      } else {
+        token = crypto.randomBytes(32).toString('hex');
+        user.apiToken = token;
+        user.apiTokenExpires = new Date(Date.now() + 8 * 60 * 60 * 1000);
+        await user.save();
+      }
       return res.status(201).json({
         _id: user._id,
         firstName: user.firstName,
@@ -105,29 +110,33 @@ const authUser = async (req, res) => {
     console.log('User found:', user ? user.email : 'None');
 
     if (user) {
-      console.log('Comparing password for user:', email);
       const isPasswordValid = await user.comparePassword(password);
-      console.log('Password valid:', isPasswordValid);
-      
       if (isPasswordValid) {
-        const token = generateToken(user._id);
-        const csrfToken = crypto.randomBytes(24).toString('hex');
-        const isProd = process.env.NODE_ENV === 'production';
-        res.cookie('session', token, {
-          httpOnly: true,
-          secure: isProd,
-          sameSite: 'None',
-          maxAge: 8 * 60 * 60 * 1000,
-          path: '/',
-        });
-        res.cookie('csrf_token', csrfToken, {
-          httpOnly: false,
-          secure: isProd,
-          sameSite: 'None',
-          maxAge: 8 * 60 * 60 * 1000,
-          path: '/',
-        });
-        console.log('Set session and CSRF cookies for user:', user.email);
+        let token;
+        if (process.env.JWT_SECRET) {
+          token = generateToken(user._id);
+          const csrfToken = crypto.randomBytes(24).toString('hex');
+          const isProd = process.env.NODE_ENV === 'production';
+          res.cookie('session', token, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'None',
+            maxAge: 8 * 60 * 60 * 1000,
+            path: '/',
+          });
+          res.cookie('csrf_token', csrfToken, {
+            httpOnly: false,
+            secure: isProd,
+            sameSite: 'None',
+            maxAge: 8 * 60 * 60 * 1000,
+            path: '/',
+          });
+        } else {
+          token = crypto.randomBytes(32).toString('hex');
+          user.apiToken = token;
+          user.apiTokenExpires = new Date(Date.now() + 8 * 60 * 60 * 1000);
+          await user.save();
+        }
         return res.json({
           _id: user._id,
           firstName: user.firstName,
@@ -242,17 +251,27 @@ const updateUserProfile = async (req, res) => {
 };
 
 // Logout user
-const logoutUser = async (req, res) => {
-  try {
-    res.clearCookie('session', { path: '/' });
-    res.clearCookie('csrf_token', { path: '/' });
-    console.log('User logged out, cookies cleared');
-    return res.status(200).json({ message: 'Logged out' });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
+  const logoutUser = async (req, res) => {
+    try {
+      res.clearCookie('session', { path: '/' });
+      res.clearCookie('csrf_token', { path: '/' });
+      try {
+        if (req.user) {
+          const user = await User.findById(req.user._id);
+          if (user) {
+            user.apiToken = null;
+            user.apiTokenExpires = null;
+            await user.save();
+          }
+        }
+      } catch (e) {}
+      console.log('User logged out, cookies cleared');
+      return res.status(200).json({ message: 'Logged out' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  };
 
 module.exports = {
   registerUser,

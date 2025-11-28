@@ -24,25 +24,35 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token decoded successfully:', { id: decoded.id });
-
-    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
-      console.log('Invalid user ID in token:', decoded.id);
-      return res.status(401).json({ message: 'Not authorized, invalid token' });
+    let decoded;
+    if (process.env.JWT_SECRET) {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+        return res.status(401).json({ message: 'Not authorized, invalid token' });
+      }
+      req.user = await User.findById(decoded.id).select('-password');
+    } else {
+      const user = await User.findOne({ apiToken: token });
+      if (user && user.apiTokenExpires && user.apiTokenExpires > new Date()) {
+        req.user = user;
+      }
     }
-
-    req.user = await User.findById(decoded.id).select('-password');
-    console.log('User found:', req.user ? req.user.email : 'None');
-
     if (!req.user) {
-      console.log('User not found in database');
       return res.status(401).json({ message: 'Not authorized, user not found' });
     }
-
     next();
   } catch (error) {
     console.error('Authentication error:', error);
+    if (!process.env.JWT_SECRET) {
+      try {
+        const user = await User.findOne({ apiToken: token });
+        if (user && user.apiTokenExpires && user.apiTokenExpires > new Date()) {
+          req.user = user;
+          return next();
+        }
+      } catch (e) {}
+      return res.status(401).json({ message: 'Not authorized, invalid token' });
+    }
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Not authorized, invalid token' });
     } else if (error.name === 'TokenExpiredError') {

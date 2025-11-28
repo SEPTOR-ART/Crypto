@@ -13,7 +13,6 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy for rate limiting
 const PORT = process.env.PORT || 5000;
 
-// Validate required environment variables
 console.log('Environment variables check:');
 console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
 console.log('- JWT_SECRET set:', !!process.env.JWT_SECRET);
@@ -24,30 +23,12 @@ console.log('- MONGODB_URI set:', !!process.env.MONGODB_URI);
 if (process.env.MONGODB_URI) {
   console.log('- MONGODB_URI length:', process.env.MONGODB_URI.length);
 }
-
-// Remove MONGODB_URI from required environment variables check
-// Let the database connection logic handle this
-const requiredEnvVars = ['JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-if (missingEnvVars.length > 0) {
-  console.error('Missing required environment variables:', missingEnvVars);
-  console.error('Please set these variables in your environment or .env file');
-  process.exit(1);
+const hasJWT = !!process.env.JWT_SECRET;
+if (!hasJWT) {
+  console.warn('JWT_SECRET not set. Falling back to opaque token authentication.');
 }
-
-// Log JWT secret status (without revealing the actual secret)
-console.log('JWT_SECRET is set:', !!process.env.JWT_SECRET);
-if (process.env.JWT_SECRET) {
-  console.log('JWT_SECRET length:', process.env.JWT_SECRET.length);
-}
-
-console.log('MONGODB_URI is set:', !!process.env.MONGODB_URI);
-if (process.env.MONGODB_URI) {
-  console.log('MONGODB_URI length:', process.env.MONGODB_URI.length);
-} else {
+if (!process.env.MONGODB_URI) {
   console.log('MONGODB_URI is not set! Will attempt to connect through database connection logic...');
-  // Don't exit here, let the database connection logic handle it
 }
 
 // Connect to database
@@ -167,6 +148,7 @@ const startServer = () => {
       (req.path === '/api/users/logout' && method === 'POST')
     );
     if (isAuthEndpoint) return next();
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) return next();
 
     // Read cookies
     let csrfCookie;

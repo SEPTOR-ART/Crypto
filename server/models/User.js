@@ -69,6 +69,16 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+  ,
+  apiToken: {
+    type: String,
+    default: null,
+    index: true
+  },
+  apiTokenExpires: {
+    type: Date,
+    default: null
+  }
 });
 
 // Hash password before saving
