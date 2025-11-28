@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 // import styles from '../styles/globals.css'; // Removed unused import
 
-const KNOWN = ['help-center','contact','fees','docs','terms','privacy','security','compliance','staking','forgot-password'];
+const KNOWN = ['help-center','contact','fees','docs','terms','privacy','security','compliance','staking','forgot-password','blog','about','press','careers','gift-cards','partners','status','licenses'];
 
 export default function InfoPage({ slug }) {
   const router = useRouter();
@@ -57,6 +57,38 @@ export default function InfoPage({ slug }) {
     'forgot-password': {
       title: 'Forgot Password',
       description: 'Reset your password if you&apos;ve forgotten it.'
+    },
+    'blog': {
+      title: 'Blog',
+      description: 'Latest news, insights, and updates from CryptoZen.'
+    },
+    'about': {
+      title: 'About Us',
+      description: 'Learn more about CryptoZen and our mission.'
+    },
+    'press': {
+      title: 'Press & Media',
+      description: 'Press releases and media resources.'
+    },
+    'careers': {
+      title: 'Careers',
+      description: 'Join our team and help shape the future of crypto trading.'
+    },
+    'gift-cards': {
+      title: 'Gift Cards',
+      description: 'Purchase and redeem cryptocurrency gift cards.'
+    },
+    'partners': {
+      title: 'Partners',
+      description: 'Our trusted partners and integrations.'
+    },
+    'status': {
+      title: 'System Status',
+      description: 'Check the current status of our platform and services.'
+    },
+    'licenses': {
+      title: 'Licenses',
+      description: 'Open source licenses and attributions.'
     }
   };
   
