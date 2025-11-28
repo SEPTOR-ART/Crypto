@@ -1,11 +1,19 @@
+:root {
+  --color-primary: #162660; /* dark blue */
+  --color-secondary: #D0E6FD; /* light blue */
+  --color-accent: #F1E4D1; /* cream */
+  --color-text-on-primary: #D0E6FD;
+  --color-text-on-secondary: #162660;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Avenir,
     Helvetica, sans-serif;
-  background: #1a1a1a;
-  color: #f0f0f0;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
 }
 
 a {
@@ -15,14 +23,14 @@ a {
 
 a:hover { text-decoration: underline; }
 a:active { opacity: 0.9; }
-a:visited { color: #6a0dad; }
+a:visited { color: var(--color-accent); }
 
 * {
   box-sizing: border-box;
 }
 
 :focus-visible {
-  outline: 3px solid #6a0dad;
+  outline: 3px solid var(--color-accent);
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -33,16 +41,16 @@ a:visited { color: #6a0dad; }
 }
 
 ::-webkit-scrollbar-track {
-  background: #2d2d2d;
+  background: rgba(255,255,255,0.1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #6a0dad;
+  background: var(--color-secondary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #7b1fa2;
+  background: #c5dcfa;
 }
 
 /* Animation utilities */

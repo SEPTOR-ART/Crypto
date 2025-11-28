@@ -1,7 +1,7 @@
 .container {
   min-height: 100vh;
-  background: #1a1a1a; /* Dark charcoal gray */
-  color: #f0f0f0; /* Light silver */
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
 }
 
 /* Header Styles */
@@ -10,12 +10,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: #0d0d0d; /* Even darker background */
-  border-bottom: 1px solid #3d3d3d; /* Dark border */
+  background: var(--color-primary);
+  border-bottom: 1px solid rgba(208,230,253,0.25);
 }
 
 .logo h1 {
-  color: #6a0dad; /* Deep purple */
+  color: var(--color-secondary);
   font-size: 1.8rem;
   margin: 0;
 }
@@ -26,7 +26,7 @@
 }
 
 .navLink {
-  color: #f0f0f0; /* Light silver */
+  color: var(--color-secondary);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
@@ -34,29 +34,23 @@
   border-radius: 4px;
 }
 
-.navLink:hover {
-  color: #6a0dad; /* Deep purple */
-  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
-}
+.navLink:hover { color: var(--color-primary); background: rgba(208,230,253,0.25); }
 
 .userMenu {
   position: relative;
 }
 
 .userButton {
-  background: #2d2d2d; /* Dark background */
-  color: #f0f0f0; /* Light silver */
-  border: 1px solid #3d3d3d; /* Dark border */
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  border: 1px solid rgba(22,38,96,0.2);
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.userButton:hover {
-  background: #3d3d3d; /* Slightly lighter background */
-  border-color: #6a0dad; /* Deep purple */
-}
+.userButton:hover { background: #cbe2fb; border-color: var(--color-primary); }
 
 /* Main Content */
 .main {
@@ -65,12 +59,12 @@
 
 /* Portfolio Overview */
 .portfolioOverview {
-  background: #2d2d2d; /* Dark background */
+  background: var(--color-secondary);
   border-radius: 15px;
   padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  border: 1px solid #3d3d3d; /* Dark border */
+  border: 1px solid rgba(22,38,96,0.2);
 }
 
 .portfolioHeader {
@@ -81,7 +75,7 @@
 }
 
 .portfolioHeader h2 {
-  color: #f0f0f0; /* Light silver */
+  color: var(--color-primary);
   margin: 0;
 }
 
@@ -91,16 +85,11 @@
 
 .valueLabel {
   display: block;
-  color: #cccccc; /* Light gray */
+  color: #415a77;
   font-size: 1rem;
 }
 
-.valueAmount {
-  display: block;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #6a0dad; /* Deep purple */
-}
+.valueAmount { display:block; font-size:2rem; font-weight:700; color: var(--color-primary); }
 
 .portfolioStats {
   display: grid;
@@ -109,21 +98,18 @@
 }
 
 .statCard {
-  background: #3d3d3d; /* Darker background */
+  background: var(--color-accent);
   border-radius: 10px;
   padding: 1.5rem;
   text-align: center;
   transition: transform 0.3s ease;
-  border: 1px solid #4d4d4d; /* Dark border */
+  border: 1px solid rgba(22,38,96,0.12);
 }
 
-.statCard:hover {
-  transform: translateY(-5px);
-  border-color: #6a0dad; /* Deep purple */
-}
+.statCard:hover { transform: translateY(-5px); border-color: var(--color-primary); }
 
 .statCard h3 {
-  color: #cccccc; /* Light gray */
+  color: var(--color-primary);
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
 }
@@ -135,16 +121,16 @@
 
 /* Account Information */
 .accountInfo {
-  background: #2d2d2d; /* Dark background */
+  background: var(--color-secondary);
   border-radius: 15px;
   padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  border: 1px solid #3d3d3d; /* Dark border */
+  border: 1px solid rgba(22,38,96,0.2);
 }
 
 .accountInfo h2 {
-  color: #f0f0f0; /* Light silver */
+  color: var(--color-primary);
   margin-top: 0;
   margin-bottom: 1.5rem;
 }
@@ -159,7 +145,7 @@
   display: flex;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #3d3d3d; /* Dark border */
+  border-bottom: 1px solid rgba(22,38,96,0.12);
 }
 
 .detailRow:last-child {
@@ -167,12 +153,12 @@
 }
 
 .label {
-  color: #cccccc; /* Light gray */
+  color: #415a77;
   font-weight: 500;
 }
 
 .value {
-  color: #f0f0f0; /* Light silver */
+  color: var(--color-primary);
   font-weight: 500;
 }
 
