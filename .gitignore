@@ -15,6 +15,12 @@ out/
 # Misc
 .DS_Store
 *.pem
+.env
+.env.production
+client/.env
+client/.env.production
+server/.env
+server/.env.production
 .env.local
 .env.development.local
 .env.test.local

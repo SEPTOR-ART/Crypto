@@ -26,9 +26,7 @@
   gap: 0.5rem;
 }
 
-.logoIcon {
-  color: #6a0dad; /* Deep purple */
-}
+.logoIcon { color: #6a0dad; /* Deep purple */ }
 
 .navLinks {
   display: flex;
@@ -45,14 +43,9 @@
   position: relative;
 }
 
-.navLink:hover {
-  color: #6a0dad; /* Deep purple */
-  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
-}
+.navLink:hover { color: #6a0dad; /* Deep purple */ background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */ }
 
-.navLink.active {
-  color: #6a0dad; /* Deep purple */
-}
+.navLink.active { color: #6a0dad; /* Deep purple */ }
 
 .navLink.active::after {
   content: '';
@@ -97,10 +90,7 @@
   transition: all 0.3s ease;
 }
 
-.userButton:hover {
-  background: #3d3d3d; /* Slightly lighter background */
-  border-color: #6a0dad; /* Deep purple */
-}
+.userButton:hover { background: #3d3d3d; /* Slightly lighter background */ border-color: #6a0dad; /* Deep purple */ }
 
 .dropdown {
   position: absolute;
@@ -130,10 +120,7 @@
   border-bottom: none;
 }
 
-.dropdownItem:hover {
-  background: #3d3d3d; /* Slightly lighter background */
-  color: #6a0dad; /* Deep purple */
-}
+.dropdownItem:hover { background: #3d3d3d; /* Slightly lighter background */ color: #6a0dad; /* Deep purple */ }
 
 .mobileMenuButton {
   display: none;

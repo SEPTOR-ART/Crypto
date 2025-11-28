@@ -15,8 +15,12 @@ const HealthCheck = () => {
           setDetails({ error: 'API base URL is not configured' });
           return;
         }
-        const path = isPlaceholder ? '/api/health' : `${API_BASE_URL}/health`;
-        const response = await fetch(path);
+        if (isPlaceholder) {
+          setStatus('unhealthy');
+          setDetails({ error: 'API base URL is not configured' });
+          return;
+        }
+        const response = await fetch(`${API_BASE_URL}/health`);
         
         if (response.ok) {
           const data = await response.json();

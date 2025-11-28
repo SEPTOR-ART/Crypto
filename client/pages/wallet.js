@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import styles from '../styles/Wallet.module.css';
 import { useAuth } from '../context/AuthContext';
 import { transactionService } from '../services/api';
@@ -14,31 +14,83 @@ export default function Wallet() {
   const [sendAmount, setSendAmount] = useState('');
   const [sendAddress, setSendAddress] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
+  const [activeTab, setActiveTab] = useState('transactions');
+  const [slowNetwork, setSlowNetwork] = useState(false);
   const { user, refreshUser } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
   const intervalRef = useRef(null);
+  const mountedRef = useRef(false);
+
+  const walletBalances = useMemo(() => ([
+    { 
+      symbol: 'BTC', 
+      name: 'Bitcoin', 
+      balance: user?.balance?.BTC || 0, 
+      value: (user?.balance?.BTC || 0) * (cryptoPrices.BTC || 45000),
+      address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' 
+    },
+    { 
+      symbol: 'ETH', 
+      name: 'Ethereum', 
+      balance: user?.balance?.ETH || 0, 
+      value: (user?.balance?.ETH || 0) * (cryptoPrices.ETH || 3000),
+      address: '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' 
+    },
+    { 
+      symbol: 'LTC', 
+      name: 'Litecoin', 
+      balance: user?.balance?.LTC || 0, 
+      value: (user?.balance?.LTC || 0) * (cryptoPrices.LTC || 150),
+      address: 'LZ1Q2W3E4R5T6Y7U8I9O0P1Q2W3E4R5T6Y7U8I9O0' 
+    },
+    { 
+      symbol: 'XRP', 
+      name: 'Ripple', 
+      balance: user?.balance?.XRP || 0, 
+      value: (user?.balance?.XRP || 0) * (cryptoPrices.XRP || 1.2),
+      address: 'r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV' 
+    }
+  ]), [user?.balance?.BTC, user?.balance?.ETH, user?.balance?.LTC, user?.balance?.XRP, cryptoPrices.BTC, cryptoPrices.ETH, cryptoPrices.LTC, cryptoPrices.XRP]);
+
+  const transactionHistory = useMemo(() => transactions.map(transaction => ({
+    id: transaction._id,
+    type: transaction.type,
+    crypto: transaction.asset,
+    amount: transaction.amount,
+    from: transaction.fromAddress || 'N/A',
+    to: transaction.toAddress || 'N/A',
+    date: new Date(transaction.createdAt).toLocaleDateString(),
+    time: new Date(transaction.createdAt).toLocaleTimeString(),
+    status: transaction.status,
+    total: transaction.total
+  })), [transactions]);
 
   // Fetch user transactions
   useEffect(() => {
+    mountedRef.current = true;
     const fetchTransactions = async () => {
       if (!user) return;
       
+      let slowTimer;
       try {
         setLoading(true);
         setError('');
+        setSlowNetwork(false);
+        slowTimer = setTimeout(() => {
+          if (mountedRef.current) setSlowNetwork(true);
+        }, 5000);
         
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication required');
+        const userTransactions = await transactionService.getUserTransactions();
+        if (mountedRef.current) {
+          setTransactions(userTransactions);
+          setSlowNetwork(false);
         }
-        
-        const userTransactions = await transactionService.getUserTransactions(token);
-        setTransactions(userTransactions);
       } catch (err) {
         console.error('Failed to fetch transactions:', err);
-        setError(err.message || 'Failed to load transactions');
+        if (mountedRef.current) setError(err.message || 'Failed to load transactions');
       } finally {
-        setLoading(false);
+        if (slowTimer) clearTimeout(slowTimer);
+        if (mountedRef.current) setLoading(false);
       }
     };
     
@@ -46,15 +98,12 @@ export default function Wallet() {
     
     // Set up interval for real-time updates
     intervalRef.current = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       if (user) {
         try {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const userTransactions = await transactionService.getUserTransactions(token);
-            setTransactions(userTransactions);
-            // Refresh user data to get updated balance
-            await refreshUser();
-          }
+          const userTransactions = await transactionService.getUserTransactions();
+          if (mountedRef.current) setTransactions(userTransactions);
+          await refreshUser();
         } catch (err) {
           console.error('Failed to refresh transactions:', err);
         }
@@ -63,6 +112,7 @@ export default function Wallet() {
     
     // Clean up interval
     return () => {
+      mountedRef.current = false;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -73,7 +123,13 @@ export default function Wallet() {
   if (loading && transactions.length === 0) {
     return (
       <ProtectedRoute requireAuth={true}>
-        <div className={styles.loading}>Loading wallet data...</div>
+        <div className={styles.container}>
+          <div className={styles.walletHeader}>
+            <h1>Wallet</h1>
+            <p>Manage your cryptocurrency assets securely</p>
+          </div>
+          <div className={styles.loading}>Loading wallet data...</div>
+        </div>
       </ProtectedRoute>
     );
   }
@@ -87,51 +143,16 @@ export default function Wallet() {
     );
   }
 
-  // Calculate wallet balances from user data using real prices
-  const walletBalances = [
-    { 
-      symbol: 'BTC', 
-      name: 'Bitcoin', 
-      balance: user.balance?.BTC || 0, 
-      value: (user.balance?.BTC || 0) * (cryptoPrices.BTC || 45000),
-      address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' 
-    },
-    { 
-      symbol: 'ETH', 
-      name: 'Ethereum', 
-      balance: user.balance?.ETH || 0, 
-      value: (user.balance?.ETH || 0) * (cryptoPrices.ETH || 3000),
-      address: '0x742d35Cc6634C0532925a3b8D4C9db4C4C4C4C4C' 
-    },
-    { 
-      symbol: 'LTC', 
-      name: 'Litecoin', 
-      balance: user.balance?.LTC || 0, 
-      value: (user.balance?.LTC || 0) * (cryptoPrices.LTC || 150),
-      address: 'LZ1Q2W3E4R5T6Y7U8I9O0P1Q2W3E4R5T6Y7U8I9O0' 
-    },
-    { 
-      symbol: 'XRP', 
-      name: 'Ripple', 
-      balance: user.balance?.XRP || 0, 
-      value: (user.balance?.XRP || 0) * (cryptoPrices.XRP || 1.2),
-      address: 'r3kmLJN5D28dHuH8vZNUZpMC43pEHpaocV' 
-    }
-  ];
+  
 
-  // Format transaction history from user transactions
-  const transactionHistory = transactions.map(transaction => ({
-    id: transaction._id,
-    type: transaction.type,
-    crypto: transaction.asset,
-    amount: transaction.amount,
-    from: transaction.fromAddress || 'N/A',
-    to: transaction.toAddress || 'N/A',
-    date: new Date(transaction.createdAt).toLocaleDateString(),
-    time: new Date(transaction.createdAt).toLocaleTimeString(),
-    status: transaction.status,
-    total: transaction.total
-  }));
+  const isValidAddress = (asset, address) => {
+    if (!address || typeof address !== 'string') return false;
+    if (asset === 'ETH') return address.startsWith('0x') && address.length === 42;
+    if (asset === 'BTC') return address.length >= 26 && address.length <= 42;
+    if (asset === 'LTC') return address.length >= 26 && address.length <= 42;
+    if (asset === 'XRP') return address.length >= 25 && address.length <= 35;
+    return address.length >= 10;
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -158,7 +179,11 @@ export default function Wallet() {
       // Check if user has sufficient balance
       const userBalance = user.balance?.[selectedCrypto] || 0;
       if (numericAmount > userBalance) {
-        throw new Error(`Insufficient ${selectedCrypto} balance`);
+        throw new Error(`Insufficient ${selectedCrypto} balance. You have ${userBalance.toFixed(6)} ${selectedCrypto}`);
+      }
+
+      if (!isValidAddress(selectedCrypto, sendAddress)) {
+        throw new Error(`Invalid ${selectedCrypto} address format`);
       }
       
       // Create transaction data for sending
@@ -227,10 +252,8 @@ export default function Wallet() {
 
   // Calculate total balance
   const totalBalance = walletBalances.reduce((total, wallet) => {
-    // Ensure we're working with numbers
-    const balance = parseFloat(wallet.balance) || 0;
-    const price = wallet.value / (balance || 1); // Avoid division by zero
-    return total + (balance * price);
+    const val = Number(wallet.value) || 0;
+    return total + val;
   }, 0);
 
   return (
@@ -241,8 +264,8 @@ export default function Wallet() {
           <p>Manage your cryptocurrency assets securely</p>
         </div>
 
-        {error && <div className={styles.errorMessage}>{error}</div>}
-        {success && <div className={styles.successMessage}>Transaction sent successfully!</div>}
+        {error && <div className={styles.errorMessage} role="status" aria-live="polite">{error}</div>}
+        {success && <div className={styles.successMessage} role="status" aria-live="polite">Transaction sent successfully!</div>}
 
         {/* Wallet Overview */}
         <div className={styles.walletOverview}>
@@ -280,6 +303,9 @@ export default function Wallet() {
               <span>Value</span>
               <span className={styles.balanceValue}>${(selectedWallet?.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
+            {pricesLoading && (
+              <div className={styles.balanceInfo}>Loading live prices...</div>
+            )}
             <div className={styles.infoRow}>
               <span>Address</span>
               <div className={styles.addressContainer}>
@@ -296,13 +322,14 @@ export default function Wallet() {
         </div>
 
         {/* Wallet Tabs */}
-        <div className={styles.walletTabs}>
-          <button className={`${styles.tab} ${styles.active}`}>Transactions</button>
-          <button className={styles.tab}>Deposit</button>
-          <button className={styles.tab}>Send</button>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${activeTab === 'transactions' ? styles.activeTab : ''}`} onClick={() => setActiveTab('transactions')}>Transactions</button>
+          <button className={`${styles.tab} ${activeTab === 'deposit' ? styles.activeTab : ''}`} onClick={() => setActiveTab('deposit')}>Deposit</button>
+          <button className={`${styles.tab} ${activeTab === 'send' ? styles.activeTab : ''}`} onClick={() => setActiveTab('send')}>Send</button>
         </div>
 
         {/* Send Form */}
+        {activeTab === 'send' && (
         <div className={styles.sendSection}>
           <h2>Send Cryptocurrency</h2>
           
@@ -320,8 +347,14 @@ export default function Wallet() {
                 className={styles.input}
               />
               <div className={styles.balanceInfo}>
+                ≈ ${((parseFloat(sendAmount) || 0) * (cryptoPrices[selectedCrypto] || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className={styles.balanceInfo}>
                 Available: {(user.balance?.[selectedCrypto] || 0).toFixed(6)} {selectedCrypto}
               </div>
+              <button type="button" className={styles.copyButton} onClick={() => setSendAmount(String(user.balance?.[selectedCrypto] || 0))}>
+                Max
+              </button>
             </div>
             
             <div className={styles.formGroup}>
@@ -336,18 +369,44 @@ export default function Wallet() {
               />
             </div>
             
-            <button type="submit" className={styles.sendButton}>
+            <button type="submit" className={styles.sendButton} disabled={pricesLoading}>
               Send {selectedCrypto}
             </button>
           </form>
         </div>
+        )}
+
+        {/* Deposit */}
+        {activeTab === 'deposit' && (
+          <div className={styles.transactionHistory}>
+            <div className={styles.sectionHeader}>
+              <h2>Deposit {selectedWallet?.symbol}</h2>
+              <div className={styles.balanceInfo}>Use the address below to deposit {selectedWallet?.symbol}.</div>
+            </div>
+            <div className={styles.walletDetails}>
+              <div className={styles.walletInfo}>
+                <div className={styles.infoRow}>
+                  <span>Address</span>
+                  <div className={styles.addressContainer}>
+                    <span className={styles.address}>{selectedWallet?.address}</span>
+                    <button className={styles.copyButton} onClick={() => copyToClipboard(selectedWallet?.address || '')}>Copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Transaction History */}
+        {activeTab === 'transactions' && (
         <div className={styles.transactionHistory}>
           <div className={styles.sectionHeader}>
             <h2>Transaction History</h2>
             <Link href="/dashboard" className={styles.viewAllButton}>View Dashboard</Link>
           </div>
+          {slowNetwork && (
+            <div className={styles.loading}>Slow network detected. Still loading latest transactions...</div>
+          )}
           
           {loading && transactions.length > 0 ? (
             <div className={styles.loading}>Refreshing transactions...</div>
@@ -356,7 +415,7 @@ export default function Wallet() {
               {transactionHistory.map((transaction) => (
                 <div key={transaction.id} className={styles.transactionItem}>
                   <div className={styles.transactionInfo}>
-                    <span className={`${styles.transactionType} ${styles[transaction.type]}`}>
+                    <span className={`${styles.transactionType} ${transaction.type === 'send' ? styles.sent : styles.received}`}>
                       {transaction.type}
                     </span>
                     <span className={styles.transactionCrypto}>{transaction.crypto}</span>
@@ -370,10 +429,10 @@ export default function Wallet() {
                     </span>
                   </div>
                   <div className={styles.transactionAddress}>
-                    <span>To: {transaction.to.substring(0, 10)}...</span>
+                    <span>To: {(transaction.to || 'N/A').slice(0, 10)}...</span>
                   </div>
                   <div className={styles.transactionStatus}>
-                    <span className={`${styles.statusBadge} ${styles[transaction.status]}`}>
+                    <span className={`${styles.statusBadge} ${transaction.status === 'completed' ? styles.completed : transaction.status === 'pending' ? styles.pending : styles.failed}`}>
                       {transaction.status}
                     </span>
                   </div>
@@ -387,6 +446,7 @@ export default function Wallet() {
             </div>
           )}
         </div>
+        )}
       </div>
     </ProtectedRoute>
   );

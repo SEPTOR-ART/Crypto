@@ -2,20 +2,13 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-
-// Admin IP whitelist (in a real application, this would be stored in a database or config file)
-const ADMIN_IP_WHITELIST = process.env.ADMIN_IP_WHITELIST ? process.env.ADMIN_IP_WHITELIST.split(',') : ['127.0.0.1', '::1'];
-
-// Check if IP is whitelisted for admin access
-const isIpWhitelisted = (ip) => {
-  return ADMIN_IP_WHITELIST.includes(ip);
-};
+const crypto = require('crypto');
 
 // Generate JWT token
 const generateToken = (id) => {
   console.log('Generating token for user ID:', id);
   const token = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
+    expiresIn: '8h'
   });
   console.log('Token generated successfully');
   return token;
@@ -63,14 +56,37 @@ const registerUser = async (req, res) => {
     console.log('User created:', user ? user.email : 'Failed');
 
     if (user) {
-      const token = generateToken(user._id);
-      console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
+      let token;
+      if (process.env.JWT_SECRET) {
+        token = generateToken(user._id);
+        const csrfToken = crypto.randomBytes(24).toString('hex');
+        const isProd = process.env.NODE_ENV === 'production';
+        res.cookie('session', token, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: 'None',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+        res.cookie('csrf_token', csrfToken, {
+          httpOnly: false,
+          secure: isProd,
+          sameSite: 'None',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+      } else {
+        token = crypto.randomBytes(32).toString('hex');
+        user.apiToken = token;
+        user.apiTokenExpires = new Date(Date.now() + 8 * 60 * 60 * 1000);
+        await user.save();
+      }
       return res.status(201).json({
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        token: token
+        token
       });
     } else {
       console.log('Registration failed: Invalid user data');
@@ -87,10 +103,6 @@ const authUser = async (req, res) => {
   try {
     console.log('Authentication request received:', req.body);
     const { email, password } = req.body;
-    
-    // Get client IP address
-    const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    console.log('Client IP:', clientIp);
 
     // Find user in database
     console.log('Finding user in database:', email);
@@ -98,24 +110,33 @@ const authUser = async (req, res) => {
     console.log('User found:', user ? user.email : 'None');
 
     if (user) {
-      console.log('Comparing password for user:', email);
       const isPasswordValid = await user.comparePassword(password);
-      console.log('Password valid:', isPasswordValid);
-      
       if (isPasswordValid) {
-        // Additional security checks for admin users
-        const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
-        if (adminEmails.includes(user.email) || user.isAdmin) {
-          // Check if IP is whitelisted for admin access
-          if (!isIpWhitelisted(clientIp)) {
-            console.log('Admin login attempt from non-whitelisted IP:', clientIp);
-            return res.status(403).json({ message: 'Access denied. IP not whitelisted for admin access.' });
-          }
-          console.log('Admin login from whitelisted IP:', clientIp);
+        let token;
+        if (process.env.JWT_SECRET) {
+          token = generateToken(user._id);
+          const csrfToken = crypto.randomBytes(24).toString('hex');
+          const isProd = process.env.NODE_ENV === 'production';
+          res.cookie('session', token, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'None',
+            maxAge: 8 * 60 * 60 * 1000,
+            path: '/',
+          });
+          res.cookie('csrf_token', csrfToken, {
+            httpOnly: false,
+            secure: isProd,
+            sameSite: 'None',
+            maxAge: 8 * 60 * 60 * 1000,
+            path: '/',
+          });
+        } else {
+          token = crypto.randomBytes(32).toString('hex');
+          user.apiToken = token;
+          user.apiTokenExpires = new Date(Date.now() + 8 * 60 * 60 * 1000);
+          await user.save();
         }
-        
-        const token = generateToken(user._id);
-        console.log('Generated token for user:', user.email, token ? 'Success' : 'Failed');
         return res.json({
           _id: user._id,
           firstName: user.firstName,
@@ -123,8 +144,7 @@ const authUser = async (req, res) => {
           email: user.email,
           kycStatus: user.kycStatus,
           twoFactorEnabled: user.twoFactorEnabled,
-          isAdmin: user.isAdmin || adminEmails.includes(user.email),
-          token: token
+          token
         });
       } else {
         console.log('Invalid password for user:', email);
@@ -166,7 +186,6 @@ const getUserProfile = async (req, res) => {
         twoFactorEnabled: user.twoFactorEnabled,
         balance: user.balance, // Include user's balance
         walletAddress: user.walletAddress, // Include walletAddress
-        isAdmin: user.isAdmin || ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'].includes(user.email),
         createdAt: user.createdAt
       });
     } else {
@@ -219,8 +238,7 @@ const updateUserProfile = async (req, res) => {
         twoFactorEnabled: updatedUser.twoFactorEnabled,
         balance: updatedUser.balance, // Include user's balance
         walletAddress: updatedUser.walletAddress, // Include walletAddress
-        isAdmin: updatedUser.isAdmin || ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'].includes(updatedUser.email),
-        token: generateToken(updatedUser._id)
+        // Do not expose new token here; session cookie remains valid
       });
     } else {
       console.log('User not found for update:', req.user._id);
@@ -232,9 +250,33 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// Logout user
+  const logoutUser = async (req, res) => {
+    try {
+      res.clearCookie('session', { path: '/' });
+      res.clearCookie('csrf_token', { path: '/' });
+      try {
+        if (req.user) {
+          const user = await User.findById(req.user._id);
+          if (user) {
+            user.apiToken = null;
+            user.apiTokenExpires = null;
+            await user.save();
+          }
+        }
+      } catch (e) {}
+      console.log('User logged out, cookies cleared');
+      return res.status(200).json({ message: 'Logged out' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  };
+
 module.exports = {
   registerUser,
   authUser,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  logoutUser
 };

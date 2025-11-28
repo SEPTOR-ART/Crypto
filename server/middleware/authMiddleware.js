@@ -2,79 +2,82 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-// Admin session timeout (15 minutes for admin users, 30 days for regular users)
-const ADMIN_SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
-
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
-      console.log('Token extracted from header:', token ? 'Present' : 'Missing');
-
-      // Verify token
-      console.log('Verifying token with JWT_SECRET');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Token decoded successfully:', decoded);
-
-      // Validate that the decoded ID is a valid ObjectId
-      if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
-        console.log('Invalid user ID in token:', decoded.id);
-        return res.status(401).json({ message: 'Not authorized, invalid token' });
-      }
-
-      // Get user from token
-      console.log('Finding user by ID:', decoded.id);
-      req.user = await User.findById(decoded.id).select('-password');
-      console.log('User found:', req.user ? req.user.email : 'None');
-
-      if (!req.user) {
-        console.log('User not found in database');
-        return res.status(401).json({ message: 'Not authorized, user not found' });
-      }
-
-      // Additional security checks for admin users
-      const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
-      const isAdminUser = adminEmails.includes(req.user.email) || req.user.isAdmin;
-      
-      if (isAdminUser) {
-        // Check if token was issued recently enough for admin users
-        const tokenIssuedAt = decoded.iat * 1000; // Convert to milliseconds
-        const currentTime = Date.now();
-        const tokenAge = currentTime - tokenIssuedAt;
-        
-        if (tokenAge > ADMIN_SESSION_TIMEOUT) {
-          console.log('Admin session expired. Token age:', tokenAge, 'ms');
-          return res.status(401).json({ message: 'Admin session expired. Please log in again.' });
-        }
-        
-        console.log('Admin session is valid. Token age:', tokenAge, 'ms');
-      }
-
-      next();
-    } catch (error) {
-      console.error('Authentication error:', error);
-      if (error.name === 'JsonWebTokenError') {
-        console.log('Invalid token format');
-        return res.status(401).json({ message: 'Not authorized, invalid token' });
-      } else if (error.name === 'TokenExpiredError') {
-        console.log('Token expired');
-        return res.status(401).json({ message: 'Not authorized, token expired' });
-      }
-      console.log('Token verification failed');
-      return res.status(401).json({ message: 'Not authorized, token failed' });
-    }
+  // Prefer Authorization header, else fall back to HttpOnly cookie 'session'
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.headers.cookie) {
+    const cookies = Object.fromEntries(
+      req.headers.cookie.split(';').map(c => {
+        const [k, ...v] = c.trim().split('=');
+        return [k, decodeURIComponent(v.join('='))];
+      })
+    );
+    token = cookies.session;
   }
 
   if (!token) {
     console.log('No token provided in request');
-    res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ message: 'Not authorized, no token' });
+  }
+
+  try {
+    let decoded;
+    if (process.env.JWT_SECRET) {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+        return res.status(401).json({ message: 'Not authorized, invalid token' });
+      }
+      req.user = await User.findById(decoded.id).select('-password');
+    } else {
+      const user = await User.findOne({ apiToken: token });
+      if (user && user.apiTokenExpires && user.apiTokenExpires > new Date()) {
+        req.user = user;
+      }
+    }
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized, user not found' });
+    }
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    if (!process.env.JWT_SECRET) {
+      try {
+        const user = await User.findOne({ apiToken: token });
+        if (user && user.apiTokenExpires && user.apiTokenExpires > new Date()) {
+          req.user = user;
+          return next();
+        }
+      } catch (e) {}
+      return res.status(401).json({ message: 'Not authorized, invalid token' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Not authorized, invalid token' });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Not authorized, token expired' });
+    }
+    return res.status(401).json({ message: 'Not authorized, token failed' });
   }
 };
 
 module.exports = { protect };
+
+// Admin-only middleware
+const requireAdmin = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized, no user' });
+    }
+    const isAdminUser = req.user.isAdmin === true || req.user.email === 'admin@cryptozen.com' || req.user.email === 'admin@cryptoasia.com';
+    if (!isAdminUser) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+    next();
+  } catch (e) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports.requireAdmin = requireAdmin;

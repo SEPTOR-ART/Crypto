@@ -13,7 +13,6 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy for rate limiting
 const PORT = process.env.PORT || 5000;
 
-// Validate required environment variables
 console.log('Environment variables check:');
 console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
 console.log('- JWT_SECRET set:', !!process.env.JWT_SECRET);
@@ -24,30 +23,12 @@ console.log('- MONGODB_URI set:', !!process.env.MONGODB_URI);
 if (process.env.MONGODB_URI) {
   console.log('- MONGODB_URI length:', process.env.MONGODB_URI.length);
 }
-
-// Remove MONGODB_URI from required environment variables check
-// Let the database connection logic handle this
-const requiredEnvVars = ['JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-if (missingEnvVars.length > 0) {
-  console.error('Missing required environment variables:', missingEnvVars);
-  console.error('Please set these variables in your environment or .env file');
-  process.exit(1);
+const hasJWT = !!process.env.JWT_SECRET;
+if (!hasJWT) {
+  console.warn('JWT_SECRET not set. Falling back to opaque token authentication.');
 }
-
-// Log JWT secret status (without revealing the actual secret)
-console.log('JWT_SECRET is set:', !!process.env.JWT_SECRET);
-if (process.env.JWT_SECRET) {
-  console.log('JWT_SECRET length:', process.env.JWT_SECRET.length);
-}
-
-console.log('MONGODB_URI is set:', !!process.env.MONGODB_URI);
-if (process.env.MONGODB_URI) {
-  console.log('MONGODB_URI length:', process.env.MONGODB_URI.length);
-} else {
+if (!process.env.MONGODB_URI) {
   console.log('MONGODB_URI is not set! Will attempt to connect through database connection logic...');
-  // Don't exit here, let the database connection logic handle it
 }
 
 // Connect to database
@@ -69,18 +50,29 @@ const startServer = () => {
 
   // Configure CORS for production and development
   if (process.env.NODE_ENV === 'production') {
-    // In production, allow specific origins or all origins if not specified
-    const allowedOrigins = process.env.ALLOWED_ORIGINS 
-      ? process.env.ALLOWED_ORIGINS.split(',') 
-      : '*'; // Allow all origins if not specified
-    
-    app.use(cors({
-      origin: allowedOrigins,
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+      : ['https://cryptozing.netlify.app']);
+
+    const corsConfig = {
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        const isExplicit = allowedOrigins.includes(origin);
+        const isNetlifySubdomain = /\.netlify\.app$/.test(origin);
+        const isRenderSelf = /\.onrender\.com$/.test(origin);
+        const isAllowed = isExplicit || isNetlifySubdomain || isRenderSelf;
+        callback(null, isAllowed);
+      },
       credentials: true,
-      optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-    }));
+      methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'],
+      allowedHeaders: ['Content-Type','Authorization','X-CSRF-Token'],
+      optionsSuccessStatus: 200
+    };
+    app.use(cors(corsConfig));
+    app.options(/.*/, cors(corsConfig));
   } else {
-    app.use(cors());
+    // Reflect request origin in development, allow credentials
+    app.use(cors({ origin: true, credentials: true }));
   }
 
   // Add JSON parsing middleware with better error handling
@@ -142,27 +134,39 @@ const startServer = () => {
   app.use('/api/transactions', apiLimiter);
   app.use('/api/gift-cards', apiLimiter);
 
-  // CSRF protection in production for state-changing routes without Authorization
+  // CSRF protection (double-submit cookie) in production for mutating routes
   function csrfMiddleware(req, res, next) {
     if (process.env.NODE_ENV !== 'production') return next();
     const method = req.method.toUpperCase();
     const mutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
     if (!mutating) return next();
-    
-    // Skip CSRF check for user registration and login since they don't require auth
-    // Handle both mounted and direct paths
-    const isRegistration = (req.path === '/api/users' || req.path === '/api/users/' || req.originalUrl === '/api/users') && method === 'POST';
-    const isLogin = (req.path === '/api/users/login' || req.path === '/api/users/login/') && method === 'POST';
-    
-    if (isRegistration || isLogin) {
+
+    // Skip CSRF for auth endpoints that set cookies
+    const isAuthEndpoint = (
+      (req.path === '/api/users' && method === 'POST') ||
+      (req.path === '/api/users/login' && method === 'POST') ||
+      (req.path === '/api/users/logout' && method === 'POST')
+    );
+    if (isAuthEndpoint) return next();
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) return next();
+
+    // Read cookies
+    let csrfCookie;
+    if (req.headers.cookie) {
+      const cookies = Object.fromEntries(
+        req.headers.cookie.split(';').map(c => {
+          const [k, ...v] = c.trim().split('=');
+          return [k, decodeURIComponent(v.join('='))];
+        })
+      );
+      csrfCookie = cookies.csrf_token;
+    }
+    const headerToken = req.headers['x-csrf-token'];
+
+    if (csrfCookie && headerToken && csrfCookie === headerToken) {
       return next();
     }
-    
-    const hasAuth = !!req.headers.authorization;
-    if (hasAuth) return next();
-    const token = req.headers['x-csrf-token'];
-    const expected = process.env.CSRF_SECRET;
-    if (expected && token === expected) return next();
+    console.warn('CSRF validation failed');
     return res.status(403).json({ message: 'CSRF validation failed' });
   }
   app.use(csrfMiddleware);
@@ -269,6 +273,8 @@ const startServer = () => {
   // Handle WebSocket connections
   wss.on('connection', (ws, request) => {
     console.log('New WebSocket connection');
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
     
     // Send initial price data
     ws.send(JSON.stringify({
@@ -305,6 +311,18 @@ const startServer = () => {
     });
   });
 
+  const heartbeat = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.isAlive === false) return ws.terminate();
+      ws.isAlive = false;
+      try { ws.ping(); } catch (e) {}
+    });
+  }, 30000);
+
+  wss.on('close', () => {
+    clearInterval(heartbeat);
+  });
+
   // Start server
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
@@ -318,3 +336,6 @@ const startServer = () => {
     });
   });
 };
+
+// Export app for testing
+module.exports = app;

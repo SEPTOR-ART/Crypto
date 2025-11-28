@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from '../../styles/Admin.module.css';
 import { useAuth } from '../../context/AuthContext';
 import { giftCardService } from '../../services/api';
@@ -20,28 +20,15 @@ export default function GiftCardManagement() {
     expiresAt: ''
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchGiftCards();
-    }
-  }, [user, page]);
-
-  const fetchGiftCards = async () => {
+  const fetchGiftCards = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
-      const response = await giftCardService.getAllGiftCards(token, page, 10);
+      const response = await giftCardService.getAllGiftCards(page, 10);
       setGiftCards(response.giftCards);
       setTotalPages(response.pagination.pages);
     } catch (err) {
       console.error('Failed to fetch gift cards:', err);
-      // Handle rate limit errors with user-friendly message
       if (err.message && err.message.includes('429')) {
         setError('Too many requests. Please wait a moment and try again.');
       } else {
@@ -50,6 +37,28 @@ export default function GiftCardManagement() {
     } finally {
       setLoading(false);
     }
+  }, [page]);
+
+  useEffect(() => {
+    if (user) {
+      fetchGiftCards();
+    }
+  }, [user, page, fetchGiftCards]);
+
+  const [showAddBalanceModal, setShowAddBalanceModal] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState(null);
+  const [addAmount, setAddAmount] = useState('');
+
+  const openAddBalance = (cardId) => {
+    setSelectedCardId(cardId);
+    setAddAmount('');
+    setShowAddBalanceModal(true);
+  };
+
+  const closeAddBalance = () => {
+    setShowAddBalanceModal(false);
+    setSelectedCardId(null);
+    setAddAmount('');
   };
 
   const handleCreateGiftCard = async (e) => {
@@ -59,10 +68,6 @@ export default function GiftCardManagement() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
       
       const cardData = {
         balance: parseFloat(newCard.balance),
@@ -70,7 +75,7 @@ export default function GiftCardManagement() {
         expiresAt: newCard.expiresAt || undefined
       };
       
-      const response = await giftCardService.createGiftCard(cardData, token);
+      const response = await giftCardService.createGiftCard(cardData);
       
       setSuccess(response.message);
       setShowCreateForm(false);
@@ -102,12 +107,7 @@ export default function GiftCardManagement() {
     try {
       setError('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-      
-      await giftCardService.updateGiftCardStatus(cardId, { status }, token);
+      await giftCardService.updateGiftCardStatus(cardId, { status });
       
       setSuccess('Gift card status updated successfully');
       
@@ -129,12 +129,12 @@ export default function GiftCardManagement() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
       
-      await giftCardService.addGiftCardBalance(cardId, { amount: parseFloat(amount) }, token);
+      const numeric = parseFloat(amount);
+      if (isNaN(numeric) || numeric <= 0) {
+        throw new Error('Please enter a valid positive amount');
+      }
+      await giftCardService.addGiftCardBalance(cardId, { amount: numeric });
       
       setSuccess('Balance added successfully');
       
@@ -291,21 +291,20 @@ export default function GiftCardManagement() {
                             <>
                               <button 
                                 className={styles.dangerButton}
-                                onClick={() => handleUpdateStatus(card._id, 'cancelled')}
-                              >
-                                Cancel
-                              </button>
-                              <button 
-                                className={styles.secondaryButton}
                                 onClick={() => {
-                                  const amount = prompt('Enter amount to add:');
-                                  if (amount) {
-                                    handleAddBalance(card._id, amount);
+                                  if (confirm('Cancel this gift card? This action cannot be easily undone.')) {
+                                    handleUpdateStatus(card._id, 'cancelled');
                                   }
                                 }}
                               >
-                                Add Balance
+                                Cancel
                               </button>
+                      <button 
+                        className={styles.secondaryButton}
+                        onClick={() => openAddBalance(card._id)}
+                      >
+                        Add Balance
+                      </button>
                             </>
                           )}
                           {card.status === 'cancelled' && (
@@ -349,6 +348,40 @@ export default function GiftCardManagement() {
           )}
         </main>
       </div>
+
+      {showAddBalanceModal && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="add-balance-title">
+          <div className={styles.modal}>
+            <h3 id="add-balance-title">Add Balance</h3>
+            <div className={styles.formGroup}>
+              <label htmlFor="add-amount">Amount</label>
+              <input
+                id="add-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={addAmount}
+                onChange={(e) => setAddAmount(e.target.value)}
+                className={styles.formControl}
+              />
+            </div>
+            <div className={styles.formActions}>
+              <button 
+                className={styles.saveButton}
+                onClick={() => {
+                  if (selectedCardId) {
+                    handleAddBalance(selectedCardId, addAmount);
+                    closeAddBalance();
+                  }
+                }}
+              >
+                Confirm
+              </button>
+              <button className={styles.cancelButton} onClick={closeAddBalance}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }

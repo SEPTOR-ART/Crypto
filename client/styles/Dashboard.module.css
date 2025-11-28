@@ -34,10 +34,7 @@
   border-radius: 4px;
 }
 
-.navLink:hover {
-  color: #6a0dad; /* Deep purple */
-  background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */
-}
+.navLink:hover { color: #6a0dad; /* Deep purple */ background: rgba(106, 13, 173, 0.1); /* Deep purple with opacity */ }
 
 .userMenu {
   position: relative;
@@ -53,10 +50,7 @@
   transition: all 0.3s ease;
 }
 
-.userButton:hover {
-  background: #3d3d3d; /* Slightly lighter background */
-  border-color: #6a0dad; /* Deep purple */
-}
+.userButton:hover { background: #3d3d3d; /* Slightly lighter background */ border-color: #6a0dad; /* Deep purple */ }
 
 /* Main Content */
 .main {
@@ -95,12 +89,7 @@
   font-size: 1rem;
 }
 
-.valueAmount {
-  display: block;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #6a0dad; /* Deep purple */
-}
+.valueAmount { display:block; font-size:2rem; font-weight:700; color: #6a0dad; /* Deep purple */ }
 
 .portfolioStats {
   display: grid;
@@ -117,10 +106,7 @@
   border: 1px solid #4d4d4d; /* Dark border */
 }
 
-.statCard:hover {
-  transform: translateY(-5px);
-  border-color: #6a0dad; /* Deep purple */
-}
+.statCard:hover { transform: translateY(-5px); border-color: #6a0dad; /* Deep purple */ }
 
 .statCard h3 {
   color: #cccccc; /* Light gray */

@@ -4,22 +4,6 @@ import { authService } from '../services/api';
 
 const AuthContext = createContext();
 
-// Shared admin check function to ensure consistency across the application
-export const isAdmin = (user) => {
-  // Check if user object exists
-  if (!user) return false;
-  
-  // Check for admin email addresses
-  const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
-  if (adminEmails.includes(user.email)) return true;
-  
-  // Check for isAdmin flag
-  if (user.isAdmin === true) return true;
-  
-  // User is not an admin
-  return false;
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,22 +12,14 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is logged in
   const checkUserLogin = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const userData = await authService.getProfile(token);
-        setUser(userData);
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-        // Check if it's a session expiration error
-        if (error.message && (error.message.includes('session expired') || error.message.includes('token expired'))) {
-          console.log('Session expired, redirecting to login');
-        }
-        localStorage.removeItem('token');
-        setUser(null);
-      }
+    try {
+      const userData = await authService.getProfile();
+      setUser(userData);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Start token refresh interval
@@ -53,31 +29,20 @@ export const AuthProvider = ({ children }) => {
       clearInterval(refreshIntervalRef.current);
     }
     
-    // Set up new interval to refresh user data
-    // For admin users, refresh more frequently to catch session timeouts
-    const refreshInterval = isAdmin(user) ? 60000 : 300000; // 1 min for admin, 5 min for regular users
-    
+    // Set up new interval to refresh user data every 5 minutes (increased from 60 seconds)
     refreshIntervalRef.current = setInterval(async () => {
-      const token = localStorage.getItem('token');
-      if (token && user) {
+      if (user) {
         try {
-          const userData = await authService.getProfile(token);
+          const userData = await authService.getProfile();
           setUser(userData);
         } catch (error) {
           console.error('Failed to refresh user data:', error);
-          // Check if it's a rate limit error
           if (error.message && error.message.includes('429')) {
             console.log('Rate limit hit, skipping refresh cycle');
           }
-          // Check if it's a session expiration error
-          else if (error.message && (error.message.includes('session expired') || error.message.includes('token expired'))) {
-            console.log('Session expired during refresh, logging out');
-            logout();
-          }
-          // Don't logout automatically on other refresh failures to avoid disrupting user experience
         }
       }
-    }, refreshInterval);
+    }, 300000);
   }, [user]);
 
   // Stop token refresh interval
@@ -103,13 +68,15 @@ export const AuthProvider = ({ children }) => {
   }, [checkUserLogin, user, startTokenRefresh, stopTokenRefresh]);
 
   // Register user
-  const register = async (userData) => {
+  const register = async (userData, nextUrl) => {
     try {
       const res = await authService.register(userData);
-      localStorage.setItem('token', res.token);
-      setUser(res);
+      if (typeof window !== 'undefined' && res && res.token) {
+        try { localStorage.setItem('token', res.token); } catch (e) {}
+      }
+      await checkUserLogin();
       startTokenRefresh();
-      router.push('/dashboard');
+      router.push(nextUrl || '/dashboard');
       return res;
     } catch (error) {
       throw error;
@@ -117,20 +84,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login user
-  const login = async (credentials) => {
+  const login = async (credentials, nextUrl) => {
     try {
       const res = await authService.login(credentials);
-      localStorage.setItem('token', res.token);
-      setUser(res);
-      startTokenRefresh();
-      
-      // Redirect to appropriate page based on user role
-      if (isAdmin(res)) {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
+      if (typeof window !== 'undefined' && res && res.token) {
+        try { localStorage.setItem('token', res.token); } catch (e) {}
       }
-      
+      await checkUserLogin();
+      startTokenRefresh();
+      router.push(nextUrl || '/dashboard');
       return res;
     } catch (error) {
       throw error;
@@ -138,9 +100,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout user
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (e) {}
     setUser(null);
+    try { if (typeof window !== 'undefined') localStorage.removeItem('token'); } catch (e) {}
     stopTokenRefresh();
     router.push('/');
   }, [router, stopTokenRefresh]);
@@ -148,8 +113,7 @@ export const AuthProvider = ({ children }) => {
   // Update user profile
   const updateProfile = async (userData) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await authService.updateProfile(userData, token);
+      const res = await authService.updateProfile(userData);
       setUser(res);
       return res;
     } catch (error) {
@@ -169,30 +133,37 @@ export const AuthProvider = ({ children }) => {
 
   // Refresh user data (manual refresh)
   const refreshUser = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (token && user) {
+    if (user) {
       try {
-        const userData = await authService.getProfile(token);
+        const userData = await authService.getProfile();
         setUser(userData);
         return userData;
       } catch (error) {
         console.error('Failed to refresh user data:', error);
-        // Check if it's a rate limit error
         if (error.message && error.message.includes('429')) {
           throw new Error('Too many requests. Please wait a moment and try again.');
         }
-        // Check if it's a session expiration error
-        else if (error.message && (error.message.includes('session expired') || error.message.includes('token expired'))) {
-          console.log('Session expired during manual refresh, logging out');
-          logout();
-          throw new Error('Your session has expired. Please log in again.');
-        }
-        // Only logout on manual refresh failure
-        logout();
+        await logout();
         throw error;
       }
     }
   }, [user, logout]);
+
+  // Check if user is admin with enhanced validation
+  const isAdmin = useCallback((user) => {
+    // Check if user object exists
+    if (!user) return false;
+    
+    // Check for admin email addresses
+    const adminEmails = ['admin@cryptozen.com', 'admin@cryptoasia.com', 'Cryptozen@12345'];
+    if (adminEmails.includes(user.email)) return true;
+    
+    // Check for isAdmin flag
+    if (user.isAdmin === true) return true;
+    
+    // User is not an admin
+    return false;
+  }, []);
 
   const value = {
     user,

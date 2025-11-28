@@ -16,29 +16,20 @@ const handleAdminRequest = async (requestFn) => {
 };
 
 // Get all users (admin only)
-export const adminGetAllUsers = async (token) => {
-  return handleAdminRequest(() => apiRequest('/api/admin/users', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }));
+export const adminGetAllUsers = async () => {
+  return handleAdminRequest(() => apiRequest('/api/admin/users'));
 };
 
 // Get user by ID (admin only)
-export const adminGetUserById = async (userId, token) => {
-  return handleAdminRequest(() => apiRequest(`/api/admin/users/${userId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }));
+export const adminGetUserById = async (userId) => {
+  return handleAdminRequest(() => apiRequest(`/api/admin/users/${userId}`));
 };
 
 // Update user balance (admin only)
-export const adminUpdateUserBalance = async (userId, asset, amount, token) => {
+export const adminUpdateUserBalance = async (userId, asset, amount) => {
   return handleAdminRequest(() => apiRequest(`/api/admin/users/${userId}`, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ asset, amount }),
@@ -46,20 +37,15 @@ export const adminUpdateUserBalance = async (userId, asset, amount, token) => {
 };
 
 // Get all transactions (admin only)
-export const adminGetAllTransactions = async (token) => {
-  return handleAdminRequest(() => apiRequest('/api/admin/transactions', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }));
+export const adminGetAllTransactions = async () => {
+  return handleAdminRequest(() => apiRequest('/api/admin/transactions'));
 };
 
 // Update transaction status (admin only)
-export const adminUpdateTransactionStatus = async (transactionId, status, token) => {
+export const adminUpdateTransactionStatus = async (transactionId, status) => {
   return handleAdminRequest(() => apiRequest(`/api/admin/transactions/${transactionId}/status`, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ status }),
@@ -67,11 +53,10 @@ export const adminUpdateTransactionStatus = async (transactionId, status, token)
 };
 
 // Suspend/activate user (admin only)
-export const adminUpdateUserStatus = async (userId, action, token) => {
+export const adminUpdateUserStatus = async (userId, action) => {
   return handleAdminRequest(() => apiRequest(`/api/admin/users/${userId}/status`, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ action }),
@@ -79,29 +64,20 @@ export const adminUpdateUserStatus = async (userId, action, token) => {
 };
 
 // Get all gift cards (admin only)
-export const adminGetAllGiftCards = async (token, page = 1, limit = 10) => {
-  return handleAdminRequest(() => apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }));
+export const adminGetAllGiftCards = async (page = 1, limit = 10) => {
+  return handleAdminRequest(() => apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`));
 };
 
 // Get gift card by ID (admin only)
-export const adminGetGiftCardById = async (giftCardId, token) => {
-  return handleAdminRequest(() => apiRequest(`/api/gift-cards/${giftCardId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }));
+export const adminGetGiftCardById = async (giftCardId) => {
+  return handleAdminRequest(() => apiRequest(`/api/gift-cards/${giftCardId}`));
 };
 
 // Create gift card (admin only)
-export const adminCreateGiftCard = async (cardData, token) => {
+export const adminCreateGiftCard = async (cardData) => {
   return handleAdminRequest(() => apiRequest('/api/gift-cards', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(cardData),
@@ -109,11 +85,10 @@ export const adminCreateGiftCard = async (cardData, token) => {
 };
 
 // Update gift card status (admin only)
-export const adminUpdateGiftCardStatus = async (giftCardId, status, token) => {
+export const adminUpdateGiftCardStatus = async (giftCardId, status) => {
   return handleAdminRequest(() => apiRequest(`/api/gift-cards/${giftCardId}`, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ status }),
@@ -121,11 +96,10 @@ export const adminUpdateGiftCardStatus = async (giftCardId, status, token) => {
 };
 
 // Add balance to gift card (admin only)
-export const adminAddGiftCardBalance = async (giftCardId, amount, token) => {
+export const adminAddGiftCardBalance = async (giftCardId, amount) => {
   return handleAdminRequest(() => apiRequest(`/api/gift-cards/${giftCardId}/add-balance`, {
     method: 'PUT',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ amount }),

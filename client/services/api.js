@@ -5,6 +5,18 @@ const RAW_WS = process.env.NEXT_PUBLIC_WS_BASE_URL || '';
 const isPlaceholder = /your-render-app-name/.test(RAW_API) || RAW_API === '';
 const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 
+// In-flight and rate limit caches to reduce duplicate requests
+const inflightRequests = new Map();
+const lastResponses = new Map();
+const rateLimits = {
+  '/api/users/profile': 10000,
+  '/api/transactions': 10000,
+  '/api/admin/users': 10000,
+  '/api/admin/transactions': 10000,
+  '/api/gift-cards': 10000,
+};
+const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
 // Helper function to make API requests
 export const apiRequest = async (endpoint, options = {}) => {
   try {
@@ -12,7 +24,8 @@ export const apiRequest = async (endpoint, options = {}) => {
     let url;
     if (typeof window !== 'undefined') {
       // In browser environment
-      if (isPlaceholder || RAW_API === '') {
+      const isNetlifyHost = /netlify\.app$/.test(window.location.hostname);
+      if (isPlaceholder || RAW_API === '' || isNetlifyHost) {
         // If we're in development or no API URL is set, construct from current origin
         if (endpoint.startsWith('/')) {
           // For relative API endpoints, construct full URL
@@ -35,15 +48,69 @@ export const apiRequest = async (endpoint, options = {}) => {
       }
     }
     
+    const method = (options.method || 'GET').toUpperCase();
+    const key = `${method} ${url}`;
+
+    // Basic Authorization guard: avoid server hit when token is missing
+    const authHeader = options.headers?.Authorization || options.headers?.authorization;
+    if (authHeader && /Bearer\s*($|undefined|null)/i.test(authHeader)) {
+      throw new Error('Not authorized, no token');
+    }
+
+    // Rate limit specific endpoints and return cached response when available
+    const rateMs = rateLimits[endpoint] || 0;
+    if (rateMs > 0) {
+      const last = lastResponses.get(key);
+      if (last && (nowMs() - last.timestamp) < rateMs) {
+        return last.data;
+      }
+    }
+
+    // De-duplicate concurrent identical requests
+    if (inflightRequests.has(key)) {
+      return await inflightRequests.get(key);
+    }
+
     console.log(`Making API request to: ${url}`);
     
+    // Attach CSRF header for mutating requests (double-submit cookie)
+    const methodUpper = (options.method || 'GET').toUpperCase();
+    const mutating = methodUpper === 'POST' || methodUpper === 'PUT' || methodUpper === 'DELETE' || methodUpper === 'PATCH';
+    let csrfHeader = {};
+    if (mutating && typeof document !== 'undefined') {
+      const cookieMap = Object.fromEntries(document.cookie.split(';').map(c => {
+        const [k, ...v] = c.trim().split('=');
+        return [k, decodeURIComponent(v.join('='))];
+      }));
+      if (cookieMap.csrf_token) {
+        csrfHeader['X-CSRF-Token'] = cookieMap.csrf_token;
+      }
+    }
+
+    // Include credentials only when needed (protected endpoints or mutations)
+    const protectedPrefixes = ['/api/users', '/api/transactions', '/api/admin', '/api/gift-cards'];
+    const needsCredentials = mutating || protectedPrefixes.some(p => endpoint.startsWith(p));
+
+    // Build headers: avoid setting Content-Type on GET/HEAD to prevent CORS preflight
+    const baseHeaders = {
+      ...csrfHeader,
+      ...options.headers,
+    };
+    if (needsCredentials && typeof window !== 'undefined') {
+      const stored = (typeof localStorage !== 'undefined') ? localStorage.getItem('token') : null;
+      if (stored && !baseHeaders.Authorization && !baseHeaders.authorization) {
+        baseHeaders.Authorization = `Bearer ${stored}`;
+      }
+    }
+    if (methodUpper !== 'GET' && methodUpper !== 'HEAD' && !baseHeaders['Content-Type']) {
+      baseHeaders['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers: baseHeaders,
+      credentials: needsCredentials ? 'include' : 'omit',
       ...options,
-      signal: AbortSignal.timeout(30000) // Increase timeout to 30 seconds for better reliability
+      signal: AbortSignal.timeout(30000)
     });
 
     const contentType = response.headers.get('content-type') || '';
@@ -65,6 +132,11 @@ export const apiRequest = async (endpoint, options = {}) => {
         throw new Error('Too many requests, please try again later.');
       }
       throw new Error(msg);
+    }
+
+    // Cache successful responses for rate-limited endpoints
+    if (rateMs > 0 && data) {
+      lastResponses.set(key, { data, timestamp: nowMs() });
     }
 
     return data;
@@ -115,14 +187,21 @@ export const authService = {
     }
   },
 
-  // Get user profile
-  getProfile: async (token) => {
+  // Logout user (clear cookies)
+  logout: async () => {
     try {
-      return await apiRequest('/api/users/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      return await apiRequest('/api/users/logout', {
+        method: 'POST'
       });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get user profile (cookie-based session)
+  getProfile: async () => {
+    try {
+      return await apiRequest('/api/users/profile');
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -133,13 +212,10 @@ export const authService = {
   },
 
   // Update user profile
-  updateProfile: async (userData, token) => {
+  updateProfile: async (userData) => {
     try {
       return await apiRequest('/api/users/profile', {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(userData),
       });
     } catch (error) {
@@ -184,16 +260,15 @@ export const cryptoService = {
   createPriceWebSocket: () => {
     let target;
     if (typeof window !== 'undefined') {
-      // In browser environment
+      const isNetlify = /netlify\.app$/.test(window.location.hostname);
       if (isPlaceholderWS || RAW_WS === '') {
-        // If we're in development or no WS URL is set, construct from current origin
+        if (isNetlify) {
+          return null;
+        }
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         target = `${protocol}//${window.location.host}/ws`;
       } else {
-        // Production environment with explicit WS URL
-        // Ensure the WebSocket URL is correctly formatted
         if (RAW_WS.startsWith('wss://') || RAW_WS.startsWith('ws://')) {
-          // If it already has the protocol, use it as is but ensure /ws path
           if (RAW_WS.endsWith('/ws')) {
             target = RAW_WS;
           } else if (RAW_WS.endsWith('/')) {
@@ -202,7 +277,6 @@ export const cryptoService = {
             target = `${RAW_WS}/ws`;
           }
         } else {
-          // If no protocol is specified, default to wss for https and ws for http
           const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
           if (RAW_WS.startsWith('/')) {
             target = `${protocol}${RAW_WS.replace('//', '').replace('/ws', '')}/ws`;
@@ -212,15 +286,12 @@ export const cryptoService = {
         }
       }
     } else {
-      // Server-side environment (for SSR)
       if (isPlaceholderWS || RAW_WS === '') {
-        // Default to localhost in development
         target = 'ws://localhost:5000/ws';
       } else {
-        target = RAW_WS;
+        target = RAW_WS.endsWith('/ws') ? RAW_WS : `${RAW_WS}/ws`;
       }
     }
-    
     console.log(`Creating WebSocket connection to: ${target}`);
     
     // Validate WebSocket URL
@@ -233,10 +304,15 @@ export const cryptoService = {
     
     const ws = new WebSocket(target);
     
-    // Add reconnection logic
+    // Provide a simple exponential backoff reconnect helper
+    let attempts = 0;
     ws.reconnect = () => {
-      console.log('Attempting to reconnect WebSocket...');
-      return new WebSocket(target);
+      attempts = Math.min(attempts + 1, 10);
+      const delay = Math.min(1000 * Math.pow(2, attempts), 10000) + Math.random() * 1000;
+      console.log(`Attempting to reconnect WebSocket in ${Math.round(delay)}ms...`);
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(new WebSocket(target)), delay);
+      });
     };
     
     return ws;
@@ -246,13 +322,10 @@ export const cryptoService = {
 // Transaction services
 export const transactionService = {
   // Create a new transaction
-  createTransaction: async (transactionData, token) => {
+  createTransaction: async (transactionData) => {
     try {
       const response = await apiRequest('/api/transactions', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(transactionData),
       });
       
@@ -267,13 +340,9 @@ export const transactionService = {
   },
 
   // Get user transactions
-  getUserTransactions: async (token) => {
+  getUserTransactions: async () => {
     try {
-      return await apiRequest('/api/transactions', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest('/api/transactions');
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -284,13 +353,9 @@ export const transactionService = {
   },
 
   // Get transaction by ID
-  getTransactionById: async (id, token) => {
+  getTransactionById: async (id) => {
     try {
-      return await apiRequest(`/api/transactions/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest(`/api/transactions/${id}`);
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -342,13 +407,9 @@ export const giftCardService = {
   },
 
   // Get user's gift cards
-  getUserGiftCards: async (token) => {
+  getUserGiftCards: async () => {
     try {
-      return await apiRequest('/api/gift-cards/my-cards', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest('/api/gift-cards/my-cards');
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -359,13 +420,12 @@ export const giftCardService = {
   },
 
   // Admin: Create gift card
-  createGiftCard: async (cardData, token) => {
+  createGiftCard: async (cardData) => {
     try {
       return await apiRequest('/api/gift-cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(cardData),
       });
@@ -379,13 +439,9 @@ export const giftCardService = {
   },
 
   // Admin: Get all gift cards
-  getAllGiftCards: async (token, page = 1, limit = 10) => {
+  getAllGiftCards: async (page = 1, limit = 10) => {
     try {
-      return await apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`);
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -396,13 +452,9 @@ export const giftCardService = {
   },
 
   // Admin: Get gift card by ID
-  getGiftCardById: async (id, token) => {
+  getGiftCardById: async (id) => {
     try {
-      return await apiRequest(`/api/gift-cards/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      return await apiRequest(`/api/gift-cards/${id}`);
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -413,13 +465,12 @@ export const giftCardService = {
   },
 
   // Admin: Update gift card status
-  updateGiftCardStatus: async (id, statusData, token) => {
+  updateGiftCardStatus: async (id, statusData) => {
     try {
       return await apiRequest(`/api/gift-cards/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(statusData),
       });
@@ -433,18 +484,92 @@ export const giftCardService = {
   },
 
   // Admin: Add balance to gift card
-  addGiftCardBalance: async (id, balanceData, token) => {
+  addGiftCardBalance: async (id, balanceData) => {
     try {
       return await apiRequest(`/api/gift-cards/${id}/add-balance`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(balanceData),
       });
     } catch (error) {
       // Handle rate limit errors
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+};
+
+// MFA services
+export const mfaService = {
+  // Setup MFA and get QR code
+  setupMFA: async () => {
+    try {
+      return await apiRequest('/api/mfa/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Verify MFA token and enable MFA
+  verifyMFA: async (token) => {
+    try {
+      return await apiRequest('/api/mfa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Disable MFA for current user
+  disableMFA: async () => {
+    try {
+      return await apiRequest('/api/mfa/disable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (error) {
+      if (error.message && error.message.includes('429')) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+      throw error;
+    }
+  },
+
+  // Verify a backup code
+  verifyBackupCode: async (code) => {
+    try {
+      return await apiRequest('/api/mfa/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+    } catch (error) {
       if (error.message && error.message.includes('429')) {
         throw new Error('Too many requests. Please wait a moment and try again.');
       }
