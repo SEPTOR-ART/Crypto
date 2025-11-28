@@ -7,6 +7,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpiry, setSessionExpiry] = useState(null);
   const router = useRouter();
   const refreshIntervalRef = useRef(null);
 
@@ -72,7 +73,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authService.register(userData);
       if (typeof window !== 'undefined' && res && res.token) {
-        try { localStorage.setItem('token', res.token); } catch (e) {}
+        try { 
+          localStorage.setItem('token', res.token);
+          // Set session expiry (8 hours from now)
+          const expiryTime = Date.now() + (8 * 60 * 60 * 1000);
+          localStorage.setItem('sessionExpiry', expiryTime.toString());
+          setSessionExpiry(expiryTime);
+        } catch (e) {}
       }
       await checkUserLogin();
       startTokenRefresh();
@@ -88,7 +95,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authService.login(credentials);
       if (typeof window !== 'undefined' && res && res.token) {
-        try { localStorage.setItem('token', res.token); } catch (e) {}
+        try { 
+          localStorage.setItem('token', res.token);
+          // Set session expiry (8 hours from now)
+          const expiryTime = Date.now() + (8 * 60 * 60 * 1000);
+          localStorage.setItem('sessionExpiry', expiryTime.toString());
+          setSessionExpiry(expiryTime);
+        } catch (e) {}
       }
       await checkUserLogin();
       startTokenRefresh();
@@ -105,7 +118,13 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
     } catch (e) {}
     setUser(null);
-    try { if (typeof window !== 'undefined') localStorage.removeItem('token'); } catch (e) {}
+    setSessionExpiry(null);
+    try { 
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('sessionExpiry');
+      }
+    } catch (e) {}
     stopTokenRefresh();
     router.push('/');
   }, [router, stopTokenRefresh]);
@@ -168,6 +187,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    sessionExpiry,
     register,
     login,
     logout,

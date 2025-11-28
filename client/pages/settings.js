@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/Settings.module.css';
 import ChatSupport from '../components/ChatSupport';
+import SessionTimer from '../components/SessionTimer';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -19,7 +20,8 @@ export default function Settings() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { user, loading, refreshUser } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { user, loading, refreshUser, logout } = useAuth();
   const router = useRouter();
 
   // Initialize security settings with user data
@@ -103,6 +105,15 @@ export default function Settings() {
     }, 3000);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setError('Failed to logout. Please try again.');
+    }
+  };
+
   return (
     <ProtectedRoute requireAuth={true}>
       <div className={styles.container}>
@@ -141,6 +152,12 @@ export default function Settings() {
                 onClick={() => setActiveSection('preferences')}
               >
                 Preferences
+              </button>
+              <button 
+                className={`${styles.navItem} ${activeSection === 'account' ? styles.active : ''}`}
+                onClick={() => setActiveSection('account')}
+              >
+                Account
               </button>
             </nav>
           </div>
@@ -350,6 +367,78 @@ export default function Settings() {
                       <option>UTC+0 - Greenwich Mean Time</option>
                       <option>UTC+9 - Japan Standard Time</option>
                     </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'account' && (
+              <div className={styles.section}>
+                <h2>Account Management</h2>
+                <p className={styles.sectionDescription}>Manage your account settings and session</p>
+                
+                <div className={styles.accountManagement}>
+                  <div className={styles.accountCard}>
+                    <div className={styles.cardIcon}>🔐</div>
+                    <h3>Active Session</h3>
+                    <p>Your current login session is active and secure</p>
+                    <div className={styles.sessionInfo}>
+                      <div className={styles.infoItem}>
+                        <span className={styles.infoLabel}>Status:</span>
+                        <span className={styles.statusBadge}>Active</span>
+                      </div>
+                      <div className={styles.infoItem}>
+                        <span className={styles.infoLabel}>Session expires in:</span>
+                        <span className={styles.infoValue}><SessionTimer /></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.accountCard}>
+                    <div className={styles.cardIcon}>👤</div>
+                    <h3>Account Information</h3>
+                    <p>Logged in as {user.email}</p>
+                    <div className={styles.sessionInfo}>
+                      <div className={styles.infoItem}>
+                        <span className={styles.infoLabel}>Name:</span>
+                        <span className={styles.infoValue}>{user.firstName} {user.lastName}</span>
+                      </div>
+                      <div className={styles.infoItem}>
+                        <span className={styles.infoLabel}>Member since:</span>
+                        <span className={styles.infoValue}>
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`${styles.accountCard} ${styles.dangerZone}`}>
+                    <div className={styles.cardIcon}>🚪</div>
+                    <h3>Logout</h3>
+                    <p>End your current session and return to the homepage</p>
+                    {showLogoutConfirm ? (
+                      <div className={styles.confirmButtons}>
+                        <button 
+                          className={styles.confirmLogout}
+                          onClick={handleLogout}
+                        >
+                          Confirm Logout
+                        </button>
+                        <button 
+                          className={styles.cancelButton}
+                          onClick={() => setShowLogoutConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        className={styles.logoutButton}
+                        onClick={() => setShowLogoutConfirm(true)}
+                      >
+                        Logout from Account
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
