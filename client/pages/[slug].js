@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 // import styles from '../styles/globals.css'; // Removed unused import
 
-const KNOWN = ['support','help-center','contact','fees','docs','terms','privacy','security','compliance','staking','forgot-password'];
+const KNOWN = ['help-center','contact','fees','docs','terms','privacy','security','compliance','staking','forgot-password'];
 
 export default function InfoPage({ slug }) {
   const router = useRouter();
@@ -53,10 +53,6 @@ export default function InfoPage({ slug }) {
     'privacy': {
       title: 'Privacy Policy',
       description: 'How we collect, use, and protect your personal information.'
-    },
-    'support': {
-      title: 'Support',
-      description: 'Get help with your account, transactions, and other issues.'
     },
     'forgot-password': {
       title: 'Forgot Password',
