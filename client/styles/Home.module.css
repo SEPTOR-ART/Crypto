@@ -63,7 +63,7 @@
   transform-style: preserve-3d;
   perspective: 1000px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .heroContent::before {
@@ -88,12 +88,20 @@
 
 .heroGrid {
   display: grid;
-  grid-template-columns: 1fr 240px;
+  grid-template-columns: 1fr 300px;
   gap: 2rem;
   align-items: center;
 }
 
-.heroAside { display: block; justify-self: center; }
+.heroAside { 
+  display: flex;
+  justify-self: center;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  position: relative;
+  z-index: 2;
+}
 
 @keyframes fadeInUp {
   from {
@@ -940,8 +948,11 @@
   }
   
   .heroAside {
-    display: block;
-    max-width: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 280px;
+    min-height: 280px;
     margin: 0 auto;
   }
 }
