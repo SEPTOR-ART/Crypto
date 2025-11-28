@@ -78,11 +78,37 @@ export default function Login() {
   return (
     <ProtectedRoute requireAuth={false}>
       <div className={styles.container}>
-        <div className={styles.loginCard}>
-          <div className={styles.logo}>
-            <h1>CryptoZen</h1>
-            <p>Secure Asian-Inspired Crypto Exchange</p>
+        <div className={styles.leftPanel}>
+          <div className={styles.brandSection}>
+            <h1 className={styles.brandTitle}>CryptoZen</h1>
+            <p className={styles.brandTagline}>The Future of Digital Asset Trading</p>
           </div>
+          <div className={styles.features}>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>📈</div>
+              <h3>Real-Time Data</h3>
+              <p>Access live market data and advanced charting tools</p>
+            </div>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>💰</div>
+              <h3>Low Fees</h3>
+              <p>Industry-leading low trading fees and instant withdrawals</p>
+            </div>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>✨</div>
+              <h3>User Friendly</h3>
+              <p>Intuitive interface designed for both beginners and pros</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className={styles.rightPanel}>
+          <div className={styles.loginCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.label}>WELCOME BACK</span>
+              <h2 className={styles.title}>Sign In</h2>
+              <p className={styles.subtitle}>Access your trading dashboard</p>
+            </div>
           
           {reason === 'auth_required' && !error && (
             <div className={styles.info} aria-live="polite">Please sign in to continue{nextUrl ? ` to ${nextUrl}` : ''}.</div>
@@ -185,6 +211,7 @@ export default function Login() {
             Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
           </div>
         </div>
+      </div>
       </div>
     </ProtectedRoute>
   );

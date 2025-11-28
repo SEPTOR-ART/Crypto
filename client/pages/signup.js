@@ -100,11 +100,37 @@ export default function Signup() {
   return (
     <ProtectedRoute requireAuth={false}>
       <div className={styles.container}>
-        <div className={styles.signupCard}>
-          <div className={styles.logo}>
-            <h1>CryptoZen</h1>
-            <p>Secure Asian-Inspired Crypto Exchange</p>
+        <div className={styles.leftPanel}>
+          <div className={styles.brandSection}>
+            <h1 className={styles.brandTitle}>CryptoZen</h1>
+            <p className={styles.brandTagline}>The Future of Digital Asset Trading</p>
           </div>
+          <div className={styles.features}>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>⚡</div>
+              <h3>Lightning Fast</h3>
+              <p>Execute trades in milliseconds with our advanced matching engine</p>
+            </div>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>🔒</div>
+              <h3>Bank-Grade Security</h3>
+              <p>Your assets are protected with military-grade encryption</p>
+            </div>
+            <div className={styles.feature}>
+              <div className={styles.featureIcon}>🌍</div>
+              <h3>Global Access</h3>
+              <p>Trade from anywhere with 24/7 customer support</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className={styles.rightPanel}>
+          <div className={styles.signupCard}>
+            <div className={styles.cardHeader}>
+              <span className={styles.label}>GET STARTED</span>
+              <h2 className={styles.title}>Create Account</h2>
+              <p className={styles.subtitle}>Join thousands of traders worldwide</p>
+            </div>
           
           {error && <div className={styles.error}>{error}</div>}
           
@@ -228,6 +254,7 @@ export default function Signup() {
             Already have an account? <Link href="/login">Sign In</Link>
           </div>
         </div>
+      </div>
       </div>
     </ProtectedRoute>
   );
