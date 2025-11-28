@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promote User to Admin - CryptoZen</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+            font-size: 28px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            text-align: center;
+            color: #667eea;
+            margin-top: 15px;
+            display: none;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Promote User to Admin</h1>
+        
+        <div class="info">
+            <strong>Note:</strong> This is a one-time setup to promote your account to admin. After this, you'll have full admin access.
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" value="ko.nwankpa@unizik.edu.ng" placeholder="Enter email to promote">
+        </div>
+
+        <div class="form-group">
+            <label for="setupKey">Setup Key</label>
+            <input type="text" id="setupKey" value="cryptozen-setup-2025" placeholder="Enter setup key">
+        </div>
+
+        <button id="promoteBtn" onclick="promoteToAdmin()">Promote to Admin</button>
+
+        <div class="loading" id="loading">
+            <p>⏳ Processing...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        async function promoteToAdmin() {
+            const email = document.getElementById('email').value;
+            const setupKey = document.getElementById('setupKey').value;
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            const btn = document.getElementById('promoteBtn');
+
+            if (!email) {
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '❌ Please enter an email address';
+                return;
+            }
+
+            if (!setupKey) {
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '❌ Please enter the setup key';
+                return;
+            }
+
+            // Show loading
+            resultDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('https://crypto-r29t.onrender.com/api/setup/promote-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, setupKey })
+                });
+
+                const data = await response.json();
+
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ <strong>${data.message}</strong><br>
+                        <br>
+                        📧 Email: ${data.email}<br>
+                        👤 Name: ${data.name || 'N/A'}<br>
+                        🔑 Admin Status: ${data.isAdmin ? 'Yes' : 'No'}<br>
+                        <br>
+                        <strong>Next Steps:</strong><br>
+                        1. Go to <a href="https://cryptozing.netlify.app/login" target="_blank">Login Page</a><br>
+                        2. Login with your email: ${data.email}<br>
+                        3. Access admin at <a href="https://cryptozing.netlify.app/admin" target="_blank">/admin</a>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ <strong>Error:</strong> ${data.message || 'Unknown error occurred'}`;
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ <strong>Error:</strong> ${error.message || 'Failed to connect to server'}`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                promoteToAdmin();
+            }
+        });
+    </script>
+</body>
+</html>

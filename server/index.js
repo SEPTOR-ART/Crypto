@@ -198,7 +198,19 @@ const startServer = () => {
 
   // One-time setup endpoint to promote user to admin
   // This endpoint is protected by a secret key and can only be called once
+  app.options('/api/setup/promote-admin', (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(200).send();
+  });
+  
   app.post('/api/setup/promote-admin', async (req, res) => {
+    // Allow CORS for this setup endpoint (including file:// origin)
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    
     try {
       const User = require('./models/User');
       
