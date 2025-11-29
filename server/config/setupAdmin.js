@@ -1,5 +1,4 @@
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 
 /**
  * Auto-create or promote admin user based on environment variables
@@ -33,9 +32,8 @@ const setupAdminUser = async () => {
       
       // Update password if provided in environment variables
       if (adminPassword) {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(adminPassword, salt);
-        adminUser.password = hashedPassword;
+        // Set the password directly - the User model's pre-save hook will hash it
+        adminUser.password = adminPassword;
         updated = true;
         console.log(`✅ Admin password updated for: ${adminEmail}`);
       }
@@ -55,14 +53,13 @@ const setupAdminUser = async () => {
       return;
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(adminPassword, salt);
+    // Hash password - User model's pre-save hook will handle this
+    // Don't hash manually to avoid double-hashing
 
     // Create admin user
     adminUser = new User({
       email: adminEmail,
-      password: hashedPassword,
+      password: adminPassword, // Will be hashed by pre-save hook
       firstName: adminFirstName,
       lastName: adminLastName,
       isAdmin: true,
