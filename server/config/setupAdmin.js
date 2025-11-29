@@ -23,9 +23,24 @@ const setupAdminUser = async () => {
     let adminUser = await User.findOne({ email: adminEmail });
 
     if (adminUser) {
-      // User exists - ensure they have admin privileges
+      // User exists - ensure they have admin privileges and update password if provided
+      let updated = false;
+      
       if (!adminUser.isAdmin) {
         adminUser.isAdmin = true;
+        updated = true;
+      }
+      
+      // Update password if provided in environment variables
+      if (adminPassword) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(adminPassword, salt);
+        adminUser.password = hashedPassword;
+        updated = true;
+        console.log(`✅ Admin password updated for: ${adminEmail}`);
+      }
+      
+      if (updated) {
         await adminUser.save();
         console.log(`✅ Promoted existing user to admin: ${adminEmail}`);
       } else {
