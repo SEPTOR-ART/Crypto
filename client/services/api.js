@@ -20,9 +20,15 @@ const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Da
 // Helper function to get cookie value by name
 const getCookie = (name) => {
   if (typeof document !== 'undefined') {
+    console.log('Available cookies:', document.cookie);
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    if (parts.length === 2) {
+      const result = parts.pop().split(';').shift();
+      console.log(`Found cookie ${name}:`, result);
+      return result;
+    }
+    console.log(`Cookie ${name} not found`);
   }
   return null;
 };
@@ -87,6 +93,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     const mutating = methodUpper === 'POST' || methodUpper === 'PUT' || methodUpper === 'DELETE' || methodUpper === 'PATCH';
     let csrfHeader = {};
     if (mutating && typeof document !== 'undefined') {
+      console.log('Attempting to extract CSRF token for mutating request');
       // Try to get CSRF token from cookie
       const csrfToken = getCookie('csrf_token');
       if (csrfToken) {
@@ -94,6 +101,19 @@ export const apiRequest = async (endpoint, options = {}) => {
         csrfHeader['X-CSRF-Token'] = csrfToken;
       } else {
         console.warn('CSRF token not found in cookie');
+        // Try alternative method to extract CSRF token
+        console.log('Trying alternative cookie parsing method');
+        const cookies = Object.fromEntries(
+          document.cookie.split(';').map(c => {
+            const [k, ...v] = c.trim().split('=');
+            return [k, decodeURIComponent(v.join('='))];
+          })
+        );
+        console.log('All parsed cookies:', cookies);
+        if (cookies.csrf_token) {
+          console.log('CSRF token found via alternative method:', cookies.csrf_token);
+          csrfHeader['X-CSRF-Token'] = cookies.csrf_token;
+        }
       }
     }
 
