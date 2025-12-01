@@ -82,7 +82,6 @@ const adminReply = async (req, res) => {
   }
 };
 
-module.exports = { createMessage, createPublicMessage, getMyMessages, adminList, adminUpdateStatus, adminReply };
 const createPublicMessage = async (req, res) => {
   try {
     const { text, subject, name, email } = req.body || {};
@@ -107,3 +106,4 @@ const createPublicMessage = async (req, res) => {
     return res.status(500).json({ message: 'Server error creating message' });
   }
 };
+module.exports = { createMessage, createPublicMessage, getMyMessages, adminList, adminUpdateStatus, adminReply };

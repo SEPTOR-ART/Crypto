@@ -48,8 +48,13 @@ connectDB().then(() => {
   startServer();
 }).catch(err => {
   console.error('Failed to connect to database:', err);
-  console.error('Cannot start server without database connection');
-  process.exit(1);
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Cannot start server without database connection');
+    process.exit(1);
+  } else {
+    console.warn('Starting server without database connection in non-production environment');
+    startServer();
+  }
 });
 
 // Function to start the server

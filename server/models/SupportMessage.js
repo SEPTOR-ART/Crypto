@@ -7,7 +7,7 @@ const ReplySchema = new mongoose.Schema({
 });
 
 const SupportMessageSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null },
   subject: { type: String },
   text: { type: String, required: true },
   status: { type: String, enum: ['open', 'pending', 'resolved'], default: 'open' },
