@@ -7,7 +7,6 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sessionExpiry, setSessionExpiry] = useState(null);
   const router = useRouter();
   const refreshIntervalRef = useRef(null);
 
@@ -30,7 +29,7 @@ export const AuthProvider = ({ children }) => {
       clearInterval(refreshIntervalRef.current);
     }
     
-    // Set up new interval to refresh user data every 5 minutes (increased from 60 seconds)
+    // Set up new interval to refresh user data every 5 minutes
     refreshIntervalRef.current = setInterval(async () => {
       if (user) {
         try {
@@ -72,15 +71,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData, nextUrl) => {
     try {
       const res = await authService.register(userData);
-      if (typeof window !== 'undefined' && res && res.token) {
-        try { 
-          localStorage.setItem('token', res.token);
-          // Set session expiry (8 hours from now)
-          const expiryTime = Date.now() + (8 * 60 * 60 * 1000);
-          localStorage.setItem('sessionExpiry', expiryTime.toString());
-          setSessionExpiry(expiryTime);
-        } catch (e) {}
-      }
+      // No need to store token in localStorage as we're using cookies
       await checkUserLogin();
       startTokenRefresh();
       router.push(nextUrl || '/dashboard');
@@ -94,15 +85,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials, nextUrl) => {
     try {
       const res = await authService.login(credentials);
-      if (typeof window !== 'undefined' && res && res.token) {
-        try { 
-          localStorage.setItem('token', res.token);
-          // Set session expiry (8 hours from now)
-          const expiryTime = Date.now() + (8 * 60 * 60 * 1000);
-          localStorage.setItem('sessionExpiry', expiryTime.toString());
-          setSessionExpiry(expiryTime);
-        } catch (e) {}
-      }
+      // No need to store token in localStorage as we're using cookies
       await checkUserLogin();
       startTokenRefresh();
       router.push(nextUrl || '/dashboard');
@@ -118,13 +101,6 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
     } catch (e) {}
     setUser(null);
-    setSessionExpiry(null);
-    try { 
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('sessionExpiry');
-      }
-    } catch (e) {}
     stopTokenRefresh();
     router.push('/');
   }, [router, stopTokenRefresh]);
@@ -187,7 +163,6 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
-    sessionExpiry,
     register,
     login,
     logout,

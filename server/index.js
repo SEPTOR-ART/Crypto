@@ -11,7 +11,7 @@ const connectDB = require('./config/db');
 // Create Express app
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for rate limiting
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 console.log('Environment variables check:');
 console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
@@ -259,177 +259,126 @@ const startServer = () => {
         return res.status(400).json({ message: 'Email is required' });
       }
       
-      // Find user
+      // Find user by email and promote to admin
       const user = await User.findOne({ email });
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
       
-      // Check if already admin
-      if (user.isAdmin) {
-        return res.status(200).json({ 
-          message: 'User is already an admin',
-          email: user.email,
-          isAdmin: true
-        });
-      }
-      
-      // Promote to admin
       user.isAdmin = true;
       await user.save();
       
-      res.status(200).json({ 
-        message: 'User promoted to admin successfully',
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        isAdmin: user.isAdmin
-      });
+      console.log(`User ${email} promoted to admin successfully`);
+      res.json({ message: 'User promoted to admin successfully' });
     } catch (error) {
-      console.error('Error promoting user to admin:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Admin promotion error:', error);
+      res.status(500).json({ message: 'Server error during admin promotion' });
     }
   });
 
-  app.get('/api/health', (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.status(200).json({ 
-      status: 'OK', 
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
-  });
-
-  app.get('/metrics', (req, res) => {
-    const avgLatency = metrics.latency.count ? Number((metrics.latency.total / metrics.latency.count).toFixed(2)) : 0;
-    res.json({
-      uptime: process.uptime(),
-      since: new Date(metrics.startTime).toISOString(),
-      requests: metrics.requests,
-      avgLatencyMs: avgLatency,
-      paths: metrics.paths,
-    });
-  });
-
   // Routes
-  app.get('/', (req, res) => {
-    res.json({ message: 'CryptoZen API is running!' });
-  });
+  app.use('/api/users', require('./routes/userRoutes'));
+  app.use('/api/transactions', require('./routes/transactionRoutes'));
+  app.use('/api/gift-cards', require('./routes/giftCardRoutes'));
+  app.use('/api/assets', require('./routes/assetRoutes'));
+  app.use('/api/prices', require('./routes/priceRoutes'));
+  app.use('/api/admin', require('./routes/adminRoutes'));
 
-  app.get('/api/prices', (req, res) => {
-    // Mock cryptocurrency prices
-    const prices = {
-      BTC: (Math.random() * 100000 + 30000).toFixed(2),
-      ETH: (Math.random() * 5000 + 1500).toFixed(2),
-      LTC: (Math.random() * 500 + 50).toFixed(2),
-      XRP: (Math.random() * 2 + 0.2).toFixed(4)
-    };
+  // Serve static files in production
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static('public'));
     
-    res.json(prices);
-  });
-
-  app.get('/api/assets', (req, res) => {
-    // Mock cryptocurrency assets
-    const assets = [
-      { symbol: 'BTC', name: 'Bitcoin', price: (Math.random() * 100000 + 30000).toFixed(2) },
-      { symbol: 'ETH', name: 'Ethereum', price: (Math.random() * 5000 + 1500).toFixed(2) },
-      { symbol: 'LTC', name: 'Litecoin', price: (Math.random() * 500 + 50).toFixed(2) },
-      { symbol: 'XRP', name: 'Ripple', price: (Math.random() * 2 + 0.2).toFixed(4) }
-    ];
-    
-    res.json(assets);
-  });
-
-  // Import routes
-  const userRoutes = require('./routes/userRoutes');
-  const transactionRoutes = require('./routes/transactionRoutes');
-  const mfaRoutes = require('./routes/mfaRoutes');
-  const adminRoutes = require('./routes/adminRoutes');
-  const giftCardRoutes = require('./routes/giftCardRoutes');
-
-  // Use routes
-  app.use('/api/users', userRoutes);
-  app.use('/api/transactions', transactionRoutes);
-  app.use('/api/mfa', mfaRoutes);
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/gift-cards', giftCardRoutes);
+    // Serve frontend routes
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
+    });
+  }
 
   // Create HTTP server
   const server = http.createServer(app);
 
-  // Handle server errors
-  server.on('error', (error) => {
-    console.error('Server error:', error);
-  });
+  // Setup WebSocket server
+  const wss = new WebSocket.Server({ server });
 
-  // Create WebSocket server with proper path handling
-  const wss = new WebSocket.Server({ server, path: '/ws' });
+  // Store active connections
+  const clients = new Set();
 
   // Handle WebSocket connections
-  wss.on('connection', (ws, request) => {
-    console.log('New WebSocket connection');
-    ws.isAlive = true;
-    ws.on('pong', () => { ws.isAlive = true; });
+  wss.on('connection', (ws, req) => {
+    console.log('WebSocket connection opened');
+    clients.add(ws);
     
     // Send initial price data
-    ws.send(JSON.stringify({
-      type: 'INITIAL_PRICES',
-      data: {
-        BTC: (Math.random() * 100000 + 30000).toFixed(2),
-        ETH: (Math.random() * 5000 + 1500).toFixed(2),
-        LTC: (Math.random() * 500 + 50).toFixed(2),
-        XRP: (Math.random() * 2 + 0.2).toFixed(4)
-      }
-    }));
-
-    // Send periodic updates
-    const interval = setInterval(() => {
-      ws.send(JSON.stringify({
-        type: 'PRICE_UPDATE',
-        data: {
-          BTC: (Math.random() * 100000 + 30000).toFixed(2),
-          ETH: (Math.random() * 5000 + 1500).toFixed(2),
-          LTC: (Math.random() * 500 + 50).toFixed(2),
-          XRP: (Math.random() * 2 + 0.2).toFixed(4)
-        }
-      }));
-    }, 5000);
-
+    sendInitialPrices(ws);
+    
     ws.on('close', () => {
       console.log('WebSocket connection closed');
-      clearInterval(interval);
+      clients.delete(ws);
     });
-
+    
     ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      clearInterval(interval);
+      console.error('WebSocket error occurred:', error);
+      clients.delete(ws);
     });
   });
 
-  const heartbeat = setInterval(() => {
-    wss.clients.forEach((ws) => {
-      if (ws.isAlive === false) return ws.terminate();
-      ws.isAlive = false;
-      try { ws.ping(); } catch (e) {}
+  // Broadcast price updates to all connected clients
+  const broadcastPrices = (prices) => {
+    const data = JSON.stringify({ type: 'PRICE_UPDATE', data: prices });
+    [...clients].forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
+      }
     });
-  }, 30000);
+  };
 
-  wss.on('close', () => {
-    clearInterval(heartbeat);
-  });
+  // Send initial price data to a client
+  const sendInitialPrices = (ws) => {
+    // Mock initial prices
+    const initialPrices = {
+      BTC: 43250.75,
+      ETH: 2650.30,
+      LTC: 85.42,
+      XRP: 0.52
+    };
+    ws.send(JSON.stringify({ type: 'INITIAL_PRICES', data: initialPrices }));
+  };
+
+  // Simulate price updates (in a real app, this would come from an external API)
+  setInterval(() => {
+    // Mock price updates
+    const priceUpdates = {
+      BTC: 43250.75 + (Math.random() - 0.5) * 100,
+      ETH: 2650.30 + (Math.random() - 0.5) * 20,
+      LTC: 85.42 + (Math.random() - 0.5) * 2,
+      XRP: 0.52 + (Math.random() - 0.5) * 0.02
+    };
+    broadcastPrices(priceUpdates);
+  }, 5000); // Update every 5 seconds
+
+  // Graceful shutdown
+  const gracefulShutdown = () => {
+    console.log('Received kill signal, shutting down gracefully');
+    server.close(() => {
+      console.log('Closed out remaining connections');
+      process.exit(0);
+    });
+    
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  };
+  
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
 
   // Start server
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-
-  // Handle graceful shutdown
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    server.close(() => {
-      console.log('Process terminated');
-    });
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    console.log(`WebSocket server listening on ws://localhost:${PORT}/ws`);
   });
 };
 
-// Export app for testing
 module.exports = app;

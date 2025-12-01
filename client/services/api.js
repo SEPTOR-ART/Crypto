@@ -107,13 +107,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...options.headers,
     };
     
-    // Always include Authorization header for protected endpoints when token exists
-    if (protectedPrefixes.some(p => endpoint.startsWith(p)) && typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (token && !baseHeaders.Authorization && !baseHeaders.authorization) {
-        baseHeaders.Authorization = `Bearer ${token}`;
-      }
-    }
+    // For protected endpoints, we rely on cookies rather than localStorage tokens
+    // The credentials: 'include' option will send cookies automatically
     
     // Ensure Content-Type is set for mutating requests if not already set
     if (mutating && !baseHeaders['Content-Type']) {
@@ -191,6 +186,7 @@ export const authService = {
       return await apiRequest('/api/users/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
+        // Credentials are automatically included for this request
       });
     } catch (error) {
       // Handle rate limit errors
@@ -382,65 +378,11 @@ export const transactionService = {
 
 // Gift Card services
 export const giftCardService = {
-  // Validate gift card
-  validateGiftCard: async (cardData) => {
-    try {
-      return await apiRequest('/api/gift-cards/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cardData),
-      });
-    } catch (error) {
-      // Handle rate limit errors
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-
-  // Process gift card payment
-  processGiftCardPayment: async (paymentData) => {
-    try {
-      return await apiRequest('/api/gift-cards/process-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentData),
-      });
-    } catch (error) {
-      // Handle rate limit errors
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-
-  // Get user's gift cards
-  getUserGiftCards: async () => {
-    try {
-      return await apiRequest('/api/gift-cards/my-cards');
-    } catch (error) {
-      // Handle rate limit errors
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-
-  // Admin: Create gift card
+  // Create a new gift card (admin only)
   createGiftCard: async (cardData) => {
     try {
       return await apiRequest('/api/gift-cards', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(cardData),
       });
     } catch (error) {
@@ -452,7 +394,7 @@ export const giftCardService = {
     }
   },
 
-  // Admin: Get all gift cards
+  // Get all gift cards (paginated)
   getAllGiftCards: async (page = 1, limit = 10) => {
     try {
       return await apiRequest(`/api/gift-cards?page=${page}&limit=${limit}`);
@@ -465,7 +407,7 @@ export const giftCardService = {
     }
   },
 
-  // Admin: Get gift card by ID
+  // Get gift card by ID
   getGiftCardById: async (id) => {
     try {
       return await apiRequest(`/api/gift-cards/${id}`);
@@ -478,15 +420,12 @@ export const giftCardService = {
     }
   },
 
-  // Admin: Update gift card status
-  updateGiftCardStatus: async (id, statusData) => {
+  // Update gift card (admin only)
+  updateGiftCard: async (id, cardData) => {
     try {
       return await apiRequest(`/api/gift-cards/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(statusData),
+        body: JSON.stringify(cardData),
       });
     } catch (error) {
       // Handle rate limit errors
@@ -497,93 +436,15 @@ export const giftCardService = {
     }
   },
 
-  // Admin: Add balance to gift card
-  addGiftCardBalance: async (id, balanceData) => {
+  // Redeem gift card
+  redeemGiftCard: async (id, redemptionData) => {
     try {
-      return await apiRequest(`/api/gift-cards/${id}/add-balance`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(balanceData),
+      return await apiRequest(`/api/gift-cards/${id}/redeem`, {
+        method: 'POST',
+        body: JSON.stringify(redemptionData),
       });
     } catch (error) {
       // Handle rate limit errors
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-};
-
-// MFA services
-export const mfaService = {
-  // Setup MFA and get QR code
-  setupMFA: async () => {
-    try {
-      return await apiRequest('/api/mfa/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (error) {
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-
-  // Verify MFA token and enable MFA
-  verifyMFA: async (token) => {
-    try {
-      return await apiRequest('/api/mfa/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
-    } catch (error) {
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-
-  // Disable MFA for current user
-  disableMFA: async () => {
-    try {
-      return await apiRequest('/api/mfa/disable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (error) {
-      if (error.message && error.message.includes('429')) {
-        throw new Error('Too many requests. Please wait a moment and try again.');
-      }
-      throw error;
-    }
-  },
-
-  // Verify a backup code
-  verifyBackupCode: async (code) => {
-    try {
-      return await apiRequest('/api/mfa/backup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code }),
-      });
-    } catch (error) {
       if (error.message && error.message.includes('429')) {
         throw new Error('Too many requests. Please wait a moment and try again.');
       }
