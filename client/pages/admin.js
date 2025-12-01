@@ -29,6 +29,10 @@ export default function AdminDashboard() {
   const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
   const { user, loading: authLoading, refreshUser, isAdmin } = useAuth();
   const router = useRouter();
+  const [supportMessages, setSupportMessages] = useState([]);
+  const [supportFilter, setSupportFilter] = useState('open');
+  const [replyText, setReplyText] = useState('');
+  const [activeTicketId, setActiveTicketId] = useState(null);
 
   // Load admin data
   const loadAdminData = async () => {
@@ -55,6 +59,8 @@ export default function AdminDashboard() {
         // For now, we'll just log them
         console.log('Gift card stats:', { activeGiftCards, totalIssuedValue, redeemedCards });
       }
+      const support = await adminListSupportMessages('open');
+      setSupportMessages(support || []);
     } catch (err) {
       // Handle rate limit errors with user-friendly message
       if (err.message && err.message.includes('429')) {
@@ -65,6 +71,36 @@ export default function AdminDashboard() {
       console.error('Admin data load error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSupport = async (status) => {
+    try {
+      const msgs = await adminListSupportMessages(status);
+      setSupportMessages(msgs || []);
+    } catch (err) {
+      console.error('Support load error:', err);
+    }
+  };
+
+  const handleSupportReply = async () => {
+    try {
+      if (!activeTicketId || !replyText.trim()) return;
+      await adminReplySupportMessage(activeTicketId, replyText.trim());
+      setReplyText('');
+      setSuccess('Reply sent');
+      await loadSupport(supportFilter);
+    } catch (err) {
+      setError('Failed to send reply: ' + err.message);
+    }
+  };
+
+  const handleSupportStatus = async (id, status) => {
+    try {
+      await adminUpdateSupportStatus(id, status);
+      await loadSupport(supportFilter);
+    } catch (err) {
+      setError('Failed to update status: ' + err.message);
     }
   };
 
