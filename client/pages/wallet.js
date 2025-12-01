@@ -106,9 +106,29 @@ export default function Wallet() {
           await refreshUser();
         } catch (err) {
           console.error('Failed to refresh transactions:', err);
+          // If we hit rate limits, increase the interval temporarily
+          if (err.message && err.message.includes('429')) {
+            console.log('Rate limit hit, increasing refresh interval');
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+            }
+            // Increase interval to 2 minutes when rate limited
+            intervalRef.current = setInterval(async () => {
+              if (typeof document !== 'undefined' && document.hidden) return;
+              if (user) {
+                try {
+                  const userTransactions = await transactionService.getUserTransactions();
+                  if (mountedRef.current) setTransactions(userTransactions);
+                  await refreshUser();
+                } catch (err) {
+                  console.error('Failed to refresh transactions:', err);
+                }
+              }
+            }, 120000); // Refresh every 2 minutes when rate limited
+          }
         }
       }
-    }, 30000); // Refresh every 30 seconds
+    }, 60000); // Refresh every 60 seconds instead of 30 seconds
     
     // Clean up interval
     return () => {

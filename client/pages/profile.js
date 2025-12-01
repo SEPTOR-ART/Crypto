@@ -55,8 +55,8 @@ export default function Profile() {
         }
       };
       
-      // Refresh profile every 60 seconds to reduce API load
-      intervalId = setInterval(refreshProfile, 60000);
+      // Refresh profile every 5 minutes to reduce API load and avoid rate limits
+      intervalId = setInterval(refreshProfile, 300000);
     };
     
     startInterval();

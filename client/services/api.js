@@ -8,12 +8,13 @@ const isPlaceholderWS = /your-render-app-name/.test(RAW_WS) || RAW_WS === '';
 // In-flight and rate limit caches to reduce duplicate requests
 const inflightRequests = new Map();
 const lastResponses = new Map();
+// Rate limits in milliseconds - increased to reduce client-side rate limiting issues
 const rateLimits = {
-  '/api/users/profile': 10000,
-  '/api/transactions': 10000,
-  '/api/admin/users': 10000,
-  '/api/admin/transactions': 10000,
-  '/api/gift-cards': 10000,
+  '/api/users/profile': 30000,  // 30 seconds
+  '/api/transactions': 30000,   // 30 seconds
+  '/api/admin/users': 30000,    // 30 seconds
+  '/api/admin/transactions': 30000, // 30 seconds
+  '/api/gift-cards': 30000,     // 30 seconds
 };
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 

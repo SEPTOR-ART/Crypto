@@ -78,13 +78,8 @@ export default function Dashboard() {
         setLoadingTransactions(true);
         setTransactionsError('');
         
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication required');
-        }
-        
         // Fetch user transactions
-        const userTransactions = await transactionService.getUserTransactions(token);
+        const userTransactions = await transactionService.getUserTransactions();
         setTransactions(userTransactions);
         
         // Set account info from user data
@@ -106,7 +101,12 @@ export default function Dashboard() {
         setPortfolioValue(totalValue.toFixed(2));
       } catch (err) {
         console.error('Failed to fetch data:', err);
-        setTransactionsError(err.message || 'Failed to load data');
+        // Handle rate limit errors specifically
+        if (err.message && err.message.includes('429')) {
+          setTransactionsError('Too many requests. Please wait a moment and try again.');
+        } else {
+          setTransactionsError(err.message || 'Failed to load data');
+        }
       } finally {
         setLoadingTransactions(false);
       }
