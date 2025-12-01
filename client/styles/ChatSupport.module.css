@@ -19,6 +19,7 @@
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(26, 42, 108, 0.4);
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .chatButton:hover {
@@ -84,6 +85,23 @@
   gap: 1rem;
 }
 
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff3366;
+  color: #fff;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(255, 51, 102, 0.5);
+}
+
 .message {
   max-width: 80%;
   padding: 0.75rem 1rem;
@@ -106,6 +124,11 @@
 .messageContent {
   margin-bottom: 0.25rem;
   word-wrap: break-word;
+}
+
+.typingIndicator {
+  font-size: 0.85rem;
+  color: #555;
 }
 
 .timestamp {

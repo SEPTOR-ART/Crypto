@@ -3,15 +3,33 @@ import styles from '../styles/ChatSupport.module.css';
 import Icon from './Icon';
 
 export default function ChatSupport() {
+  const loadMessages = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = window.localStorage.getItem('chat_support_messages');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return parsed.map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
+        }
+      }
+    } catch {}
+    return null;
+  };
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState(() => loadMessages() || [
     { id: 1, text: "Hello! How can I help you today?", sender: 'support', timestamp: new Date() }
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [unread, setUnread] = useState(0);
   const messagesEndRef = useRef(null);
+  const listRef = useRef(null);
+  const autoScrollRef = useRef(true);
 
   const toggleChat = () => {
-    setIsOpen(!isOpen);
+    const next = !isOpen;
+    setIsOpen(next);
+    if (next) setUnread(0);
   };
 
   const sendMessage = (e) => {
@@ -20,56 +38,89 @@ export default function ChatSupport() {
 
     // Add user message
     const userMessage = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: inputValue,
       sender: 'user',
       timestamp: new Date()
     };
 
-    setMessages([...messages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-
-    // Simulate support response after a delay
+    setTyping(true);
     setTimeout(() => {
-      const supportResponses = [
+      const responses = [
         "Thanks for your message. Our team will get back to you shortly.",
         "I understand your concern. Let me check that for you.",
         "Could you please provide more details about your issue?",
         "I've forwarded your request to our technical team.",
         "Is there anything else I can assist you with today?"
       ];
-      
-      const randomResponse = supportResponses[Math.floor(Math.random() * supportResponses.length)];
-      
+      const reply = responses[Math.floor(Math.random() * responses.length)];
       const supportMessage = {
-        id: messages.length + 2,
-        text: randomResponse,
+        id: Date.now() + 1,
+        text: reply,
         sender: 'support',
         timestamp: new Date()
       };
-      
       setMessages(prev => [...prev, supportMessage]);
+      setTyping(false);
+      if (!isOpen) setUnread(u => u + 1);
     }, 1000);
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (autoScrollRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('chat_support_messages', JSON.stringify(messages));
+      }
+    } catch {}
+  }, [messages]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+  }, [isOpen]);
+
+  const onInputKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      return sendMessage(e);
+    }
+  };
+
+  const onScroll = () => {
+    if (!listRef.current) return;
+    const el = listRef.current;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+    autoScrollRef.current = nearBottom;
+  };
+
   return (
     <div className={styles.chatContainer}>
       {isOpen ? (
-        <div className={styles.chatWindow}>
+        <div className={styles.chatWindow} role="dialog" aria-modal="true" aria-labelledby="chat-title">
           <div className={styles.chatHeader}>
-            <h3>Customer Support</h3>
-            <button onClick={toggleChat} className={styles.closeButton}>×</button>
+            <h3 id="chat-title">Customer Support</h3>
+            <button onClick={toggleChat} className={styles.closeButton} aria-label="Close chat">×</button>
           </div>
           
-          <div className={styles.messagesContainer}>
+          <div ref={listRef} onScroll={onScroll} className={styles.messagesContainer} aria-live="polite">
             {messages.map(message => (
               <div 
                 key={message.id} 
@@ -83,6 +134,11 @@ export default function ChatSupport() {
                 </div>
               </div>
             ))}
+            {typing && (
+              <div className={`${styles.message} ${styles.support}`}>
+                <div className={styles.typingIndicator} aria-live="polite">Support is typing…</div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
           
@@ -91,6 +147,7 @@ export default function ChatSupport() {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={onInputKeyDown}
               placeholder="Type your message..."
               className={styles.messageInput}
             />
@@ -101,6 +158,7 @@ export default function ChatSupport() {
         <button onClick={toggleChat} className={styles.chatButton} aria-label="Open support chat">
           <Icon name="chat" size={24} color="#fff" />
           <span>Support</span>
+          {unread > 0 && <span className={styles.badge} aria-label={`${unread} new messages`}>{unread}</span>}
         </button>
       )}
     </div>
