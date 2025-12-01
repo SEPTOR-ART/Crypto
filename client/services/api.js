@@ -20,15 +20,12 @@ const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Da
 // Helper function to get cookie value by name
 const getCookie = (name) => {
   if (typeof document !== 'undefined') {
-    console.log('Available cookies:', document.cookie);
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) {
       const result = parts.pop().split(';').shift();
-      console.log(`Found cookie ${name}:`, result);
       return result;
     }
-    console.log(`Cookie ${name} not found`);
   }
   return null;
 };
@@ -93,27 +90,10 @@ export const apiRequest = async (endpoint, options = {}) => {
     const mutating = methodUpper === 'POST' || methodUpper === 'PUT' || methodUpper === 'DELETE' || methodUpper === 'PATCH';
     let csrfHeader = {};
     if (mutating && typeof document !== 'undefined') {
-      console.log('Attempting to extract CSRF token for mutating request');
       // Try to get CSRF token from cookie
       const csrfToken = getCookie('csrf_token');
       if (csrfToken) {
-        console.log('CSRF token found in cookie, adding to header');
         csrfHeader['X-CSRF-Token'] = csrfToken;
-      } else {
-        console.warn('CSRF token not found in cookie');
-        // Try alternative method to extract CSRF token
-        console.log('Trying alternative cookie parsing method');
-        const cookies = Object.fromEntries(
-          document.cookie.split(';').map(c => {
-            const [k, ...v] = c.trim().split('=');
-            return [k, decodeURIComponent(v.join('='))];
-          })
-        );
-        console.log('All parsed cookies:', cookies);
-        if (cookies.csrf_token) {
-          console.log('CSRF token found via alternative method:', cookies.csrf_token);
-          csrfHeader['X-CSRF-Token'] = cookies.csrf_token;
-        }
       }
     }
 
@@ -130,17 +110,13 @@ export const apiRequest = async (endpoint, options = {}) => {
     // Always include Authorization header for protected endpoints when token exists
     if (protectedPrefixes.some(p => endpoint.startsWith(p)) && typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
-      console.log('Token from localStorage:', token);
       if (token && !baseHeaders.Authorization && !baseHeaders.authorization) {
         baseHeaders.Authorization = `Bearer ${token}`;
-        console.log('Added Authorization header:', baseHeaders.Authorization);
-      } else if (!token) {
-        console.warn('No token found in localStorage');
-      } else {
-        console.log('Authorization header already exists or token is falsy');
       }
     }
-    if (methodUpper !== 'GET' && methodUpper !== 'HEAD' && !baseHeaders['Content-Type']) {
+    
+    // Ensure Content-Type is set for mutating requests if not already set
+    if (mutating && !baseHeaders['Content-Type']) {
       baseHeaders['Content-Type'] = 'application/json';
     }
 
@@ -149,14 +125,6 @@ export const apiRequest = async (endpoint, options = {}) => {
       credentials: needsCredentials ? 'include' : 'omit',
       ...options,
       signal: AbortSignal.timeout(30000)
-    });
-
-    // Log the request details for debugging
-    console.log('API request details:', {
-      url,
-      method: options.method || 'GET',
-      headers: baseHeaders,
-      credentials: needsCredentials ? 'include' : 'omit'
     });
 
     const contentType = response.headers.get('content-type') || '';

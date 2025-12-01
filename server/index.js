@@ -160,7 +160,9 @@ const startServer = () => {
     
     // Skip CSRF validation if Bearer token is present in Authorization header
     const authHeader = req.headers.authorization || req.headers.Authorization;
-    if (authHeader && authHeader.startsWith('Bearer')) return next();
+    if (authHeader && authHeader.startsWith('Bearer')) {
+      return next();
+    }
 
     // Read cookies
     let csrfCookie;
@@ -175,10 +177,21 @@ const startServer = () => {
     }
     const headerToken = req.headers['x-csrf-token'];
 
+    // If we have both cookie and header token, validate them
     if (csrfCookie && headerToken && csrfCookie === headerToken) {
       return next();
     }
-    console.warn('CSRF validation failed');
+    
+    // Log detailed information for debugging
+    console.warn('CSRF validation failed for request:', {
+      method: req.method,
+      path: req.path,
+      hasAuthHeader: !!authHeader,
+      hasCsrfCookie: !!csrfCookie,
+      hasHeaderToken: !!headerToken,
+      userAgent: req.headers['user-agent']
+    });
+    
     return res.status(403).json({ message: 'CSRF validation failed' });
   }
   app.use(csrfMiddleware);
