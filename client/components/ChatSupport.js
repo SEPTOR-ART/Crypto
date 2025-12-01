@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from '../styles/ChatSupport.module.css';
+import { useAuth } from '../context/AuthContext';
+import { createSupportMessage, getMySupportMessages } from '../services/supportService';
 import Icon from './Icon';
 
 export default function ChatSupport() {
@@ -15,6 +17,7 @@ export default function ChatSupport() {
     } catch {}
     return null;
   };
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => loadMessages() || [
     { id: 1, text: "Hello! How can I help you today?", sender: 'support', timestamp: new Date() }
@@ -47,6 +50,10 @@ export default function ChatSupport() {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setTyping(true);
+    // Persist to backend when authenticated
+    if (user) {
+      createSupportMessage({ text: userMessage.text }).catch(() => {});
+    }
     setTimeout(() => {
       const responses = [
         "Thanks for your message. Our team will get back to you shortly.",
@@ -77,6 +84,26 @@ export default function ChatSupport() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    // Load history from backend when chat opens and user authenticated
+    const load = async () => {
+      if (user && isOpen) {
+        try {
+          const serverMessages = await getMySupportMessages();
+          if (Array.isArray(serverMessages) && serverMessages.length > 0) {
+            const hydrated = serverMessages.flatMap(m => [
+              { id: m._id, text: m.text, sender: 'user', timestamp: new Date(m.createdAt) },
+              ...((m.replies || []).map(r => ({ id: `${m._id}-${r.timestamp}`, text: r.text, sender: r.sender, timestamp: new Date(r.timestamp) })))
+            ]);
+            hydrated.sort((a, b) => a.timestamp - b.timestamp);
+            setMessages(hydrated);
+          }
+        } catch {}
+      }
+    };
+    load();
+  }, [isOpen, user]);
 
   useEffect(() => {
     try {

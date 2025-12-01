@@ -108,7 +108,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     }
 
     // Include credentials only when needed (protected endpoints or mutations)
-    const protectedPrefixes = ['/api/users', '/api/transactions', '/api/admin', '/api/gift-cards'];
+  const protectedPrefixes = ['/api/users', '/api/transactions', '/api/admin', '/api/gift-cards', '/api/support'];
     const needsCredentials = mutating || protectedPrefixes.some(p => endpoint.startsWith(p));
 
     // Build headers: avoid setting Content-Type on GET/HEAD to prevent CORS preflight

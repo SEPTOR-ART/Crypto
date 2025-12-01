@@ -12,6 +12,7 @@ import {
   adminUpdateUserStatus,
   adminGetAllGiftCards
 } from '../services/adminService';
+import { adminListSupportMessages, adminUpdateSupportStatus, adminReplySupportMessage } from '../services/supportService';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Link from 'next/link';
 
@@ -825,31 +826,67 @@ export default function AdminDashboard() {
 
           {activeTab === 'support' && (
             <div className={styles.supportContent}>
-              <h2>Support Chat</h2>
-              <div className={styles.chatContainer}>
-                <div className={styles.chatMessages}>
-                  <div className={`${styles.message}`}>
-                    <div className={styles.messageHeader}>
-                      <span className={styles.userName}>John Doe</span>
-                      <span className={styles.timestamp}>2025-11-20 14:30</span>
+              <h2>Support Inbox</h2>
+              <div className={styles.filterRow}>
+                <select value={supportFilter} onChange={(e) => { setSupportFilter(e.target.value); loadSupport(e.target.value); }} className={styles.filterSelect}>
+                  <option value="open">Open</option>
+                  <option value="pending">Pending</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </div>
+              <div className={styles.supportGrid}>
+                <div className={styles.ticketList}>
+                  {supportMessages.map(m => (
+                    <div key={m._id} className={styles.ticketItem} onClick={() => setActiveTicketId(m._id)}>
+                      <div className={styles.ticketHeader}>
+                        <span className={styles.userName}>{m.userId?.email || 'User'}</span>
+                        <span className={styles.timestamp}>{new Date(m.createdAt).toLocaleString()}</span>
+                      </div>
+                      <div className={styles.ticketPreview}>{m.text}</div>
+                      <div className={styles.ticketStatus}>{m.status}</div>
                     </div>
-                    <div className={styles.messageContent}>
-                      I&apos;m having trouble with my withdrawal. It&apos;s been pending for over 24 hours.
-                    </div>
-                  </div>
-                  <div className={`${styles.message} ${styles.admin}`}>
-                    <div className={styles.messageHeader}>
-                      <span className={styles.userName}>Admin</span>
-                      <span className={styles.timestamp}>2025-11-20 14:32</span>
-                    </div>
-                    <div className={styles.messageContent}>
-                      Hello John, I can see your withdrawal request. Let me check the status for you.
-                    </div>
-                  </div>
+                  ))}
                 </div>
-                <div className={styles.chatInput}>
-                  <input type="text" placeholder="Type your message..." className={styles.messageInput} />
-                  <button className={styles.sendButton}>Send</button>
+                <div className={styles.ticketDetail}>
+                  {activeTicketId ? (
+                    (() => {
+                      const ticket = supportMessages.find(t => t._id === activeTicketId);
+                      if (!ticket) return null;
+                      return (
+                        <div className={styles.chatContainer}>
+                          <div className={styles.chatMessages}>
+                            <div className={styles.message}>
+                              <div className={styles.messageHeader}>
+                                <span className={styles.userName}>{ticket.userId?.email || 'User'}</span>
+                                <span className={styles.timestamp}>{new Date(ticket.createdAt).toLocaleString()}</span>
+                              </div>
+                              <div className={styles.messageContent}>{ticket.text}</div>
+                            </div>
+                            {(ticket.replies || []).map((r, idx) => (
+                              <div key={idx} className={`${styles.message} ${r.sender === 'admin' ? styles.admin : ''}`}>
+                                <div className={styles.messageHeader}>
+                                  <span className={styles.userName}>{r.sender === 'admin' ? 'Admin' : ticket.userId?.email || 'User'}</span>
+                                  <span className={styles.timestamp}>{new Date(r.timestamp).toLocaleString()}</span>
+                                </div>
+                                <div className={styles.messageContent}>{r.text}</div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className={styles.chatInput}>
+                            <input type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Type your reply..." className={styles.messageInput} />
+                            <button className={styles.sendButton} onClick={handleSupportReply}>Send</button>
+                            <select value={ticket.status} onChange={(e) => handleSupportStatus(ticket._id, e.target.value)} className={styles.filterSelect}>
+                              <option value="open">Open</option>
+                              <option value="pending">Pending</option>
+                              <option value="resolved">Resolved</option>
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className={styles.emptyState}>Select a ticket to view details</div>
+                  )}
                 </div>
               </div>
             </div>

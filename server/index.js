@@ -284,6 +284,7 @@ const startServer = () => {
   app.use('/api/assets', require('./routes/assetRoutes'));
   app.use('/api/prices', require('./routes/priceRoutes'));
   app.use('/api/admin', require('./routes/adminRoutes'));
+  app.use('/api/support', require('./routes/supportRoutes'));
 
   // Serve static files in production
   if (process.env.NODE_ENV === 'production') {
