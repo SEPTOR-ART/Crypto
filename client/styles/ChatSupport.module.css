@@ -85,6 +85,13 @@
   gap: 1rem;
 }
 
+.errorBanner {
+  background: #ffe5e8;
+  color: #b00020;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
 .badge {
   position: absolute;
   top: -8px;

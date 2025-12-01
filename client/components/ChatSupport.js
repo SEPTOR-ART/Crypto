@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import styles from '../styles/ChatSupport.module.css';
 import { useAuth } from '../context/AuthContext';
 import { createSupportMessage, getMySupportMessages } from '../services/supportService';
+import { apiRequest } from '../services/api';
 import Icon from './Icon';
 
 export default function ChatSupport() {
@@ -25,6 +26,7 @@ export default function ChatSupport() {
   const [inputValue, setInputValue] = useState('');
   const [typing, setTyping] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [sendError, setSendError] = useState('');
   const messagesEndRef = useRef(null);
   const listRef = useRef(null);
   const autoScrollRef = useRef(true);
@@ -52,7 +54,11 @@ export default function ChatSupport() {
     setTyping(true);
     // Persist to backend when authenticated
     if (user) {
-      createSupportMessage({ text: userMessage.text }).catch(() => {});
+      createSupportMessage({ text: userMessage.text })
+        .then(() => setSendError(''))
+        .catch((err) => {
+          setSendError(err?.message || 'Failed to send to support');
+        });
     }
     setTimeout(() => {
       const responses = [
@@ -84,6 +90,17 @@ export default function ChatSupport() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const preflight = async () => {
+      try {
+        if (user && isOpen) {
+          await apiRequest('/api/users/profile');
+        }
+      } catch {}
+    };
+    preflight();
+  }, [isOpen, user]);
 
   useEffect(() => {
     // Load history from backend when chat opens and user authenticated
@@ -146,6 +163,7 @@ export default function ChatSupport() {
             <h3 id="chat-title">Customer Support</h3>
             <button onClick={toggleChat} className={styles.closeButton} aria-label="Close chat">×</button>
           </div>
+          {sendError && <div className={styles.errorBanner}>{sendError}</div>}
           
           <div ref={listRef} onScroll={onScroll} className={styles.messagesContainer} aria-live="polite">
             {messages.map(message => (
