@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 // Track failed authentication attempts for rate limiting
 const failedAttempts = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 10; // Increased from 5 to 10 attempts
 
 // Clean up old entries periodically
 setInterval(() => {
@@ -22,6 +22,9 @@ const protect = async (req, res, next) => {
   
   // Get client IP for rate limiting
   const clientIP = req.ip || req.connection.remoteAddress;
+  
+  // Log request details for debugging
+  console.log('Auth middleware called for:', req.path, 'from IP:', clientIP);
   
   // Check rate limiting
   const attempts = failedAttempts.get(clientIP);
@@ -41,6 +44,7 @@ const protect = async (req, res, next) => {
   // Prefer Authorization header, else fall back to HttpOnly cookie 'session'
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+    console.log('Using Bearer token for authentication');
   } else if (req.headers.cookie) {
     const cookies = Object.fromEntries(
       req.headers.cookie.split(';').map(c => {
@@ -49,6 +53,9 @@ const protect = async (req, res, next) => {
       })
     );
     token = cookies.session;
+    console.log('Using session cookie for authentication, cookie present:', !!cookies.session);
+  } else {
+    console.log('No authorization header or cookies found');
   }
 
   if (!token) {

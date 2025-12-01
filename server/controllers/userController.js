@@ -188,6 +188,7 @@ const authUser = async (req, res) => {
       }
       
       const isPasswordValid = await user.comparePassword(password);
+      console.log('Password validation result:', isPasswordValid);
       if (isPasswordValid) {
         let token;
         if (process.env.JWT_SECRET) {
@@ -199,6 +200,7 @@ const authUser = async (req, res) => {
           const isProd = process.env.NODE_ENV === 'production';
           
           // Set secure HttpOnly cookie for session
+          console.log('Setting session cookie with sameSite: None and secure: true');
           res.cookie('session', token, {
             httpOnly: true, // XSS protection
             secure: true, // Always use HTTPS for cross-origin requests
@@ -208,6 +210,7 @@ const authUser = async (req, res) => {
           });
           
           // Set CSRF token
+          console.log('Setting CSRF token cookie with sameSite: None and secure: true');
           res.cookie('csrf_token', csrfToken, {
             httpOnly: false,
             secure: true, // Always use HTTPS for cross-origin requests

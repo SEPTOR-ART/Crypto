@@ -120,7 +120,7 @@ const startServer = () => {
   // Basic rate limiting for auth endpoints - increased limits for better user experience
   const authLimiter = rateLimit({ 
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 200, // Increased from 100 to 200 requests per window
+    max: 500, // Increased from 200 to 500 requests per window
     message: {
       error: 'Too many requests',
       message: 'Too many requests, please try again later.'
@@ -133,7 +133,7 @@ const startServer = () => {
   // Rate limiting for general API endpoints
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // 500 requests per window
+    max: 1000, // Increased from 500 to 1000 requests per window
     message: {
       error: 'Too many requests',
       message: 'Too many requests, please try again later.'
