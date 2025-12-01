@@ -17,6 +17,16 @@ const rateLimits = {
 };
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+// Helper function to get cookie value by name
+const getCookie = (name) => {
+  if (typeof document !== 'undefined') {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+  return null;
+};
+
 // Helper function to make API requests
 export const apiRequest = async (endpoint, options = {}) => {
   try {
@@ -77,12 +87,13 @@ export const apiRequest = async (endpoint, options = {}) => {
     const mutating = methodUpper === 'POST' || methodUpper === 'PUT' || methodUpper === 'DELETE' || methodUpper === 'PATCH';
     let csrfHeader = {};
     if (mutating && typeof document !== 'undefined') {
-      const cookieMap = Object.fromEntries(document.cookie.split(';').map(c => {
-        const [k, ...v] = c.trim().split('=');
-        return [k, decodeURIComponent(v.join('='))];
-      }));
-      if (cookieMap.csrf_token) {
-        csrfHeader['X-CSRF-Token'] = cookieMap.csrf_token;
+      // Try to get CSRF token from cookie
+      const csrfToken = getCookie('csrf_token');
+      if (csrfToken) {
+        console.log('CSRF token found in cookie, adding to header');
+        csrfHeader['X-CSRF-Token'] = csrfToken;
+      } else {
+        console.warn('CSRF token not found in cookie');
       }
     }
 
