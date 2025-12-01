@@ -88,7 +88,18 @@ export const AuthProvider = ({ children }) => {
       // No need to store token in localStorage as we're using cookies
       // Add a small delay to ensure cookies are properly set
       await new Promise(resolve => setTimeout(resolve, 100));
-      await checkUserLogin();
+      
+      // Check user login and wait for the state to be updated
+      let userData;
+      try {
+        userData = await authService.getProfile();
+        setUser(userData);
+      } catch (profileError) {
+        console.error('Failed to fetch user profile after login:', profileError);
+        setUser(null);
+        throw profileError;
+      }
+      
       startTokenRefresh();
       router.push(nextUrl || '/dashboard');
       return res;
