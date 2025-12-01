@@ -35,15 +35,14 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
       
-      // Load users and transactions
-      const [usersData, transactionsData, giftCardsData] = await Promise.all([
-        adminGetAllUsers(),
-        adminGetAllTransactions(),
-        adminGetAllGiftCards(1, 100) // Get first 100 gift cards for stats
-      ]);
-      
+      // Load data sequentially to avoid rate limiting
+      const usersData = await adminGetAllUsers();
       setUsers(usersData);
+      
+      const transactionsData = await adminGetAllTransactions();
       setTransactions(transactionsData);
+      
+      const giftCardsData = await adminGetAllGiftCards(1, 100); // Get first 100 gift cards for stats
       
       // Calculate gift card stats
       if (giftCardsData && giftCardsData.giftCards) {
@@ -230,13 +229,13 @@ export default function AdminDashboard() {
             console.log('Rate limit hit, extending refresh interval');
             // Extend the interval when rate limited
             clearInterval(intervalId);
-            intervalId = setInterval(refreshData, 600000); // 10 minutes when rate limited
+            intervalId = setInterval(refreshData, 1200000); // 20 minutes when rate limited
           }
         }
       };
       
-      // Refresh every 5 minutes (increased from 1 minute to reduce API load)
-      intervalId = setInterval(refreshData, 300000);
+      // Refresh every 10 minutes (increased from 5 minutes to reduce API load)
+      intervalId = setInterval(refreshData, 600000);
     };
     
     // Load initial data
@@ -273,13 +272,13 @@ export default function AdminDashboard() {
             console.log('Rate limit hit, extending refresh interval');
             // Extend the interval when rate limited
             clearInterval(intervalId);
-            intervalId = setInterval(refreshProfile, 600000); // 10 minutes when rate limited
+            intervalId = setInterval(refreshProfile, 1200000); // 20 minutes when rate limited
           }
         }
       };
       
-      // Refresh profile every 5 minutes (increased from 60 seconds)
-      intervalId = setInterval(refreshProfile, 300000);
+      // Refresh profile every 10 minutes (increased from 5 minutes)
+      intervalId = setInterval(refreshProfile, 600000);
     };
     
     startInterval();

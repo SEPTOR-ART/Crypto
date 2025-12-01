@@ -95,10 +95,12 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...csrfHeader,
       ...options.headers,
     };
-    if (needsCredentials && typeof window !== 'undefined') {
-      const stored = (typeof localStorage !== 'undefined') ? localStorage.getItem('token') : null;
-      if (stored && !baseHeaders.Authorization && !baseHeaders.authorization) {
-        baseHeaders.Authorization = `Bearer ${stored}`;
+    
+    // Always include Authorization header for protected endpoints when token exists
+    if (protectedPrefixes.some(p => endpoint.startsWith(p)) && typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token && !baseHeaders.Authorization && !baseHeaders.authorization) {
+        baseHeaders.Authorization = `Bearer ${token}`;
       }
     }
     if (methodUpper !== 'GET' && methodUpper !== 'HEAD' && !baseHeaders['Content-Type']) {
