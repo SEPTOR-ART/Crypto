@@ -151,6 +151,14 @@ export const apiRequest = async (endpoint, options = {}) => {
       signal: AbortSignal.timeout(30000)
     });
 
+    // Log the request details for debugging
+    console.log('API request details:', {
+      url,
+      method: options.method || 'GET',
+      headers: baseHeaders,
+      credentials: needsCredentials ? 'include' : 'omit'
+    });
+
     const contentType = response.headers.get('content-type') || '';
     let data;
     if (contentType.includes('application/json')) {
