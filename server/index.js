@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const WebSocket = require('ws');
+const path = require('path');
 const connectDB = require('./config/db');
 
 // Create Express app
