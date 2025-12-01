@@ -130,8 +130,14 @@ export const apiRequest = async (endpoint, options = {}) => {
     // Always include Authorization header for protected endpoints when token exists
     if (protectedPrefixes.some(p => endpoint.startsWith(p)) && typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
+      console.log('Token from localStorage:', token);
       if (token && !baseHeaders.Authorization && !baseHeaders.authorization) {
         baseHeaders.Authorization = `Bearer ${token}`;
+        console.log('Added Authorization header:', baseHeaders.Authorization);
+      } else if (!token) {
+        console.warn('No token found in localStorage');
+      } else {
+        console.log('Authorization header already exists or token is falsy');
       }
     }
     if (methodUpper !== 'GET' && methodUpper !== 'HEAD' && !baseHeaders['Content-Type']) {
