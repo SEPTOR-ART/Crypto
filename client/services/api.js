@@ -134,9 +134,9 @@ export const apiRequest = async (endpoint, options = {}) => {
     }
 
     const response = await fetch(url, {
+      ...options,
       headers: baseHeaders,
       credentials: needsCredentials ? 'include' : 'omit',
-      ...options,
       signal: AbortSignal.timeout(30000)
     });
 
