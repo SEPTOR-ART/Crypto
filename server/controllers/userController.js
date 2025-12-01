@@ -100,8 +100,8 @@ const registerUser = async (req, res) => {
         // Set secure HttpOnly cookie for session token
         res.cookie('session', token, {
           httpOnly: true, // Prevents XSS attacks
-          secure: isProd, // HTTPS only in production
-          sameSite: 'Lax', // More compatible than 'None'
+          secure: true, // Always use HTTPS for cross-origin requests
+          sameSite: 'None', // Required for cross-origin requests
           maxAge: 8 * 60 * 60 * 1000, // 8 hours
           path: '/',
         });
@@ -109,8 +109,8 @@ const registerUser = async (req, res) => {
         // Set CSRF token (readable by JavaScript for API calls)
         res.cookie('csrf_token', csrfToken, {
           httpOnly: false,
-          secure: isProd,
-          sameSite: 'Lax', // More compatible than 'None'
+          secure: true, // Always use HTTPS for cross-origin requests
+          sameSite: 'None', // Required for cross-origin requests
           maxAge: 8 * 60 * 60 * 1000,
           path: '/',
         });
@@ -201,8 +201,8 @@ const authUser = async (req, res) => {
           // Set secure HttpOnly cookie for session
           res.cookie('session', token, {
             httpOnly: true, // XSS protection
-            secure: isProd, // HTTPS only in production
-            sameSite: 'Lax', // More compatible than 'None'
+            secure: true, // Always use HTTPS for cross-origin requests
+            sameSite: 'None', // Required for cross-origin requests
             maxAge: 8 * 60 * 60 * 1000, // 8 hours
             path: '/',
           });
@@ -210,8 +210,8 @@ const authUser = async (req, res) => {
           // Set CSRF token
           res.cookie('csrf_token', csrfToken, {
             httpOnly: false,
-            secure: isProd,
-            sameSite: 'Lax', // More compatible than 'None'
+            secure: true, // Always use HTTPS for cross-origin requests
+            sameSite: 'None', // Required for cross-origin requests
             maxAge: 8 * 60 * 60 * 1000,
             path: '/',
           });
