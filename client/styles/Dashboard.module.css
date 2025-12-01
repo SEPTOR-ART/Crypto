@@ -2,6 +2,7 @@
   min-height: 100vh;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
+  overflow-x: hidden;
 }
 
 /* Hero Section */
@@ -447,6 +448,7 @@
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
   color: var(--color-text-primary);
+  word-break: break-word;
 }
 
 .kycStatus {
@@ -537,6 +539,11 @@
     padding: 0 var(--spacing-lg) var(--spacing-xl);
   }
   
+  .sectionHeader {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+
   .portfolioStats {
     grid-template-columns: 1fr;
   }
@@ -552,5 +559,20 @@
   
   .transactionDetails {
     text-align: left;
+  }
+}
+
+@media (max-width: 380px) {
+  .portfolioOverview,
+  .holdingsSection,
+  .transactionsSection,
+  .accountSection {
+    padding: var(--spacing-lg);
+  }
+  .title {
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
+  }
+  .portfolioValue {
+    font-size: clamp(2.25rem, 10vw, 3rem);
   }
 }
