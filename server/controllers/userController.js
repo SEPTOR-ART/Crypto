@@ -101,16 +101,16 @@ const registerUser = async (req, res) => {
         res.cookie('session', token, {
           httpOnly: true, // Prevents XSS attacks
           secure: isProd, // HTTPS only in production
-          sameSite: isProd ? 'None' : 'Lax', // CSRF protection
+          sameSite: 'Lax', // More compatible than 'None'
           maxAge: 8 * 60 * 60 * 1000, // 8 hours
           path: '/',
         });
-        
+                  
         // Set CSRF token (readable by JavaScript for API calls)
         res.cookie('csrf_token', csrfToken, {
           httpOnly: false,
           secure: isProd,
-          sameSite: isProd ? 'None' : 'Lax',
+          sameSite: 'Lax', // More compatible than 'None'
           maxAge: 8 * 60 * 60 * 1000,
           path: '/',
         });
@@ -202,7 +202,7 @@ const authUser = async (req, res) => {
           res.cookie('session', token, {
             httpOnly: true, // XSS protection
             secure: isProd, // HTTPS only in production
-            sameSite: isProd ? 'None' : 'Lax', // CSRF protection
+            sameSite: 'Lax', // More compatible than 'None'
             maxAge: 8 * 60 * 60 * 1000, // 8 hours
             path: '/',
           });
@@ -211,7 +211,7 @@ const authUser = async (req, res) => {
           res.cookie('csrf_token', csrfToken, {
             httpOnly: false,
             secure: isProd,
-            sameSite: isProd ? 'None' : 'Lax',
+            sameSite: 'Lax', // More compatible than 'None'
             maxAge: 8 * 60 * 60 * 1000,
             path: '/',
           });

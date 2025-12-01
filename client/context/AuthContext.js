@@ -86,6 +86,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authService.login(credentials);
       // No need to store token in localStorage as we're using cookies
+      // Add a small delay to ensure cookies are properly set
+      await new Promise(resolve => setTimeout(resolve, 100));
       await checkUserLogin();
       startTokenRefresh();
       router.push(nextUrl || '/dashboard');
