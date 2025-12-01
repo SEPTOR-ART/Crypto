@@ -175,7 +175,14 @@ const startServer = () => {
       );
       csrfCookie = cookies.csrf_token;
     }
-    const headerToken = req.headers['x-csrf-token'];
+    
+    // Get CSRF token from header (case-insensitive)
+    let headerToken;
+    const headerKeys = Object.keys(req.headers);
+    const csrfHeaderKey = headerKeys.find(key => key.toLowerCase() === 'x-csrf-token');
+    if (csrfHeaderKey) {
+      headerToken = req.headers[csrfHeaderKey];
+    }
 
     // If we have both cookie and header token, validate them
     if (csrfCookie && headerToken && csrfCookie === headerToken) {
