@@ -286,30 +286,18 @@ const getUserProfile = async (req, res) => {
     if (user) {
       console.log('User profile found for:', user.email);
       try {
-        let hasCsrfCookie = false;
-        if (req.headers.cookie) {
-          const cookies = Object.fromEntries(
-            req.headers.cookie.split(';').map(c => {
-              const [k, ...v] = c.trim().split('=');
-              return [k, decodeURIComponent(v.join('='))];
-            })
-          );
-          hasCsrfCookie = !!cookies.csrf_token;
-        }
-        if (!hasCsrfCookie) {
-          const crypto = require('crypto');
-          const csrfToken = crypto.randomBytes(32).toString('hex');
-          res.cookie('csrf_token', csrfToken, {
-            httpOnly: false,
-            secure: true,
-            sameSite: 'None',
-            maxAge: 8 * 60 * 60 * 1000,
-            path: '/',
-          });
-          console.log('CSRF token refreshed for user:', user.email);
-        }
+        const crypto = require('crypto');
+        const csrfToken = crypto.randomBytes(32).toString('hex');
+        res.cookie('csrf_token', csrfToken, {
+          httpOnly: false,
+          secure: true,
+          sameSite: 'None',
+          maxAge: 8 * 60 * 60 * 1000,
+          path: '/',
+        });
+        console.log('CSRF token set on profile fetch for user:', user.email);
       } catch (e) {
-        console.warn('Failed to refresh CSRF token on profile:', e.message);
+        console.warn('Failed to set CSRF token on profile:', e.message);
       }
       return res.json({
         _id: user._id,
