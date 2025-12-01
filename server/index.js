@@ -155,7 +155,8 @@ const startServer = () => {
     const isAuthEndpoint = (
       (req.path === '/api/users' && method === 'POST') ||
       (req.path === '/api/users/login' && method === 'POST') ||
-      (req.path === '/api/users/logout' && method === 'POST')
+      (req.path === '/api/users/logout' && method === 'POST') ||
+      (req.path === '/api/support/public' && method === 'POST')
     );
     if (isAuthEndpoint) return next();
     

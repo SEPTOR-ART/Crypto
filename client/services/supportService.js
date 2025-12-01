@@ -47,3 +47,11 @@ export const adminReplySupportMessage = async (id, text) => {
     body: JSON.stringify({ text })
   }));
 };
+
+export const createPublicSupportMessage = async ({ text, subject, name, email }) => {
+  return handleSupportRequest(() => apiRequest('/api/support/public', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, subject, name, email })
+  }));
+};

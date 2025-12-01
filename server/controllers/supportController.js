@@ -1,5 +1,6 @@
 const SupportMessage = require('../models/SupportMessage');
 const { Types } = require('mongoose');
+const { sendWhatsAppMessage } = require('../services/whatsapp');
 
 const createMessage = async (req, res) => {
   try {
@@ -13,6 +14,12 @@ const createMessage = async (req, res) => {
       subject: subject || undefined,
       status: 'open'
     });
+    try {
+      const email = req.user?.email || 'Unknown user';
+      const link = process.env.ADMIN_SUPPORT_URL || 'https://crypto-r29t.onrender.com/admin?tab=support';
+      const body = `New support message\nFrom: ${email}\nSubject: ${subject || '-'}\nText: ${text.trim()}\nOpen: ${link}`;
+      await sendWhatsAppMessage(body);
+    } catch (e) {}
     return res.status(201).json(msg);
   } catch (e) {
     return res.status(500).json({ message: 'Server error creating message' });
@@ -35,7 +42,7 @@ const adminList = async (req, res) => {
     if (status && ['open', 'pending', 'resolved'].includes(status)) {
       filter.status = status;
     }
-    const msgs = await SupportMessage.find(filter).sort({ createdAt: -1 }).limit(500);
+    const msgs = await SupportMessage.find(filter).populate('userId', 'email firstName lastName').sort({ createdAt: -1 }).limit(500);
     return res.json(msgs);
   } catch (e) {
     return res.status(500).json({ message: 'Server error fetching support messages' });
@@ -75,4 +82,28 @@ const adminReply = async (req, res) => {
   }
 };
 
-module.exports = { createMessage, getMyMessages, adminList, adminUpdateStatus, adminReply };
+module.exports = { createMessage, createPublicMessage, getMyMessages, adminList, adminUpdateStatus, adminReply };
+const createPublicMessage = async (req, res) => {
+  try {
+    const { text, subject, name, email } = req.body || {};
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ message: 'Text is required' });
+    }
+    const msg = await SupportMessage.create({
+      userId: undefined,
+      text: text.trim(),
+      subject: subject || undefined,
+      status: 'open',
+      createdAt: new Date()
+    });
+    try {
+      const who = email ? `${email}` : (name ? `${name}` : 'Anonymous');
+      const link = process.env.ADMIN_SUPPORT_URL || 'https://crypto-r29t.onrender.com/admin?tab=support';
+      const body = `New public support message\nFrom: ${who}\nSubject: ${subject || '-'}\nText: ${text.trim()}\nOpen: ${link}`;
+      await sendWhatsAppMessage(body);
+    } catch (e) {}
+    return res.status(201).json(msg);
+  } catch (e) {
+    return res.status(500).json({ message: 'Server error creating message' });
+  }
+};

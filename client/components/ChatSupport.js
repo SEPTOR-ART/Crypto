@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import styles from '../styles/ChatSupport.module.css';
 import { useAuth } from '../context/AuthContext';
-import { createSupportMessage, getMySupportMessages } from '../services/supportService';
+import { createSupportMessage, getMySupportMessages, createPublicSupportMessage } from '../services/supportService';
 import { apiRequest } from '../services/api';
 import Icon from './Icon';
 
@@ -55,6 +55,12 @@ export default function ChatSupport() {
     // Persist to backend when authenticated
     if (user) {
       createSupportMessage({ text: userMessage.text })
+        .then(() => setSendError(''))
+        .catch((err) => {
+          setSendError(err?.message || 'Failed to send to support');
+        });
+    } else {
+      createPublicSupportMessage({ text: userMessage.text })
         .then(() => setSendError(''))
         .catch((err) => {
           setSendError(err?.message || 'Failed to send to support');
