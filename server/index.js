@@ -157,7 +157,10 @@ const startServer = () => {
       (req.path === '/api/users/logout' && method === 'POST')
     );
     if (isAuthEndpoint) return next();
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) return next();
+    
+    // Skip CSRF validation if Bearer token is present in Authorization header
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer')) return next();
 
     // Read cookies
     let csrfCookie;
