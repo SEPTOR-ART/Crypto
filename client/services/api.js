@@ -31,6 +31,15 @@ const getCookie = (name) => {
   return null;
 };
 
+const getStoredToken = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem('auth_token') || null;
+    }
+  } catch {}
+  return null;
+};
+
 // Helper function to make API requests
 export const apiRequest = async (endpoint, options = {}) => {
   try {
@@ -111,9 +120,17 @@ export const apiRequest = async (endpoint, options = {}) => {
     // For protected endpoints, we rely on cookies rather than localStorage tokens
     // The credentials: 'include' option will send cookies automatically
     
-    // Ensure Content-Type is set for mutating requests if not already set
     if (mutating && !baseHeaders['Content-Type']) {
       baseHeaders['Content-Type'] = 'application/json';
+    }
+    if (needsCredentials) {
+      const hasAuth = !!(baseHeaders.Authorization || baseHeaders.authorization);
+      if (!hasAuth) {
+        const t = getStoredToken();
+        if (t) {
+          baseHeaders.Authorization = `Bearer ${t}`;
+        }
+      }
     }
 
     const response = await fetch(url, {
@@ -168,10 +185,16 @@ export const authService = {
   // Register a new user
   register: async (userData) => {
     try {
-      return await apiRequest('/api/users', {
+      const res = await apiRequest('/api/users', {
         method: 'POST',
         body: JSON.stringify(userData),
       });
+      try {
+        if (typeof window !== 'undefined' && res && res.token) {
+          window.localStorage.setItem('auth_token', res.token);
+        }
+      } catch {}
+      return res;
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -184,11 +207,17 @@ export const authService = {
   // Login user
   login: async (credentials) => {
     try {
-      return await apiRequest('/api/users/login', {
+      const res = await apiRequest('/api/users/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
         // Credentials are automatically included for this request
       });
+      try {
+        if (typeof window !== 'undefined' && res && res.token) {
+          window.localStorage.setItem('auth_token', res.token);
+        }
+      } catch {}
+      return res;
     } catch (error) {
       // Handle rate limit errors
       if (error.message && error.message.includes('429')) {
@@ -201,9 +230,15 @@ export const authService = {
   // Logout user (clear cookies)
   logout: async () => {
     try {
-      return await apiRequest('/api/users/logout', {
+      const res = await apiRequest('/api/users/logout', {
         method: 'POST'
       });
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('auth_token');
+        }
+      } catch {}
+      return res;
     } catch (error) {
       throw error;
     }
