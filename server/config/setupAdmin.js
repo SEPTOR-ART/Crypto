@@ -11,6 +11,7 @@ const setupAdminUser = async () => {
     const adminPassword = process.env.ADMIN_PASSWORD;
     const adminFirstName = process.env.ADMIN_FIRST_NAME || 'Admin';
     const adminLastName = process.env.ADMIN_LAST_NAME || 'User';
+    const adminPhone = process.env.ADMIN_PHONE;
 
     // Skip if no admin credentials configured
     if (!adminEmail) {
@@ -38,6 +39,10 @@ const setupAdminUser = async () => {
         console.log(`✅ Admin password updated for: ${adminEmail}`);
       }
       
+      if (adminPhone && adminUser.phone !== adminPhone) {
+        adminUser.phone = adminPhone;
+        updated = true;
+      }
       if (updated) {
         await adminUser.save();
         console.log(`✅ Promoted existing user to admin: ${adminEmail}`);
@@ -63,6 +68,7 @@ const setupAdminUser = async () => {
       firstName: adminFirstName,
       lastName: adminLastName,
       isAdmin: true,
+      phone: adminPhone,
       emailVerified: true,
       kycStatus: 'verified',
       balance: {

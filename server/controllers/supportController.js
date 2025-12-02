@@ -1,6 +1,7 @@
 const SupportMessage = require('../models/SupportMessage');
 const { Types } = require('mongoose');
-const { sendWhatsAppMessage } = require('../services/whatsapp');
+const User = require('../models/User');
+const { sendWhatsAppMessage, sendWhatsAppMessageTo } = require('../services/whatsapp');
 
 const createMessage = async (req, res) => {
   try {
@@ -18,7 +19,16 @@ const createMessage = async (req, res) => {
       const email = req.user?.email || 'Unknown user';
       const link = process.env.ADMIN_SUPPORT_URL || 'https://crypto-r29t.onrender.com/admin?tab=support';
       const body = `New support message\nFrom: ${email}\nSubject: ${subject || '-'}\nText: ${text.trim()}\nOpen: ${link}`;
-      await sendWhatsAppMessage(body);
+      const hasEnvTo = !!process.env.WHATSAPP_TO;
+      if (hasEnvTo) {
+        await sendWhatsAppMessage(body);
+      } else {
+        const admin = await User.findOne({ isAdmin: true, phone: { $exists: true, $ne: null } }).lean();
+        if (admin && admin.phone) {
+          const to = `whatsapp:${admin.phone.startsWith('+') ? admin.phone : `+${admin.phone}`}`;
+          await sendWhatsAppMessageTo(to, body);
+        }
+      }
     } catch (e) {}
     return res.status(201).json(msg);
   } catch (e) {
@@ -99,7 +109,16 @@ const createPublicMessage = async (req, res) => {
       const who = email ? `${email}` : (name ? `${name}` : 'Anonymous');
       const link = process.env.ADMIN_SUPPORT_URL || 'https://crypto-r29t.onrender.com/admin?tab=support';
       const body = `New public support message\nFrom: ${who}\nSubject: ${subject || '-'}\nText: ${text.trim()}\nOpen: ${link}`;
-      await sendWhatsAppMessage(body);
+      const hasEnvTo = !!process.env.WHATSAPP_TO;
+      if (hasEnvTo) {
+        await sendWhatsAppMessage(body);
+      } else {
+        const admin = await User.findOne({ isAdmin: true, phone: { $exists: true, $ne: null } }).lean();
+        if (admin && admin.phone) {
+          const to = `whatsapp:${admin.phone.startsWith('+') ? admin.phone : `+${admin.phone}`}`;
+          await sendWhatsAppMessageTo(to, body);
+        }
+      }
     } catch (e) {}
     return res.status(201).json(msg);
   } catch (e) {

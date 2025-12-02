@@ -30,4 +30,19 @@ async function sendWhatsAppMessage(body) {
   }
 }
 
-module.exports = { sendWhatsAppMessage };
+async function sendWhatsAppMessageTo(to, body) {
+  try {
+    if (process.env.WHATSAPP_ENABLED !== 'true') return false;
+    const from = process.env.WHATSAPP_FROM;
+    if (!from || !to) return false;
+    const client = getClient();
+    if (!client) return false;
+    const resp = await client.messages.create({ from, to, body });
+    return !!resp && !!resp.sid;
+  } catch (e) {
+    try { console.warn('WhatsApp send failed:', e.message); } catch {}
+    return false;
+  }
+}
+
+module.exports = { sendWhatsAppMessage, sendWhatsAppMessageTo };
