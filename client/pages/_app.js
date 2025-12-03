@@ -1,5 +1,6 @@
 import '../styles/globals.css';
 import Head from 'next/head';
+import { useEffect } from 'react';
 import { AuthProvider } from '../context/AuthContext';
 import HealthCheck from '../components/HealthCheck';
 import Header from '../components/Header';
@@ -14,6 +15,7 @@ function MyApp({ Component, pageProps }) {
         <meta charSet="utf-8" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <TawkLoader />
       <Header />
       <Component {...pageProps} />
       <Footer />
@@ -24,3 +26,21 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp;
+
+function TawkLoader() {
+  useEffect(() => {
+    const propertyId = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID;
+    const widgetId = process.env.NEXT_PUBLIC_TAWK_WIDGET_ID;
+    if (!propertyId || !widgetId) return;
+    const s1 = document.createElement('script');
+    s1.async = true;
+    s1.src = `https://embed.tawk.to/${propertyId}/${widgetId}`;
+    s1.charset = 'UTF-8';
+    s1.setAttribute('crossorigin', '*');
+    document.body.appendChild(s1);
+    return () => {
+      try { s1.remove(); } catch {}
+    };
+  }, []);
+  return null;
+}
