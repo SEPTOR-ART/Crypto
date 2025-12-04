@@ -82,7 +82,7 @@ export default function Home() {
       <Head>
         <title>CryptoZen - Asian-Inspired Cryptocurrency Exchange</title>
         <meta name="description" content="Modern, secure cryptocurrency exchange with Asian-inspired aesthetics" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.svg" />
       </Head>
 
       {/* Hero Section with Parallax Effect */}
