@@ -200,6 +200,9 @@ export default function ChatSupport() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={onInputKeyDown}
               placeholder="Type your message..."
+              id="chat-message"
+              name="chat-message"
+              aria-label="Type your support message"
               className={styles.messageInput}
             />
             <button type="submit" className={styles.sendButton}>Send</button>
