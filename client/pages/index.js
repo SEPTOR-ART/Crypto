@@ -3,7 +3,6 @@ import styles from '../styles/Home.module.css';
 import { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import ChatSupport from '../components/ChatSupport';
 import ThreeCoin from '../components/ThreeCoin';
 import HeroCanvas from '../components/HeroCanvas';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
@@ -267,7 +266,7 @@ export default function Home() {
         </div>
       </section>
 
-      <ChatSupport />
+      
     </div>
   );
 }
