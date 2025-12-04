@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/Settings.module.css';
-import ChatSupport from '../components/ChatSupport';
 import SessionTimer from '../components/SessionTimer';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
@@ -446,7 +445,6 @@ export default function Settings() {
           </div>
         </div>
         
-        <ChatSupport />
       </div>
     </ProtectedRoute>
   );

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/Dashboard.module.css';
-import ChatSupport from '../components/ChatSupport';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
@@ -295,7 +294,6 @@ export default function Dashboard() {
           </section>
         </main>
         
-        <ChatSupport />
       </div>
     </ProtectedRoute>
   );

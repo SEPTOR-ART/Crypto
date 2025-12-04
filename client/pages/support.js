@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import styles from '../styles/Support.module.css';
-import ChatSupport from '../components/ChatSupport';
 
 export default function Support() {
   const [formData, setFormData] = useState({
@@ -182,7 +181,26 @@ export default function Support() {
                 <h3>{method.title}</h3>
                 <p className={styles.methodDesc}>{method.description}</p>
                 <span className={styles.availability}>{method.availability}</span>
-                <button className={styles.methodButton}>{method.action}</button>
+                <button
+                  className={styles.methodButton}
+                  onClick={() => {
+                    if (method.title === 'Live Chat') {
+                      if (typeof window !== 'undefined' && window.Tawk_API && typeof window.Tawk_API.maximize === 'function') {
+                        window.Tawk_API.maximize();
+                      }
+                    } else if (method.title === 'Email Support') {
+                      if (typeof window !== 'undefined') {
+                        window.location.href = 'mailto:support@cryptozen.com';
+                      }
+                    } else if (method.title === 'Phone Support') {
+                      if (typeof window !== 'undefined') {
+                        window.location.href = 'tel:+18881234567';
+                      }
+                    }
+                  }}
+                >
+                  {method.action}
+                </button>
               </div>
             ))}
           </div>
@@ -317,7 +335,7 @@ export default function Support() {
           </form>
         </section>
 
-        <ChatSupport />
+        
       </div>
     </>
   );

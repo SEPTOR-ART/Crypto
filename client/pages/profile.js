@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/Settings.module.css';
-import ChatSupport from '../components/ChatSupport';
 import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Link from 'next/link';
@@ -231,7 +230,6 @@ export default function Profile() {
           </div>
         </div>
         
-        <ChatSupport />
       </div>
     </ProtectedRoute>
   );

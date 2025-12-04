@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import styles from '../styles/Trade.module.css';
-import ChatSupport from '../components/ChatSupport';
 import Chart from '../components/Chart';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
@@ -488,7 +487,6 @@ export default function Trade() {
           </div>
         </div>
         
-        <ChatSupport />
       </div>
     </ProtectedRoute>
   );
