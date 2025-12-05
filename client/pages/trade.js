@@ -15,6 +15,7 @@ export default function Trade() {
   const [total, setTotal] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('credit');
   const [orderBook, setOrderBook] = useState({ bids: [], asks: [] });
+  const [depth, setDepth] = useState({ bids: [], asks: [] });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const { user, loading: authLoading, updateUserBalance, refreshUser } = useAuth();
@@ -67,6 +68,13 @@ export default function Trade() {
     }
     
     setOrderBook({ bids, asks });
+
+    const maxBid = Math.max(...bids.map(b => parseFloat(b.amount) || 0), 0.0001);
+    const maxAsk = Math.max(...asks.map(a => parseFloat(a.amount) || 0), 0.0001);
+    setDepth({
+      bids: bids.map(b => ({ ...b, pct: Math.min(100, (parseFloat(b.amount) || 0) / maxBid * 100) })),
+      asks: asks.map(a => ({ ...a, pct: Math.min(100, (parseFloat(a.amount) || 0) / maxAsk * 100) }))
+    });
   }, [price]);
 
   // Refresh user profile periodically to ensure balance is up to date
@@ -311,20 +319,22 @@ export default function Trade() {
               <div className={styles.orderBookContent}>
                 <div className={styles.asks}>
                   <h4>Asks (Sell Orders)</h4>
-                  {orderBook.asks.slice(0, 5).map((ask, index) => (
+                  {depth.asks.slice(0, 5).map((ask, index) => (
                     <div key={index} className={styles.orderRow}>
                       <span className={styles.askPrice}>${ask.price}</span>
                       <span className={styles.orderAmount}>{ask.amount}</span>
+                      <span className={styles.depthBar} style={{width: `${ask.pct}%`, background: 'rgba(255,0,128,.25)'}}></span>
                     </div>
                   ))}
                 </div>
                 
                 <div className={styles.bids}>
                   <h4>Bids (Buy Orders)</h4>
-                  {orderBook.bids.slice(0, 5).map((bid, index) => (
+                  {depth.bids.slice(0, 5).map((bid, index) => (
                     <div key={index} className={styles.orderRow}>
                       <span className={styles.bidPrice}>${bid.price}</span>
                       <span className={styles.orderAmount}>{bid.amount}</span>
+                      <span className={styles.depthBar} style={{width: `${bid.pct}%`, background: 'rgba(0,212,255,.25)'}}></span>
                     </div>
                   ))}
                 </div>

@@ -15,6 +15,12 @@ export default function Wallet() {
   const [sendAddress, setSendAddress] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [activeTab, setActiveTab] = useState('transactions');
+  const [filterType, setFilterType] = useState('all');
+  const [filterAsset, setFilterAsset] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [addressBook, setAddressBook] = useState([]);
+  const [newLabel, setNewLabel] = useState('');
+  const [newAddress, setNewAddress] = useState('');
   const [slowNetwork, setSlowNetwork] = useState(false);
   const { user, refreshUser } = useAuth();
   const { prices: cryptoPrices, loading: pricesLoading } = useCryptoPrices();
@@ -64,6 +70,15 @@ export default function Wallet() {
     status: transaction.status,
     total: transaction.total
   })), [transactions]);
+
+  const filteredHistory = useMemo(() => {
+    return transactionHistory.filter(t => {
+      const typeOk = filterType === 'all' || t.type === filterType;
+      const assetOk = filterAsset === 'all' || t.crypto === filterAsset;
+      const statusOk = filterStatus === 'all' || t.status === filterStatus;
+      return typeOk && assetOk && statusOk;
+    });
+  }, [transactionHistory, filterType, filterAsset, filterStatus]);
 
   // Fetch user transactions
   useEffect(() => {
@@ -138,6 +153,33 @@ export default function Wallet() {
       }
     };
   }, [user, refreshUser]);
+
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('address_book') : null;
+      if (raw) setAddressBook(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const saveAddressBook = (next) => {
+    setAddressBook(next);
+    try {
+      if (typeof window !== 'undefined') window.localStorage.setItem('address_book', JSON.stringify(next));
+    } catch {}
+  };
+
+  const addAddress = () => {
+    if (!newLabel.trim() || !newAddress.trim()) return;
+    const next = [...addressBook, { id: Date.now(), label: newLabel.trim(), address: newAddress.trim() }];
+    setNewLabel('');
+    setNewAddress('');
+    saveAddressBook(next);
+  };
+
+  const removeAddress = (id) => {
+    const next = addressBook.filter(a => a.id !== id);
+    saveAddressBook(next);
+  };
 
   // Show loading state
   if (loading && transactions.length === 0) {
@@ -346,6 +388,7 @@ export default function Wallet() {
           <button className={`${styles.tab} ${activeTab === 'transactions' ? styles.activeTab : ''}`} onClick={() => setActiveTab('transactions')}>Transactions</button>
           <button className={`${styles.tab} ${activeTab === 'deposit' ? styles.activeTab : ''}`} onClick={() => setActiveTab('deposit')}>Deposit</button>
           <button className={`${styles.tab} ${activeTab === 'send' ? styles.activeTab : ''}`} onClick={() => setActiveTab('send')}>Send</button>
+          <button className={`${styles.tab} ${activeTab === 'address-book' ? styles.activeTab : ''}`} onClick={() => setActiveTab('address-book')}>Address Book</button>
         </div>
 
         {/* Send Form */}
@@ -424,15 +467,35 @@ export default function Wallet() {
             <h2>Transaction History</h2>
             <Link href="/dashboard" className={styles.viewAllButton}>View Dashboard</Link>
           </div>
+          <div className={styles.filters}>
+            <select value={filterType} onChange={(e)=>setFilterType(e.target.value)} className={styles.filterSelect}>
+              <option value="all">All Types</option>
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+              <option value="send">Send</option>
+            </select>
+            <select value={filterAsset} onChange={(e)=>setFilterAsset(e.target.value)} className={styles.filterSelect}>
+              <option value="all">All Assets</option>
+              {walletBalances.map(w=> (
+                <option key={w.symbol} value={w.symbol}>{w.symbol}</option>
+              ))}
+            </select>
+            <select value={filterStatus} onChange={(e)=>setFilterStatus(e.target.value)} className={styles.filterSelect}>
+              <option value="all">All Status</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
           {slowNetwork && (
             <div className={styles.loading}>Slow network detected. Still loading latest transactions...</div>
           )}
           
           {loading && transactions.length > 0 ? (
             <div className={styles.loading}>Refreshing transactions...</div>
-          ) : transactionHistory.length > 0 ? (
+          ) : filteredHistory.length > 0 ? (
             <div className={styles.transactionsList}>
-              {transactionHistory.map((transaction) => (
+              {filteredHistory.map((transaction) => (
                 <div key={transaction.id} className={styles.transactionItem}>
                   <div className={styles.transactionInfo}>
                     <span className={`${styles.transactionType} ${transaction.type === 'send' ? styles.sent : styles.received}`}>
@@ -459,13 +522,52 @@ export default function Wallet() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className={styles.emptyState}>
-              <p>No transactions yet.</p>
-              <Link href="/trade" className={styles.getStartedButton}>Start Trading</Link>
-            </div>
-          )}
+        ) : (
+          <div className={styles.emptyState}>
+            <p>No transactions yet.</p>
+            <Link href="/trade" className={styles.getStartedButton}>Start Trading</Link>
+          </div>
+        )}
         </div>
+        )}
+
+        {activeTab === 'address-book' && (
+          <div className={styles.transactionHistory}>
+            <div className={styles.sectionHeader}>
+              <h2>Address Book</h2>
+            </div>
+            <div className={styles.sendForm}>
+              <div className={styles.formGroup}>
+                <label>Label</label>
+                <input type="text" value={newLabel} onChange={(e)=>setNewLabel(e.target.value)} className={styles.input} />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Address</label>
+                <input type="text" value={newAddress} onChange={(e)=>setNewAddress(e.target.value)} className={styles.input} />
+              </div>
+              <button type="button" className={styles.sendButton} onClick={addAddress}>Add</button>
+            </div>
+            <div className={styles.transactionsList}>
+              {addressBook.length === 0 ? (
+                <div className={styles.emptyState}><p>No saved addresses.</p></div>
+              ) : (
+                addressBook.map(entry => (
+                  <div key={entry.id} className={styles.transactionItem}>
+                    <div className={styles.transactionInfo}>
+                      <span className={styles.transactionCrypto}>{entry.label}</span>
+                    </div>
+                    <div className={styles.transactionAddress}>
+                      <span>{entry.address}</span>
+                    </div>
+                    <div className={styles.transactionStatus}>
+                      <button className={styles.copyButton} onClick={() => setSendAddress(entry.address)}>Use</button>
+                      <button className={styles.copyButton} onClick={() => removeAddress(entry.id)}>Delete</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         )}
       </div>
     </ProtectedRoute>

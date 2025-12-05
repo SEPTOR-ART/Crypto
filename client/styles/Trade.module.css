@@ -318,6 +318,13 @@
   font-family: 'Space Grotesk', monospace;
 }
 
+.depthBar {
+  display: block;
+  height: 6px;
+  border-radius: 4px;
+  margin-left: var(--spacing-sm);
+}
+
 /* Trading Panel */
 .tradingPanel {
   background: var(--glass-bg);
