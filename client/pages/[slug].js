@@ -195,6 +195,117 @@ export default function InfoPage({ slug }) {
     );
   };
 
+  const GiftCards = () => {
+    const [amount, setAmount] = useState('50');
+    const [recipient, setRecipient] = useState('');
+    const [sender, setSender] = useState('');
+    const [message, setMessage] = useState('');
+    const [design, setDesign] = useState('Neon');
+    const [code, setCode] = useState('');
+    const [redeemCode, setRedeemCode] = useState('');
+    const [status, setStatus] = useState('');
+    const [error, setError] = useState('');
+
+    const designs = ['Neon','Classic','Aurora','Carbon'];
+
+    const generateCode = () => {
+      const rand = () => Math.random().toString(36).slice(2,6).toUpperCase();
+      return `GC-${rand()}-${rand()}`;
+    };
+
+    const handlePurchase = () => {
+      setError('');
+      setStatus('');
+      if (!recipient || !sender) {
+        setError('Recipient and sender are required');
+        return;
+      }
+      const c = generateCode();
+      setCode(c);
+      setStatus('Gift card created');
+    };
+
+    const handleRedeem = () => {
+      setError('');
+      setStatus('');
+      if (!redeemCode.trim()) {
+        setError('Enter a gift card code');
+        return;
+      }
+      setStatus('Redeemed successfully');
+    };
+
+    return (
+      <div style={{marginTop:'1.5rem'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:'1rem'}}>
+          <div style={{padding:'1rem',border:'1px solid #eee',borderRadius:8}}>
+            <div style={{fontWeight:700,marginBottom:'.5rem'}}>Purchase Gift Card</div>
+            <div style={{display:'grid',gap:'.75rem'}}>
+              <div>
+                <div style={{fontSize:'.8rem',color:'#6c757d'}}>Amount (USD)</div>
+                <select value={amount} onChange={(e)=>setAmount(e.target.value)} style={{width:'100%',padding:'.5rem'}}>
+                  <option>25</option><option>50</option><option>100</option><option>250</option>
+                </select>
+              </div>
+              <div>
+                <div style={{fontSize:'.8rem',color:'#6c757d'}}>Design</div>
+                <select value={design} onChange={(e)=>setDesign(e.target.value)} style={{width:'100%',padding:'.5rem'}}>
+                  {designs.map((d)=>(<option key={d}>{d}</option>))}
+                </select>
+              </div>
+              <div>
+                <div style={{fontSize:'.8rem',color:'#6c757d'}}>Recipient Email</div>
+                <input value={recipient} onChange={(e)=>setRecipient(e.target.value)} placeholder="user@example.com" style={{width:'100%',padding:'.5rem'}} />
+              </div>
+              <div>
+                <div style={{fontSize:'.8rem',color:'#6c757d'}}>Sender Name</div>
+                <input value={sender} onChange={(e)=>setSender(e.target.value)} placeholder="Your name" style={{width:'100%',padding:'.5rem'}} />
+              </div>
+              <div>
+                <div style={{fontSize:'.8rem',color:'#6c757d'}}>Message (optional)</div>
+                <textarea value={message} onChange={(e)=>setMessage(e.target.value)} rows={3} style={{width:'100%',padding:'.5rem'}} />
+              </div>
+              <button onClick={handlePurchase} style={{padding:'.6rem 1rem',background:'#1a2a6c',color:'#fff',border:'none',borderRadius:6}}>Create Gift Card</button>
+              {error && <div style={{color:'#d63384'}}>{error}</div>}
+              {status && <div style={{color:'#00d488'}}>{status}</div>}
+              {code && (
+                <div style={{marginTop:'.5rem',padding:'.75rem',border:'1px solid #eee',borderRadius:8}}>
+                  <div style={{fontWeight:700}}>Card Preview</div>
+                  <div style={{color:'#6c757d'}}>Design: {design}</div>
+                  <div style={{marginTop:'.25rem'}}>Code: <span style={{fontFamily:'Space Grotesk, monospace'}}>{code}</span></div>
+                  <div style={{fontSize:'.85rem',color:'#6c757d',marginTop:'.5rem'}}>Send to {recipient}. Amount ${amount}. Non-refundable. Expires in 24 months.</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{padding:'1rem',border:'1px solid #eee',borderRadius:8}}>
+            <div style={{fontWeight:700,marginBottom:'.5rem'}}>Redeem Gift Card</div>
+            <div style={{display:'grid',gap:'.75rem'}}>
+              <input value={redeemCode} onChange={(e)=>setRedeemCode(e.target.value)} placeholder="GC-XXXX-XXXX" style={{width:'100%',padding:'.5rem'}} />
+              <button onClick={handleRedeem} style={{padding:'.6rem 1rem',background:'#00d488',color:'#0b132b',border:'none',borderRadius:6}}>Redeem</button>
+              {error && !code && <div style={{color:'#d63384'}}>{error}</div>}
+              {status && !code && <div style={{color:'#00d488'}}>{status}</div>}
+              <div style={{fontSize:'.85rem',color:'#6c757d'}}>Redemption converts to account balance in USD equivalent.</div>
+            </div>
+          </div>
+
+          <div style={{padding:'1rem',border:'1px solid #eee',borderRadius:8}}>
+            <div style={{fontWeight:700,marginBottom:'.5rem'}}>Popular Designs</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:'.75rem'}}>
+              {designs.map((d)=> (
+                <div key={d} style={{padding:'1rem',border:'1px solid #eee',borderRadius:8,textAlign:'center'}}>
+                  <div style={{fontWeight:700}}>{d}</div>
+                  <div style={{fontSize:'.85rem',color:'#6c757d'}}>Digital delivery</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const ContactForm = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -444,6 +555,7 @@ export default function InfoPage({ slug }) {
           {slug === 'help-center' && <HelpCenter />}
           {slug === 'about' && <About />}
           {slug === 'press' && <PressKit />}
+          {slug === 'gift-cards' && <GiftCards />}
           {['terms','privacy','security','compliance','licenses'].includes(slug) && <LegalDoc title={content.title} />}
           {slug === 'careers' && <Careers />}
           {slug === 'blog' && <Blog />}
