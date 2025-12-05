@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [success, setSuccess] = useState('');
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
+  const [balanceNotice, setBalanceNotice] = useState('');
   const { user, loading: authLoading, refreshUser, isAdmin } = useAuth();
   const canModify = isAdmin(user);
   const router = useRouter();
@@ -152,6 +153,12 @@ export default function AdminDashboard() {
         throw new Error('No user selected');
       }
       
+      const prevAmount = selectedUser?.balance && selectedUser.balance[balanceUpdate.asset] !== undefined
+        ? Number(selectedUser.balance[balanceUpdate.asset])
+        : 0;
+      const nextAmount = Number(balanceUpdate.amount);
+      const delta = nextAmount - prevAmount;
+
       await adminUpdateUserBalance(
         selectedUser._id, 
         balanceUpdate.asset, 
@@ -159,6 +166,13 @@ export default function AdminDashboard() {
       );
       
       setSuccess('User balance updated successfully');
+      if (delta !== 0) {
+        const kind = delta > 0 ? 'deposit' : 'withdrawal';
+        setBalanceNotice(`Transaction logged: ${kind} ${Math.abs(delta)} ${balanceUpdate.asset}`);
+        setTimeout(() => setBalanceNotice(''), 6000);
+      } else {
+        setBalanceNotice('');
+      }
       
       // Reload user details
       await loadUserDetails(selectedUser._id);
@@ -628,6 +642,9 @@ export default function AdminDashboard() {
                     
                     <div className={styles.detailSection}>
                       <h4>Update Balance</h4>
+                      {balanceNotice && (
+                        <div className={styles.success}>{balanceNotice}</div>
+                      )}
                       {editingBalance ? (
                         <form onSubmit={handleUpdateBalance} className={styles.balanceForm}>
                           <div className={styles.formRow}>
