@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
   const { user, loading: authLoading, refreshUser, isAdmin } = useAuth();
-  const isSuperAdmin = user?.role === 'super_admin';
+  const canModify = isAdmin(user);
   const router = useRouter();
   const [supportMessages, setSupportMessages] = useState([]);
   const [supportFilter, setSupportFilter] = useState('open');
@@ -221,16 +221,16 @@ export default function AdminDashboard() {
           setSuccess('Transaction rejected successfully');
           break;
         case 'modify':
-          if (!isSuperAdmin) {
-            setError('Super admin privileges required');
+          if (!canModify) {
+            setError('Admin privileges required');
             break;
           }
           setPendingEdit(transactionId);
           setShowEditModal(true);
           break;
         case 'rollback':
-          if (!isSuperAdmin) {
-            setError('Super admin privileges required');
+          if (!canModify) {
+            setError('Admin privileges required');
             break;
           }
           setPendingRollback(transactionId);
@@ -358,8 +358,8 @@ export default function AdminDashboard() {
 
   const confirmModify = async () => {
     try {
-      if (!isSuperAdmin) {
-        setError('Super admin privileges required');
+      if (!canModify) {
+        setError('Admin privileges required');
         return;
       }
       const changes = {};
@@ -380,8 +380,8 @@ export default function AdminDashboard() {
 
   const confirmRollback = async () => {
     try {
-      if (!isSuperAdmin) {
-        setError('Super admin privileges required');
+      if (!canModify) {
+        setError('Admin privileges required');
         return;
       }
       await adminRollbackTransaction(pendingRollback, Number(rollbackRevision));
@@ -742,7 +742,7 @@ export default function AdminDashboard() {
                                 </button>
                               </>
                             )}
-                            {isSuperAdmin && (
+                            {canModify && (
                               <>
                                 <button 
                                   className={styles.viewButton}
@@ -779,22 +779,26 @@ export default function AdminDashboard() {
                       <div>
                         <strong>After</strong>
                         <div>
-                          <select value={editChanges.type} onChange={e => setEditChanges(prev => ({ ...prev, type: e.target.value }))}>
+                          <label htmlFor="edit-type">Type</label>
+                          <select id="edit-type" name="edit-type" value={editChanges.type} onChange={e => setEditChanges(prev => ({ ...prev, type: e.target.value }))}>
                             <option value="">(unchanged)</option>
                             <option value="buy">buy</option>
                             <option value="sell">sell</option>
                           </select>
                         </div>
                         <div>
-                          <input type="number" placeholder="Amount" value={editChanges.amount} onChange={e => setEditChanges(prev => ({ ...prev, amount: e.target.value }))} />
+                          <label htmlFor="edit-amount">Amount</label>
+                          <input id="edit-amount" name="edit-amount" type="number" placeholder="Amount" value={editChanges.amount} onChange={e => setEditChanges(prev => ({ ...prev, amount: e.target.value }))} />
                         </div>
                         <div>
-                          <input type="number" placeholder="Price" value={editChanges.price} onChange={e => setEditChanges(prev => ({ ...prev, price: e.target.value }))} />
+                          <label htmlFor="edit-price">Price</label>
+                          <input id="edit-price" name="edit-price" type="number" placeholder="Price" value={editChanges.price} onChange={e => setEditChanges(prev => ({ ...prev, price: e.target.value }))} />
                         </div>
                       </div>
                     </div>
                     <div className={styles.modalFooter}>
-                      <input type="text" placeholder="Reason" value={editReason} onChange={e => setEditReason(e.target.value)} />
+                      <label htmlFor="edit-reason">Reason</label>
+                      <input id="edit-reason" name="edit-reason" type="text" placeholder="Reason" value={editReason} onChange={e => setEditReason(e.target.value)} />
                       <button className={styles.approveButton} onClick={confirmModify}>Confirm</button>
                       <button className={styles.rejectButton} onClick={() => { setShowEditModal(false); setPendingEdit(null); }}>Cancel</button>
                     </div>
