@@ -4,6 +4,7 @@ import Chart from '../components/Chart';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/router';
 import { useCryptoPrices } from '../hooks/useCryptoPrices';
+import { useMarketData } from '../hooks/useMarketData';
 import { transactionService, giftCardService } from '../services/api';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Link from 'next/link';
@@ -28,6 +29,9 @@ export default function Trade() {
 
   // Get current price for selected crypto
   const price = cryptoPrices[selectedCrypto] || 0;
+  const symbol = `${selectedCrypto}USD`;
+  const { data: marketAgg } = useMarketData({ symbols: [symbol], metrics: true });
+  const agg = Array.isArray(marketAgg) ? marketAgg.find(d => d.symbol === symbol) : null;
 
   // Cryptocurrencies with real data
   const cryptocurrencies = [
@@ -494,6 +498,17 @@ export default function Trade() {
                 </div>
               </div>
             </div>
+            {agg && (
+              <div className={styles.quickStats}>
+                <h3>Verified Rates</h3>
+                <div className={styles.statsGrid}>
+                  <div className={styles.statItem}><span className={styles.statLabel}>VWAP</span><span className={styles.statValue}>${Number(agg.verified?.vwap||0).toFixed(2)}</span></div>
+                  <div className={styles.statItem}><span className={styles.statLabel}>Mid</span><span className={styles.statValue}>${Number(agg.verified?.priceMid||0).toFixed(2)}</span></div>
+                  <div className={styles.statItem}><span className={styles.statLabel}>Sources</span><span className={styles.statValue}>{Object.keys(agg.sources||{}).length}</span></div>
+                  <div className={styles.statItem}><span className={styles.statLabel}>Discrepancy</span><span className={styles.statValue}>{Number(agg.verified?.discrepancyPct||0).toFixed(2)}%</span></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

@@ -97,6 +97,7 @@ export default function Header() {
               <>
                 <li><Link href="/dashboard" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Dashboard</Link></li>
                 <li><Link href="/trade" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Trade</Link></li>
+                <li><Link href="/rates" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Rates</Link></li>
                 <li><Link href="/margin" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Margin</Link></li>
                 <li><Link href="/[slug]" as="/staking" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Staking</Link></li>
                 <li><Link href="/wallet" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Wallet</Link></li>
@@ -138,6 +139,7 @@ export default function Header() {
             ) : (
               <>
                 <li><Link href="/trade" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Trade</Link></li>
+                <li><Link href="/rates" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Rates</Link></li>
                 <li><Link href="/margin" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Margin</Link></li>
                 <li><Link href="/[slug]" as="/staking" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Staking</Link></li>
                 <li><Link href="/support" className={styles.navLink} onMouseEnter={(e)=>gsap.to(e.currentTarget,{y:-2,duration:.2})} onMouseLeave={(e)=>gsap.to(e.currentTarget,{y:0,duration:.2})}>Support</Link></li>
