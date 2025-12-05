@@ -18,13 +18,79 @@ export const useCryptoPrices = () => {
   const pollIntervalRef = useRef(null);
   const reconnectAttemptRef = useRef(false);
   const mountedRef = useRef(true);
+  const cooldownUntilRef = useRef(0);
+  const disableExternal = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_DISABLE_EXTERNAL_RATES === '1') || false;
+  const isStaticHost = typeof window !== 'undefined' && /netlify\.app$/.test(window.location.hostname);
+
+  const timeoutFetch = async (url, init = {}, timeoutMs = 2500) => {
+    const controller = AbortSignal.timeout(timeoutMs);
+    return fetch(url, { ...init, signal: controller });
+  };
+
+  const aggregateSymbol = async (symbol) => {
+    const parseBinance = async () => {
+      const pair = symbol + 'USDT';
+      const [book, stats] = await Promise.all([
+        timeoutFetch(`https://api.binance.com/api/v3/ticker/bookTicker?symbol=${pair}`),
+        timeoutFetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`)
+      ]);
+      const b = await book.json();
+      const s = await stats.json();
+      return { bid: parseFloat(b.bidPrice), ask: parseFloat(b.askPrice), volume24h: parseFloat(s.volume) };
+    };
+    const parseCoinbase = async () => {
+      const pair = symbol + '-USD';
+      const [ticker, stats] = await Promise.all([
+        timeoutFetch(`https://api.exchange.coinbase.com/products/${pair}/ticker`, { headers: { 'User-Agent': 'CryptoZen' } }),
+        timeoutFetch(`https://api.exchange.coinbase.com/products/${pair}/stats`, { headers: { 'User-Agent': 'CryptoZen' } })
+      ]);
+      const t = await ticker.json();
+      const s = await stats.json();
+      return { bid: parseFloat(t.bid), ask: parseFloat(t.ask), volume24h: parseFloat(s.volume) };
+    };
+    const parseKraken = async () => {
+      const map = { BTC: 'XBTUSD', ETH: 'ETHUSD', LTC: 'LTCUSD', XRP: 'XRPUSD' };
+      const pair = map[symbol] || `${symbol}USD`;
+      const res = await timeoutFetch(`https://api.kraken.com/0/public/Ticker?pair=${pair}`);
+      const json = await res.json();
+      const key = Object.keys(json.result || {})[0];
+      const d = json.result?.[key];
+      return { bid: parseFloat(d?.b?.[0]), ask: parseFloat(d?.a?.[0]), volume24h: parseFloat(d?.v?.[1] || d?.v?.[0] || 0) };
+    };
+    const results = await Promise.allSettled([parseBinance(), parseCoinbase(), parseKraken()]);
+    const mids = results.filter(r => r.status === 'fulfilled').map(r => {
+      const v = r.value; return (v.bid + v.ask) / 2;
+    }).filter(v => isFinite(v));
+    if (!mids.length) return 0;
+    return mids.reduce((a,b)=>a+b,0) / mids.length;
+  };
 
   useEffect(() => {
     // Get initial prices
     const fetchInitialPrices = async () => {
       try {
-        const initialPrices = await cryptoService.getPrices();
-        setPrices(initialPrices);
+        const initial = await cryptoService.getPrices();
+        const mapping = initial && initial.prices ? initial.prices : initial;
+        const normalized = {
+          BTC: Number(mapping?.BTC || 0),
+          ETH: Number(mapping?.ETH || 0),
+          LTC: Number(mapping?.LTC || 0),
+          XRP: Number(mapping?.XRP || 0)
+        };
+        const offline = typeof navigator !== 'undefined' && navigator && navigator.onLine === false;
+        const skipExternal = disableExternal || isStaticHost || offline || (cooldownUntilRef.current && Date.now() < cooldownUntilRef.current);
+        if (!skipExternal && (normalized.BTC <= 0 || normalized.ETH <= 0)) {
+          const [btc, eth, ltc, xrp] = await Promise.all([
+            aggregateSymbol('BTC'),
+            aggregateSymbol('ETH'),
+            aggregateSymbol('LTC'),
+            aggregateSymbol('XRP')
+          ]);
+          setPrices({ BTC: btc || normalized.BTC, ETH: eth || normalized.ETH, LTC: ltc || normalized.LTC, XRP: xrp || normalized.XRP });
+        } else {
+          setPrices(normalized);
+          if (skipExternal) cooldownUntilRef.current = Date.now() + 5 * 60 * 1000;
+        }
         setLoading(false);
         setError(null);
       } catch (err) {
@@ -57,7 +123,26 @@ export const useCryptoPrices = () => {
             pollIntervalRef.current = setInterval(async () => {
               try {
                 const refreshed = await cryptoService.getPrices();
-                setPrices(prev => ({ ...prev, ...refreshed }));
+                const mapping = refreshed && refreshed.prices ? refreshed.prices : refreshed;
+                const normalized = {
+                  BTC: Number(mapping?.BTC || 0),
+                  ETH: Number(mapping?.ETH || 0),
+                  LTC: Number(mapping?.LTC || 0),
+                  XRP: Number(mapping?.XRP || 0)
+                };
+                const offline = typeof navigator !== 'undefined' && navigator && navigator.onLine === false;
+                const skipExternal = disableExternal || isStaticHost || offline || (cooldownUntilRef.current && Date.now() < cooldownUntilRef.current);
+                if (!skipExternal && (normalized.BTC <= 0 || normalized.ETH <= 0)) {
+                  const [btc, eth, ltc, xrp] = await Promise.all([
+                    aggregateSymbol('BTC'),
+                    aggregateSymbol('ETH'),
+                    aggregateSymbol('LTC'),
+                    aggregateSymbol('XRP')
+                  ]);
+                  setPrices({ BTC: btc || normalized.BTC, ETH: eth || normalized.ETH, LTC: ltc || normalized.LTC, XRP: xrp || normalized.XRP });
+                } else {
+                  setPrices(normalized);
+                }
                 setRefreshing(true);
                 setTimeout(() => setRefreshing(false), 300);
               } catch (e) {

@@ -340,29 +340,74 @@ const startServer = () => {
     });
   };
 
-  // Send initial price data to a client
-  const sendInitialPrices = (ws) => {
-    // Mock initial prices
-    const initialPrices = {
-      BTC: 43250.75,
-      ETH: 2650.30,
-      LTC: 85.42,
-      XRP: 0.52
-    };
-    ws.send(JSON.stringify({ type: 'INITIAL_PRICES', data: initialPrices }));
+  let cache = { prices: null, ts: 0 };
+  const timeoutFetch = async (url, init = {}, timeoutMs = 2500) => {
+    const signal = AbortSignal.timeout(timeoutMs);
+    const res = await fetch(url, { ...init, signal });
+    return res;
   };
-
-  // Simulate price updates (in a real app, this would come from an external API)
-  setInterval(() => {
-    // Mock price updates
-    const priceUpdates = {
-      BTC: 43250.75 + (Math.random() - 0.5) * 100,
-      ETH: 2650.30 + (Math.random() - 0.5) * 20,
-      LTC: 85.42 + (Math.random() - 0.5) * 2,
-      XRP: 0.52 + (Math.random() - 0.5) * 0.02
-    };
-    broadcastPrices(priceUpdates);
-  }, 5000); // Update every 5 seconds
+  const parseBinance = async (symbol) => {
+    const pair = symbol + 'USDT';
+    const [book, stats] = await Promise.all([
+      timeoutFetch(`https://api.binance.com/api/v3/ticker/bookTicker?symbol=${pair}`),
+      timeoutFetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`)
+    ]);
+    const b = await book.json();
+    const s = await stats.json();
+    return { bid: parseFloat(b.bidPrice), ask: parseFloat(b.askPrice), volume24h: parseFloat(s.volume) };
+  };
+  const parseCoinbase = async (symbol) => {
+    const pair = symbol + '-USD';
+    const [ticker, stats] = await Promise.all([
+      timeoutFetch(`https://api.exchange.coinbase.com/products/${pair}/ticker`, { headers: { 'User-Agent': 'CryptoZen' } }),
+      timeoutFetch(`https://api.exchange.coinbase.com/products/${pair}/stats`, { headers: { 'User-Agent': 'CryptoZen' } })
+    ]);
+    const t = await ticker.json();
+    const s = await stats.json();
+    return { bid: parseFloat(t.bid), ask: parseFloat(t.ask), volume24h: parseFloat(s.volume) };
+  };
+  const parseKraken = async (symbol) => {
+    const map = { BTC: 'XBTUSD', ETH: 'ETHUSD', LTC: 'LTCUSD', XRP: 'XRPUSD' };
+    const pair = map[symbol] || `${symbol}USD`;
+    const res = await timeoutFetch(`https://api.kraken.com/0/public/Ticker?pair=${pair}`);
+    const json = await res.json();
+    const key = Object.keys(json.result || {})[0];
+    const d = json.result?.[key];
+    return { bid: parseFloat(d?.b?.[0]), ask: parseFloat(d?.a?.[0]), volume24h: parseFloat(d?.v?.[1] || d?.v?.[0] || 0) };
+  };
+  const aggregateSymbol = async (symbol) => {
+    const results = await Promise.allSettled([
+      parseBinance(symbol),
+      parseCoinbase(symbol),
+      parseKraken(symbol)
+    ]);
+    const mids = results.filter(r => r.status === 'fulfilled').map(r => {
+      const v = r.value; return (v.bid + v.ask) / 2;
+    }).filter(v => isFinite(v));
+    if (!mids.length) return 0;
+    return mids.reduce((a,b)=>a+b,0) / mids.length;
+  };
+  const getLivePrices = async () => {
+    const now = Date.now();
+    if (cache.prices && (now - cache.ts) < 3000) return cache.prices;
+    const symbols = ['BTC','ETH','LTC','XRP'];
+    const values = await Promise.all(symbols.map(aggregateSymbol));
+    const prices = Object.fromEntries(symbols.map((s, i) => [s, Number(values[i] || 0)]));
+    cache = { prices, ts: now };
+    return prices;
+  };
+  const sendInitialPrices = async (ws) => {
+    try {
+      const initialPrices = await getLivePrices();
+      ws.send(JSON.stringify({ type: 'INITIAL_PRICES', data: initialPrices }));
+    } catch {}
+  };
+  setInterval(async () => {
+    try {
+      const priceUpdates = await getLivePrices();
+      broadcastPrices(priceUpdates);
+    } catch {}
+  }, 5000);
 
   // Graceful shutdown
   const gracefulShutdown = () => {
