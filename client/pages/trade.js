@@ -150,10 +150,8 @@ export default function Trade() {
       setError('');
       setSuccess(false);
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
+      // Authentication is enforced by ProtectedRoute and cookie-based session
+      // No need to check localStorage token here
       
       // Validate amount
       const numericAmount = parseFloat(amount);
@@ -205,8 +203,8 @@ export default function Trade() {
         fromAddress: tradeType === 'buy' ? 'sender_address' : undefined
       };
       
-      // Call the transaction service
-      const result = await transactionService.createTransaction(transactionData, token);
+      // Call the transaction service (cookie-based auth)
+      const result = await transactionService.createTransaction(transactionData);
       
       console.log('Trade executed:', result);
       
