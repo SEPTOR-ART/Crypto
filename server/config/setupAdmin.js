@@ -13,9 +13,40 @@ const setupAdminUser = async () => {
     const adminLastName = process.env.ADMIN_LAST_NAME || 'User';
     const adminPhone = process.env.ADMIN_PHONE;
 
-    // Skip if no admin credentials configured
+    // If no admin credentials configured, promote existing admin to super admin
     if (!adminEmail) {
-      console.log('ℹ️  No ADMIN_EMAIL configured - skipping admin setup');
+      try {
+        const existingAdmin = await User.findOne({ isAdmin: true });
+        if (existingAdmin) {
+          let changed = false;
+          if (!existingAdmin.isAdmin) {
+            existingAdmin.isAdmin = true;
+            changed = true;
+          }
+          if (existingAdmin.role !== 'super_admin') {
+            existingAdmin.role = 'super_admin';
+            changed = true;
+          }
+          if (changed) {
+            await existingAdmin.save();
+            console.log(`✅ Promoted existing admin to super admin: ${existingAdmin.email}`);
+          } else {
+            console.log(`✓ Existing admin already super admin: ${existingAdmin.email}`);
+          }
+          return;
+        }
+        const adminByRole = await User.findOne({ role: 'admin' });
+        if (adminByRole) {
+          adminByRole.role = 'super_admin';
+          adminByRole.isAdmin = true;
+          await adminByRole.save();
+          console.log(`✅ Promoted role=admin user to super admin: ${adminByRole.email}`);
+          return;
+        }
+        console.log('ℹ️  No ADMIN_EMAIL configured and no admin user found');
+      } catch (e) {
+        console.log('⚠️  Admin auto-promotion skipped due to error');
+      }
       return;
     }
 

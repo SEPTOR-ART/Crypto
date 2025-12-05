@@ -168,6 +168,7 @@ export const AuthProvider = ({ children }) => {
     
     // Check for isAdmin flag
     if (user.isAdmin === true) return true;
+    if (user.role === 'admin' || user.role === 'super_admin') return true;
     
     // User is not an admin
     return false;

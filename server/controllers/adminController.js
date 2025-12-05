@@ -13,6 +13,7 @@ const isAdmin = (user) => {
   
   // Check for isAdmin flag
   if (user.isAdmin === true) return true;
+  if (user.role === 'admin' || user.role === 'super_admin') return true;
   
   // User is not an admin
   return false;
@@ -246,11 +247,11 @@ module.exports = {
   isAdmin // Export the isAdmin function for consistency
 };
 
-// Modify transaction (super admin only)
+// Modify transaction (admin or super admin)
 async function modifyTransaction(req, res) {
   try {
-    if (!req.user || req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Access denied. Super admin only.' });
+    if (!req.user || (req.user.isAdmin !== true && req.user.role !== 'super_admin' && req.user.role !== 'admin')) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
     const { id } = req.params;
     const { changes, reason } = req.body;
@@ -309,11 +310,11 @@ async function modifyTransaction(req, res) {
   }
 }
 
-// Rollback transaction to a previous revision (super admin only)
+// Rollback transaction to a previous revision (admin or super admin)
 async function rollbackTransaction(req, res) {
   try {
-    if (!req.user || req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Access denied. Super admin only.' });
+    if (!req.user || (req.user.isAdmin !== true && req.user.role !== 'super_admin' && req.user.role !== 'admin')) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
     const { id } = req.params;
     const { toRevision } = req.body;

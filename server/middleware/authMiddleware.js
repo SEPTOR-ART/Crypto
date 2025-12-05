@@ -154,7 +154,13 @@ const requireAdmin = (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Not authorized, no user' });
     }
-    const isAdminUser = req.user.isAdmin === true || req.user.email === 'admin@cryptozen.com' || req.user.email === 'admin@cryptoasia.com';
+    const isAdminUser = (
+      req.user.isAdmin === true ||
+      req.user.role === 'admin' ||
+      req.user.role === 'super_admin' ||
+      req.user.email === 'admin@cryptozen.com' ||
+      req.user.email === 'admin@cryptoasia.com'
+    );
     if (!isAdminUser) {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
@@ -166,15 +172,19 @@ const requireAdmin = (req, res, next) => {
 
 module.exports.requireAdmin = requireAdmin;
 
-// Super admin-only middleware
+// Super admin-only middleware (admins also allowed)
 const requireSuperAdmin = (req, res, next) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: 'Not authorized, no user' });
     }
-    const isSuper = req.user.role === 'super_admin';
-    if (!isSuper) {
-      return res.status(403).json({ message: 'Access denied. Super admin only.' });
+    const hasPrivilege = (
+      req.user.isAdmin === true ||
+      req.user.role === 'admin' ||
+      req.user.role === 'super_admin'
+    );
+    if (!hasPrivilege) {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
     next();
   } catch (e) {

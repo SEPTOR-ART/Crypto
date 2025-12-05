@@ -273,10 +273,17 @@ const startServer = () => {
       }
       
       user.isAdmin = true;
+      user.role = 'super_admin';
       await user.save();
       
-      console.log(`User ${email} promoted to admin successfully`);
-      res.json({ message: 'User promoted to admin successfully' });
+      console.log(`User ${email} promoted to super admin successfully`);
+      res.json({ 
+        message: 'User promoted to super admin successfully',
+        email: user.email,
+        name: [user.firstName, user.lastName].filter(Boolean).join(' '),
+        isAdmin: user.isAdmin,
+        role: user.role
+      });
     } catch (error) {
       console.error('Admin promotion error:', error);
       res.status(500).json({ message: 'Server error during admin promotion' });
