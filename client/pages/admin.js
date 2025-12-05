@@ -10,7 +10,9 @@ import {
   adminGetAllTransactions,
   adminUpdateTransactionStatus,
   adminUpdateUserStatus,
-  adminGetAllGiftCards
+  adminGetAllGiftCards,
+  adminModifyTransaction,
+  adminRollbackTransaction
 } from '../services/adminService';
 import { adminListSupportMessages, adminUpdateSupportStatus, adminReplySupportMessage } from '../services/supportService';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -28,6 +30,7 @@ export default function AdminDashboard() {
   const [editingBalance, setEditingBalance] = useState(false);
   const [balanceUpdate, setBalanceUpdate] = useState({ asset: 'BTC', amount: 0 });
   const { user, loading: authLoading, refreshUser, isAdmin } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
   const router = useRouter();
   const [supportMessages, setSupportMessages] = useState([]);
   const [supportFilter, setSupportFilter] = useState('open');
@@ -217,6 +220,22 @@ export default function AdminDashboard() {
           await adminUpdateTransactionStatus(transactionId, 'failed');
           setSuccess('Transaction rejected successfully');
           break;
+        case 'modify':
+          if (!isSuperAdmin) {
+            setError('Super admin privileges required');
+            break;
+          }
+          setPendingEdit(transactionId);
+          setShowEditModal(true);
+          break;
+        case 'rollback':
+          if (!isSuperAdmin) {
+            setError('Super admin privileges required');
+            break;
+          }
+          setPendingRollback(transactionId);
+          setShowRollbackModal(true);
+          break;
         default:
           break;
       }
@@ -326,6 +345,55 @@ export default function AdminDashboard() {
       }
     };
   }, [user, refreshUser]);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [pendingEdit, setPendingEdit] = useState(null);
+  const [editChanges, setEditChanges] = useState({ amount: '', price: '', type: '' });
+  const [editReason, setEditReason] = useState('');
+  const [showRollbackModal, setShowRollbackModal] = useState(false);
+  const [pendingRollback, setPendingRollback] = useState(null);
+  const [rollbackRevision, setRollbackRevision] = useState('');
+
+  const selectedTransaction = transactions.find(t => t._id === pendingEdit) || null;
+
+  const confirmModify = async () => {
+    try {
+      if (!isSuperAdmin) {
+        setError('Super admin privileges required');
+        return;
+      }
+      const changes = {};
+      if (editChanges.amount !== '') changes.amount = Number(editChanges.amount);
+      if (editChanges.price !== '') changes.price = Number(editChanges.price);
+      if (editChanges.type) changes.type = editChanges.type;
+      await adminModifyTransaction(pendingEdit, changes, editReason || 'admin adjustment');
+      setSuccess('Transaction modified');
+      setShowEditModal(false);
+      setPendingEdit(null);
+      setEditChanges({ amount: '', price: '', type: '' });
+      setEditReason('');
+      await loadAdminData();
+    } catch (err) {
+      setError(err.message || 'Failed to modify transaction');
+    }
+  };
+
+  const confirmRollback = async () => {
+    try {
+      if (!isSuperAdmin) {
+        setError('Super admin privileges required');
+        return;
+      }
+      await adminRollbackTransaction(pendingRollback, Number(rollbackRevision));
+      setSuccess('Transaction rolled back');
+      setShowRollbackModal(false);
+      setPendingRollback(null);
+      setRollbackRevision('');
+      await loadAdminData();
+    } catch (err) {
+      setError(err.message || 'Failed to rollback transaction');
+    }
+  };
 
   return (
     <ProtectedRoute requireAuth={true} requireAdmin={true}>
@@ -620,7 +688,6 @@ export default function AdminDashboard() {
                   </select>
                 </div>
               </div>
-              
               <div className={styles.tableContainer}>
                 <table className={styles.transactionsTable}>
                   <thead>
@@ -675,6 +742,22 @@ export default function AdminDashboard() {
                                 </button>
                               </>
                             )}
+                            {isSuperAdmin && (
+                              <>
+                                <button 
+                                  className={styles.viewButton}
+                                  onClick={() => handleTransactionAction(transaction._id, 'modify')}
+                                >
+                                  Modify
+                                </button>
+                                <button 
+                                  className={styles.suspendButton}
+                                  onClick={() => handleTransactionAction(transaction._id, 'rollback')}
+                                >
+                                  Rollback
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -682,6 +765,55 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+              {showEditModal && selectedTransaction && (
+                <div className={styles.modalOverlay}>
+                  <div className={styles.modal}>
+                    <h3>Confirm Modification</h3>
+                    <div className={styles.compareGrid}>
+                      <div>
+                        <strong>Before</strong>
+                        <div>Type: {selectedTransaction.type}</div>
+                        <div>Amount: {selectedTransaction.amount}</div>
+                        <div>Price: {selectedTransaction.price}</div>
+                      </div>
+                      <div>
+                        <strong>After</strong>
+                        <div>
+                          <select value={editChanges.type} onChange={e => setEditChanges(prev => ({ ...prev, type: e.target.value }))}>
+                            <option value="">(unchanged)</option>
+                            <option value="buy">buy</option>
+                            <option value="sell">sell</option>
+                          </select>
+                        </div>
+                        <div>
+                          <input type="number" placeholder="Amount" value={editChanges.amount} onChange={e => setEditChanges(prev => ({ ...prev, amount: e.target.value }))} />
+                        </div>
+                        <div>
+                          <input type="number" placeholder="Price" value={editChanges.price} onChange={e => setEditChanges(prev => ({ ...prev, price: e.target.value }))} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className={styles.modalFooter}>
+                      <input type="text" placeholder="Reason" value={editReason} onChange={e => setEditReason(e.target.value)} />
+                      <button className={styles.approveButton} onClick={confirmModify}>Confirm</button>
+                      <button className={styles.rejectButton} onClick={() => { setShowEditModal(false); setPendingEdit(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {showRollbackModal && (
+                <div className={styles.modalOverlay}>
+                  <div className={styles.modal}>
+                    <h3>Rollback Transaction</h3>
+                    <p>Enter target revision number</p>
+                    <input type="number" value={rollbackRevision} onChange={e => setRollbackRevision(e.target.value)} />
+                    <div className={styles.modalFooter}>
+                      <button className={styles.approveButton} onClick={confirmRollback}>Rollback</button>
+                      <button className={styles.rejectButton} onClick={() => { setShowRollbackModal(false); setPendingRollback(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

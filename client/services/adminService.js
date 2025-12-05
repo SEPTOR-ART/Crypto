@@ -56,6 +56,26 @@ export const adminUpdateTransactionStatus = async (transactionId, status) => {
   }));
 };
 
+export const adminModifyTransaction = async (transactionId, changes, reason) => {
+  return handleAdminRequest(() => apiRequest(`/api/admin/transactions/${transactionId}/modify`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ changes, reason }),
+  }));
+};
+
+export const adminRollbackTransaction = async (transactionId, toRevision) => {
+  return handleAdminRequest(() => apiRequest(`/api/admin/transactions/${transactionId}/rollback`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ toRevision }),
+  }));
+};
+
 // Suspend/activate user (admin only)
 export const adminUpdateUserStatus = async (userId, action) => {
   return handleAdminRequest(() => apiRequest(`/api/admin/users/${userId}/status`, {

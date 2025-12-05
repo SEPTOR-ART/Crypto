@@ -245,3 +245,127 @@ module.exports = {
   updateUserStatus,
   isAdmin // Export the isAdmin function for consistency
 };
+
+// Modify transaction (super admin only)
+async function modifyTransaction(req, res) {
+  try {
+    if (!req.user || req.user.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Access denied. Super admin only.' });
+    }
+    const { id } = req.params;
+    const { changes, reason } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid transaction ID' });
+    }
+    const tx = await Transaction.findById(id);
+    if (!tx) return res.status(404).json({ message: 'Transaction not found' });
+    const user = await User.findById(tx.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const before = tx.toObject();
+    const allowed = ['type','asset','amount','price','total','status','paymentMethod','toAddress','fromAddress'];
+    const applied = {};
+    for (const k of Object.keys(changes || {})) {
+      if (allowed.includes(k)) applied[k] = changes[k];
+    }
+    const effect = (t, amt) => (t === 'buy' || t === 'deposit') ? amt : (t === 'sell' || t === 'withdrawal') ? -amt : 0;
+    const prevAsset = (before.asset || '').toUpperCase();
+    const nextAsset = (applied.asset || before.asset || '').toUpperCase();
+    const prevAmount = Number(before.amount || 0);
+    const nextType = applied.type || before.type;
+    const nextAmount = applied.amount !== undefined ? Number(applied.amount) : prevAmount;
+    const prevEffect = effect(before.type, prevAmount);
+    const nextEffect = effect(nextType, nextAmount);
+    const getBal = (a) => user.balance?.get ? (user.balance.get(a) || 0) : (user.balance?.[a] || 0);
+    const setBal = (a, v) => user.balance?.set ? user.balance.set(a, v) : (user.balance = { ...(user.balance || {}), [a]: v });
+    const oldBal = getBal(prevAsset);
+    const newBal = getBal(nextAsset);
+    const adjustedOld = oldBal - prevEffect;
+    const adjustedNew = newBal + nextEffect;
+    if (adjustedOld < 0) {
+      return res.status(400).json({ message: `Modification would result in negative ${prevAsset} balance` });
+    }
+    if (adjustedNew < 0) {
+      return res.status(400).json({ message: `Modification would result in negative ${nextAsset} balance` });
+    }
+    tx.versions = tx.versions || [];
+    tx.versions.push({ revision: tx.revision, snapshot: before, changedBy: req.user._id, reason });
+    tx.revision = (tx.revision || 1) + 1;
+    const fields = {};
+    for (const k of Object.keys(applied)) {
+      fields[k] = { before: before[k], after: applied[k] };
+      tx[k] = applied[k];
+    }
+    tx.auditLogs = tx.auditLogs || [];
+    tx.auditLogs.push({ action: 'modify', by: req.user._id, fields });
+    await tx.save();
+    setBal(prevAsset, adjustedOld);
+    setBal(nextAsset, adjustedNew);
+    await user.save();
+    const safeBalance = user.balance?.get ? Object.fromEntries(user.balance) : user.balance;
+    return res.json({ message: 'Transaction modified', transaction: tx, userBalance: safeBalance });
+  } catch (error) {
+    console.error('Modify transaction error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+// Rollback transaction to a previous revision (super admin only)
+async function rollbackTransaction(req, res) {
+  try {
+    if (!req.user || req.user.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Access denied. Super admin only.' });
+    }
+    const { id } = req.params;
+    const { toRevision } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid transaction ID' });
+    }
+    const tx = await Transaction.findById(id);
+    if (!tx) return res.status(404).json({ message: 'Transaction not found' });
+    const user = await User.findById(tx.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const target = (tx.versions || []).find(v => v.revision === Number(toRevision));
+    if (!target) return res.status(404).json({ message: 'Revision not found' });
+    const before = tx.toObject();
+    const effect = (t, amt) => (t === 'buy' || t === 'deposit') ? amt : (t === 'sell' || t === 'withdrawal') ? -amt : 0;
+    const prevAsset = (before.asset || '').toUpperCase();
+    const nextAsset = (target.snapshot.asset || before.asset || '').toUpperCase();
+    const prevAmount = Number(before.amount || 0);
+    const nextType = target.snapshot.type;
+    const nextAmount = Number(target.snapshot.amount || 0);
+    const prevEffect = effect(before.type, prevAmount);
+    const nextEffect = effect(nextType, nextAmount);
+    const getBal = (a) => user.balance?.get ? (user.balance.get(a) || 0) : (user.balance?.[a] || 0);
+    const setBal = (a, v) => user.balance?.set ? user.balance.set(a, v) : (user.balance = { ...(user.balance || {}), [a]: v });
+    const oldBal = getBal(prevAsset);
+    const newBal = getBal(nextAsset);
+    const adjustedOld = oldBal - prevEffect;
+    const adjustedNew = newBal + nextEffect;
+    if (adjustedOld < 0) {
+      return res.status(400).json({ message: `Rollback would result in negative ${prevAsset} balance` });
+    }
+    if (adjustedNew < 0) {
+      return res.status(400).json({ message: `Rollback would result in negative ${nextAsset} balance` });
+    }
+    const fields = {};
+    const keys = ['type','asset','amount','price','total','status','paymentMethod','toAddress','fromAddress'];
+    keys.forEach(k => {
+      fields[k] = { before: before[k], after: target.snapshot[k] };
+      tx[k] = target.snapshot[k];
+    });
+    tx.auditLogs = tx.auditLogs || [];
+    tx.auditLogs.push({ action: 'rollback', by: req.user._id, fields });
+    await tx.save();
+    setBal(prevAsset, adjustedOld);
+    setBal(nextAsset, adjustedNew);
+    await user.save();
+    const safeBalance = user.balance?.get ? Object.fromEntries(user.balance) : user.balance;
+    return res.json({ message: 'Transaction rolled back', transaction: tx, userBalance: safeBalance });
+  } catch (error) {
+    console.error('Rollback transaction error:', error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+module.exports.modifyTransaction = modifyTransaction;
+module.exports.rollbackTransaction = rollbackTransaction;

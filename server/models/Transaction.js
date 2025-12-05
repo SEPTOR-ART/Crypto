@@ -52,6 +52,23 @@ const transactionSchema = new mongoose.Schema({
   transactionHash: {
     type: String
   },
+  revision: {
+    type: Number,
+    default: 1
+  },
+  versions: [{
+    revision: Number,
+    snapshot: mongoose.Schema.Types.Mixed,
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reason: String,
+    timestamp: { type: Date, default: Date.now }
+  }],
+  auditLogs: [{
+    action: { type: String, enum: ['create','modify','rollback'] },
+    by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    fields: mongoose.Schema.Types.Mixed,
+    timestamp: { type: Date, default: Date.now }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -138,9 +138,17 @@ const createTransaction = async (req, res) => {
       status: 'pending'
     });
     
-    // Save to database
+  // Save to database
+  await transaction.save();
+  console.log('Transaction saved:', transaction._id);
+  try {
+    transaction.auditLogs = transaction.auditLogs || [];
+    transaction.versions = transaction.versions || [];
+    transaction.auditLogs.push({ action: 'create', by: req.user._id, fields: { type, asset, amount, price, total, paymentMethod } });
+    transaction.revision = 1;
+    transaction.versions.push({ revision: 1, snapshot: transaction.toObject(), changedBy: req.user._id, reason: 'initial creation' });
     await transaction.save();
-    console.log('Transaction saved:', transaction._id);
+  } catch {}
     
     // Process blockchain transaction
     const blockchainResult = await processBlockchainTransaction({
@@ -207,10 +215,10 @@ const createTransaction = async (req, res) => {
           } : undefined
         });
       }
-    } else {
-      // Mark transaction as failed
-      transaction.status = 'failed';
-      await transaction.save();
+  } else {
+    // Mark transaction as failed
+    transaction.status = 'failed';
+    await transaction.save();
       console.log('Transaction failed:', transaction._id);
       
       return res.status(400).json({ 
@@ -265,9 +273,17 @@ const updateTransactionStatus = async (req, res) => {
     });
     
     if (transaction) {
-      transaction.status = req.body.status || transaction.status;
+      const before = transaction.toObject();
+      const nextStatus = req.body.status || transaction.status;
+      transaction.status = nextStatus;
       transaction.updatedAt = Date.now();
-      
+      try {
+        transaction.auditLogs = transaction.auditLogs || [];
+        transaction.versions = transaction.versions || [];
+        transaction.auditLogs.push({ action: 'modify', by: req.user._id, fields: { status: { before: before.status, after: nextStatus } } });
+        transaction.revision = (transaction.revision || 1) + 1;
+        transaction.versions.push({ revision: transaction.revision, snapshot: before, changedBy: req.user._id, reason: 'status update' });
+      } catch {}
       await transaction.save();
       
       res.json(transaction);

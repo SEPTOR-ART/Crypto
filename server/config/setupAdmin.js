@@ -30,6 +30,10 @@ const setupAdminUser = async () => {
         adminUser.isAdmin = true;
         updated = true;
       }
+      if (adminUser.role !== 'super_admin') {
+        adminUser.role = 'super_admin';
+        updated = true;
+      }
       
       // Update password if provided in environment variables
       if (adminPassword) {
@@ -68,6 +72,7 @@ const setupAdminUser = async () => {
       firstName: adminFirstName,
       lastName: adminLastName,
       isAdmin: true,
+      role: 'super_admin',
       phone: adminPhone,
       emailVerified: true,
       kycStatus: 'verified',
