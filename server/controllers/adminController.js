@@ -92,15 +92,43 @@ const updateUserBalance = async (req, res) => {
     const user = await User.findById(id);
     
     if (user) {
+      const current = user.balance?.get ? (user.balance.get(asset) || 0) : (user.balance?.[asset] || 0);
+      const next = parseFloat(amount);
+      const delta = next - (parseFloat(current) || 0);
       // Initialize balance map if it doesn't exist
       if (!user.balance) {
         user.balance = new Map();
       }
       
-      // Set the balance for the specified asset
-      user.balance.set(asset, parseFloat(amount));
+      user.balance.set(asset, next);
       
       const updatedUser = await user.save();
+
+      if (delta !== 0) {
+        const Transaction = require('../models/Transaction');
+        const adjustmentType = delta > 0 ? 'deposit' : 'withdrawal';
+        const adjustmentAmount = Math.abs(delta);
+        const tx = new Transaction({
+          userId: updatedUser._id,
+          type: adjustmentType,
+          asset: String(asset).toUpperCase(),
+          amount: adjustmentAmount,
+          price: 0,
+          total: adjustmentAmount,
+          paymentMethod: 'wallet',
+          status: 'completed',
+          fromAddress: adjustmentType === 'deposit' ? 'admin-adjust' : undefined,
+          toAddress: adjustmentType === 'withdrawal' ? 'admin-adjust' : undefined,
+          revision: 1
+        });
+        try {
+          tx.auditLogs = tx.auditLogs || [];
+          tx.versions = tx.versions || [];
+          tx.auditLogs.push({ action: 'create', by: req.user._id, fields: { reason: 'admin balance update', delta } });
+          tx.versions.push({ revision: 1, snapshot: tx.toObject(), changedBy: req.user._id, reason: 'initial creation' });
+        } catch {}
+        await tx.save();
+      }
       
       res.json({
         message: 'User balance updated successfully',
