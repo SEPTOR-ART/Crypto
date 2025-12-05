@@ -204,6 +204,11 @@ export default function AdminDashboard() {
     }
   };
 
+  const setTab = (tab) => {
+    setActiveTab(tab);
+    router.push({ pathname: '/admin', query: { tab } }, undefined, { shallow: true });
+  };
+
   // Handle transaction action
   const handleTransactionAction = async (transactionId, action) => {
     try {
@@ -346,6 +351,13 @@ export default function AdminDashboard() {
     };
   }, [user, refreshUser]);
 
+  useEffect(() => {
+    const q = router.query?.tab;
+    if (typeof q === 'string' && q.length > 0) {
+      setActiveTab(q);
+    }
+  }, [router.query?.tab]);
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [pendingEdit, setPendingEdit] = useState(null);
   const [editChanges, setEditChanges] = useState({ amount: '', price: '', type: '' });
@@ -404,9 +416,9 @@ export default function AdminDashboard() {
             <h1>CryptoZen Admin</h1>
           </div>
           <nav className={styles.nav}>
-            <Link href="/admin" className={styles.navLink}>Dashboard</Link>
-            <Link href="/admin/users" className={styles.navLink}>Users</Link>
-            <Link href="/admin/transactions" className={styles.navLink}>Transactions</Link>
+            <Link href={{ pathname: '/admin', query: { tab: 'users' } }} className={styles.navLink}>Dashboard</Link>
+            <Link href={{ pathname: '/admin', query: { tab: 'users' } }} className={styles.navLink}>Users</Link>
+            <Link href={{ pathname: '/admin', query: { tab: 'transactions' } }} className={styles.navLink}>Transactions</Link>
             <Link href="/admin/gift-cards" className={styles.navLink}>Gift Cards</Link>
           </nav>
         </header>
@@ -445,37 +457,37 @@ export default function AdminDashboard() {
         <div className={styles.tabs}>
           <button 
             className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('users')}
+            onClick={() => setTab('users')}
           >
             User Management
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'transactions' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('transactions')}
+            onClick={() => setTab('transactions')}
           >
             Transactions
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'giftcards' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('giftcards')}
+            onClick={() => setTab('giftcards')}
           >
             Gift Cards
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'settings' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => setTab('settings')}
           >
             Platform Settings
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'reports' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('reports')}
+            onClick={() => setTab('reports')}
           >
             Reports
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'support' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('support')}
+            onClick={() => setTab('support')}
           >
             Support Chat
           </button>
