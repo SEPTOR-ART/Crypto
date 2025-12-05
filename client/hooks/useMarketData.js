@@ -132,24 +132,7 @@ export const useMarketData = ({ symbols = ['BTCUSD','ETHUSD'], metrics = false, 
         metricsRef.current.lastDurationMs = Date.now() - start;
         metricsRef.current.lastError = null;
       } else {
-        // Fallback: aggregate client-side if serverless route unavailable
-        try {
-          const aggregated = await Promise.all((symbols||[]).map(aggregateSymbol));
-          const hist = Object.fromEntries((symbols||[]).map(s => {
-            const arr = histRef.current[s] || [];
-            const now = Date.now();
-            const avgWithin = (ms) => {
-              const xs = arr.filter(x => now - x.t <= ms).map(x => x.vwap);
-              return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0;
-            };
-            return [s, { minute: avgWithin(60000), hourly: avgWithin(3600000), daily: avgWithin(86400000) }];
-          }));
-          metricsRef.current.successes += 1;
-          metricsRef.current.lastDurationMs = Date.now() - start;
-          metricsRef.current.lastError = `fallback HTTP ${res.status}`;
-          setData({ status: 'ok', data: aggregated, history: hist, metrics: metricsRef.current });
-        } catch (exchangeErr) {
-          // Final fallback: use backend placeholder prices when exchanges unreachable
+        if (skipExternal) {
           const placeholder = await apiRequest('/api/prices').catch(() => null);
           const mapping = placeholder?.prices || {};
           const dataFromPlaceholder = (symbols||[]).map(sym => {
@@ -163,10 +146,43 @@ export const useMarketData = ({ symbols = ['BTCUSD','ETHUSD'], metrics = false, 
             };
           });
           const hist = Object.fromEntries((symbols||[]).map(s => [s, { minute: mapping ? (Number(mapping[s.replace('USD','')])||0) : 0, hourly: 0, daily: 0 }]));
-          metricsRef.current.lastError = `exchanges unreachable: ${exchangeErr?.message || 'error'}`;
-          // Set cooldown for 5 minutes to avoid repeated DNS errors
+          metricsRef.current.lastError = 'skipExternal';
           cooldownUntilRef.current = Date.now() + 5 * 60 * 1000;
           setData({ status: 'ok', data: dataFromPlaceholder, history: hist, metrics: metricsRef.current });
+        } else {
+          try {
+            const aggregated = await Promise.all((symbols||[]).map(aggregateSymbol));
+            const hist = Object.fromEntries((symbols||[]).map(s => {
+              const arr = histRef.current[s] || [];
+              const now = Date.now();
+              const avgWithin = (ms) => {
+                const xs = arr.filter(x => now - x.t <= ms).map(x => x.vwap);
+                return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0;
+              };
+              return [s, { minute: avgWithin(60000), hourly: avgWithin(3600000), daily: avgWithin(86400000) }];
+            }));
+            metricsRef.current.successes += 1;
+            metricsRef.current.lastDurationMs = Date.now() - start;
+            metricsRef.current.lastError = `fallback HTTP ${res.status}`;
+            setData({ status: 'ok', data: aggregated, history: hist, metrics: metricsRef.current });
+          } catch (exchangeErr) {
+            const placeholder = await apiRequest('/api/prices').catch(() => null);
+            const mapping = placeholder?.prices || {};
+            const dataFromPlaceholder = (symbols||[]).map(sym => {
+              const asset = sym.replace('USD','');
+              const price = Number(mapping[asset] || 0);
+              return {
+                symbol: sym,
+                sources: { placeholder: { bid: price ? price*0.999 : 0, ask: price ? price*1.001 : 0, volume24h: 0, change24hPct: 0 } },
+                verified: { priceMid: price || 0, vwap: price || 0, discrepancyPct: 0, alert: false },
+                timestamp: Date.now()
+              };
+            });
+            const hist = Object.fromEntries((symbols||[]).map(s => [s, { minute: mapping ? (Number(mapping[s.replace('USD','')])||0) : 0, hourly: 0, daily: 0 }]));
+            metricsRef.current.lastError = `exchanges unreachable: ${exchangeErr?.message || 'error'}`;
+            cooldownUntilRef.current = Date.now() + 5 * 60 * 1000;
+            setData({ status: 'ok', data: dataFromPlaceholder, history: hist, metrics: metricsRef.current });
+          }
         }
       }
     } catch (e) {
