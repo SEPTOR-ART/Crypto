@@ -8,6 +8,9 @@ export const useMarketData = ({ symbols = ['BTCUSD','ETHUSD'], metrics = false, 
   const timerRef = useRef(null);
   const histRef = useRef(Object.fromEntries((symbols||[]).map(s => [s, []])));
   const metricsRef = useRef({ successes: 0, failures: 0, lastDurationMs: 0, lastError: null });
+  const cooldownUntilRef = useRef(0);
+  const disableExternal = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_DISABLE_EXTERNAL_RATES === '1') || false;
+  const isStaticHost = typeof window !== 'undefined' && /netlify\.app$/.test(window.location.hostname);
 
   const timeoutFetch = async (url, init = {}, timeoutMs = 2500) => {
     const controller = AbortSignal.timeout(timeoutMs);
@@ -119,7 +122,9 @@ export const useMarketData = ({ symbols = ['BTCUSD','ETHUSD'], metrics = false, 
       if (metrics) params.set('metrics', '1');
       if (history) params.set('history', '1');
       const start = Date.now();
-      const res = await fetch(`/api/market-data?${params.toString()}`, { headers: apiKey ? { 'x-api-key': apiKey } : undefined });
+      const offline = typeof navigator !== 'undefined' && navigator && navigator.onLine === false;
+      const skipExternal = disableExternal || isStaticHost || offline || (cooldownUntilRef.current && Date.now() < cooldownUntilRef.current);
+      const res = skipExternal ? { ok: false, status: 404 } : await fetch(`/api/market-data?${params.toString()}`, { headers: apiKey ? { 'x-api-key': apiKey } : undefined });
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -159,6 +164,8 @@ export const useMarketData = ({ symbols = ['BTCUSD','ETHUSD'], metrics = false, 
           });
           const hist = Object.fromEntries((symbols||[]).map(s => [s, { minute: mapping ? (Number(mapping[s.replace('USD','')])||0) : 0, hourly: 0, daily: 0 }]));
           metricsRef.current.lastError = `exchanges unreachable: ${exchangeErr?.message || 'error'}`;
+          // Set cooldown for 5 minutes to avoid repeated DNS errors
+          cooldownUntilRef.current = Date.now() + 5 * 60 * 1000;
           setData({ status: 'ok', data: dataFromPlaceholder, history: hist, metrics: metricsRef.current });
         }
       }
@@ -195,6 +202,8 @@ export const useMarketData = ({ symbols = ['BTCUSD','ETHUSD'], metrics = false, 
         });
         const hist = Object.fromEntries((symbols||[]).map(s => [s, { minute: mapping ? (Number(mapping[s.replace('USD','')])||0) : 0, hourly: 0, daily: 0 }]));
         metricsRef.current.lastError = `fallback placeholder: ${inner?.message || 'error'}`;
+        // Set cooldown to avoid hammering external hosts
+        cooldownUntilRef.current = Date.now() + 5 * 60 * 1000;
         setData({ status: 'ok', data: dataFromPlaceholder, history: hist, metrics: metricsRef.current });
         setError(null);
       }
